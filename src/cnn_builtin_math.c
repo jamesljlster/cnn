@@ -1,21 +1,22 @@
+#include <string.h>
 #include <math.h>
 
 #include "cnn.h"
 #include "cnn_builtin_math.h"
 
-CNN_AFUNC_DEF((*cnn_transfer_list[])) = {
+CNN_AFUNC_DEF((*cnn_afunc_list[])) = {
 	cnn_softmax,
 	cnn_relu,
 	cnn_swish
 };
 
-CNN_AFUNC_DEF((*cnn_transfer_derivative_list[])) = {
-	cnn_softmax_derivative,
-	cnn_relu_derivative,
-	cnn_swish_derivative
+CNN_AFUNC_DEF((*cnn_afunc_grad_list[])) = {
+	cnn_softmax_grad,
+	cnn_relu_grad,
+	cnn_swish_grad
 };
 
-const char* cnn_transfer_func_name[] = {
+const char* cnn_afunc_name[] = {
 	"Softmax",
 	"ReLU",
 	"Swish"
@@ -51,9 +52,19 @@ CNN_AFUNC_DEF(cnn_softmax)
 	}
 }
 
-CNN_AFUNC_DEF(cnn_softmax_derivative)
+CNN_AFUNC_DEF(cnn_softmax_grad)
 {
+	int i, j;
 
+	// Find softmax grad
+	cnn_softmax(buf, src, len, NULL);
+	for(i = 0; i < len; i++)
+	{
+		for(j = 0; j < len; j++)
+		{
+			dst[i * len + j] = buf[i] * ((float)(i == j) - buf[j]);
+		}
+	}
 }
 
 CNN_AFUNC_DEF(cnn_relu)
@@ -61,7 +72,7 @@ CNN_AFUNC_DEF(cnn_relu)
 
 }
 
-CNN_AFUNC_DEF(cnn_relu_derivative)
+CNN_AFUNC_DEF(cnn_relu_grad)
 {
 
 }
@@ -71,7 +82,7 @@ CNN_AFUNC_DEF(cnn_swish)
 
 }
 
-CNN_AFUNC_DEF(cnn_swish_derivative)
+CNN_AFUNC_DEF(cnn_swish_grad)
 {
 
 }
