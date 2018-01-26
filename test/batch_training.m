@@ -188,8 +188,8 @@ dataset = [
 INPUTS = 4
 HIDDEN = 12
 OUTPUTS = 3
-ITER = 10000
-L_RATE = 0.01
+ITER = 1000
+L_RATE = 0.001
 
 # Rand weight and zero bias
 hWeight = rand(INPUTS, HIDDEN);
@@ -210,43 +210,62 @@ endif
 for iter = 1 : ITER
   mse = 0;
   hit = 0;
+  
+  # Forward
+  input = dataset(:, 1 : INPUTS);
+  desire = dataset(:, INPUTS + 1 : dataCols);
+  
+  tmpHOut = input * hWeight + hBias;
+  hOut = [];
   for i = 1 : dataRows
-    # Forward
-    input = dataset(i, 1 : INPUTS);
-    desire = dataset(i, INPUTS + 1 : dataCols);
-    
-    tmpHOut = input * hWeight + hBias;
-    hOut = sigmoid(tmpHOut);
-    
-    tmpOOut = hOut * oWeight + oBias;
-    output = sigmoid(tmpOOut);
-    
-    [d, dIndex] = max(desire);
-    [o, oIndex] = max(output);
+    hOut = [hOut; sigmoid(tmpHOut(i, :))];
+  endfor
+  
+  tmpOOut = hOut * oWeight + oBias;
+  output = [];
+  for i = 1 : dataRows
+    output = [output; sigmoid(tmpOOut(i, :))];
+  endfor
+  
+  for i = 1 : dataRows
+    [d, dIndex] = max(desire(i, :));
+    [o, oIndex] = max(output(i, :));
     if dIndex == oIndex
       hit++;
     endif
-    
-    # Find error
-    gradVec = desire - output;
-    mse += sum(gradVec * transpose(gradVec)) / OUTPUTS;
-    
-    # Backpropagation
-    grad0 = desire - output;
-    grad1 = grad0 * sigmoid_derivative(tmpOOut);
-    
-    oBias += L_RATE * grad1;
-    oWeight += L_RATE * (transpose(hOut) * grad1);
-    
-    grad2 = grad1 * transpose(oWeight);
-    grad3 = grad2 * sigmoid_derivative(tmpHOut);
-    
-    hBias += L_RATE * grad2;
-    hWeight += L_RATE * (transpose(input) * grad3);
-    
   endfor
+  
+  # Find error
+  gradVec = desire - output;
+  for i = 1 : dataRows
+    mse += sum(gradVec(i, :) * transpose(gradVec(i, :)));
+  endfor
+  
+  # Backpropagation
+  grad0 = desire - output;
+  grad1 = [];
+  for i = 1 : dataRows
+    grad1 = [grad1; (grad0(i, :) * sigmoid_derivative(tmpOOut(i, :)))];
+  endfor
+  
+  for i = 1 : dataRows
+    oBias += L_RATE * grad1(i, :);
+  endfor
+  oWeight += L_RATE * (transpose(hOut) * grad1);
+  
+  grad2 = grad1 * transpose(oWeight);
+  grad3 = [];
+  for i = 1 : dataRows
+    grad3 = [grad3; (grad2(i, :) * sigmoid_derivative(tmpHOut(i, :)))];
+  endfor
+  
+  for i = 1 : dataRows
+    hBias += L_RATE * grad2(i, :);
+  endfor
+  hWeight += L_RATE * (transpose(input) * grad3);
 
-  mse /= dataRows;
+  # Find mse and accuracy
+  mse /= dataRows * OUTPUTS;
   hit /= dataRows;
   printf("iter %d, mse: %f, accuracy: %f %%\n", iter, mse, hit * 100)
 endfor
