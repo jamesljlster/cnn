@@ -106,7 +106,7 @@ CNN_AFUNC_DEF(cnn_swish_grad)
 	cnn_swish(buf, src, len, NULL);
 	for(i = 0; i < len; i++)
 	{
-		dst[i * len + i] = buf[i] + (buf[i] / src[i]) / (1.0f - src[i]);
+		dst[i * len + i] = buf[i] + (buf[i] / src[i]) * (1.0f - buf[i]);
 	}
 }
 
