@@ -9,6 +9,7 @@ void print_mat(float* src, int rows, int cols);
 
 int main(int argc, char* argv[])
 {
+	int id;
 	int i, j;
 	int len;
 
@@ -44,57 +45,61 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	// Parse argument
-	for(i = 0; i < len; i++)
+	// Test activation functions
+	for(id = 0; id < CNN_AFUNC_AMOUNT; id++)
 	{
-		src[i] = atof(argv[i + 1]);
-	}
-
-	// Find grad
-	cnn_softmax(dst, src, len, NULL);
-	for(i = 0; i < len; i++)
-	{
-		for(j = 0; j < len; j++)
+		// Parse argument
+		for(i = 0; i < len; i++)
 		{
-			src[j] = atof(argv[j + 1]);
-			if(i == j)
+			src[i] = atof(argv[i + 1]);
+		}
+
+		// Find grad
+		cnn_afunc_list[id](dst, src, len, NULL);
+		for(i = 0; i < len; i++)
+		{
+			for(j = 0; j < len; j++)
 			{
-				src[j] += dx;
+				src[j] = atof(argv[j + 1]);
+				if(i == j)
+				{
+					src[j] += dx;
+				}
+			}
+
+			cnn_afunc_list[id](buf, src, len, NULL);
+
+			for(j = 0; j < len; j++)
+			{
+				grad[i * len + j] = (buf[j] - dst[j]) / dx;
 			}
 		}
 
-		cnn_softmax(buf, src, len, NULL);
-
-		for(j = 0; j < len; j++)
+		// Find derivative
+		for(i = 0; i < len; i++)
 		{
-			grad[i * len + j] = (buf[j] - dst[j]) / dx;
+			src[i] = atof(argv[i + 1]);
 		}
+
+		cnn_afunc_grad_list[id](deri, src, len, buf);
+
+		// Find error
+		err = 0;
+		for(i = 0; i < len * len; i++)
+		{
+			err += fabs(grad[i] - deri[i]);
+		}
+
+		printf("=== Test %s derivative ===\n", cnn_afunc_name[id]);
+		printf("deri:\n");
+		print_mat(deri, len, len);
+		printf("\n");
+		printf("grad:\n");
+		print_mat(grad, len, len);
+		printf("\n");
+		printf("Sum of error: %lf\n", err);
+		printf("\n");
 	}
-
-	// Find derivative
-	for(i = 0; i < len; i++)
-	{
-		src[i] = atof(argv[i + 1]);
-	}
-
-	cnn_softmax_grad(deri, src, len, buf);
-
-	// Find error
-	err = 0;
-	for(i = 0; i < len * len; i++)
-	{
-		err += fabs(grad[i] - deri[i]);
-	}
-
-	printf("Test softmax derivative:\n");
-	printf("deri:\n");
-	print_mat(deri, len, len);
-	printf("\n");
-	printf("grad:\n");
-	print_mat(grad, len, len);
-	printf("\n");
-	printf("Sum error: %lf\n", err);
-	printf("\n");
 
 	return 0;
 }
