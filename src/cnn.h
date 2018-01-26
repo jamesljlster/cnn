@@ -1,9 +1,43 @@
 #ifndef __CNN_H__
 #define __CNN_H__
 
+enum CNN_RETVAL
+{
+	CNN_NO_ERROR = 0,
+	CNN_MEM_FAILED = -1,
+	CNN_INVALID_ARG = -3
+};
+
+enum CNN_LAYER_TYPE
+{
+	CNN_LAYER_FC = 1,
+	CNN_LAYER_AFUNC = 2,
+	CNN_LAYER_CONV = 3
+};
+
+enum CNN_ACTIVATION_FUNC
+{
+	CNN_SOFTMAX = 0,
+	CNN_RELU = 1,
+	CNN_SWISH = 2
+};
+
+typedef struct CNN* cnn_t;
+typedef struct CNN_CONFIG* cnn_config_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int cnn_config_create(cnn_config_t* cfgPtr);
+int cnn_config_delete(cnn_config_t cfg);
+
+int cnn_config_set_input_size(cnn_config_t cfg, int width, int height);
+int cnn_config_set_outputs(cnn_config_t cfg, int outputs);
+int cnn_config_set_layers(cnn_config_t cfg, int layers);
+int cnn_config_set_full_connect(cnn_config_t cfg, int layerIndex, int size);
+int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, int aFuncID);
+int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, int convDim, int size);
 
 #ifdef __cplusplus
 }
