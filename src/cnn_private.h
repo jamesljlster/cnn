@@ -47,7 +47,16 @@ void cnn_config_struct_delete(struct CNN_CONFIG* cfg);
 int cnn_config_struct_clone(struct CNN_CONFIG* dstPtr, const struct CNN_CONFIG* src);
 
 // Private allocate functions
+int cnn_mat_alloc(struct CNN_MAT* matPtr, int rows, int cols, int needGrad);
+int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr, int outSize, int batch);
+int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr, int inSize, int outSize, int batch);
+int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inSize, int outSize, int batch);
+
 int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg);
+
+// Private delete functions
+void cnn_mat_delete(struct CNN_MAT* matPtr);
+void cnn_layer_afunc_delete(struct CNN_LAYER_AFUNC* layerPtr);
 
 #ifdef __cplusplus
 }
