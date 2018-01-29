@@ -4,6 +4,9 @@
 // CNN matrix type
 struct CNN_MAT
 {
+	int width;
+	int height;
+
 	int rows;
 	int cols;
 
