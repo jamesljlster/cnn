@@ -4,14 +4,20 @@
 // CNN matrix type
 struct CNN_MAT
 {
-	int width;
-	int height;
-
 	int rows;
 	int cols;
 
 	float* mat;
 	float* grad;
+};
+
+// CNN shape type
+struct CNN_SHAPE
+{
+	int width;
+	int height;
+
+	struct CNN_MAT data;
 };
 
 struct CNN_CONFIG_LAYER_AFUNC
