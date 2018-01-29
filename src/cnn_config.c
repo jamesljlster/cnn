@@ -15,6 +15,51 @@
 #define CNN_DEFAULT_FC_SIZE 16
 #define CNN_DEFAULT_AFUNC CNN_SOFTMAX
 
+int cnn_config_clone(cnn_config_t* cfgPtr, const cnn_config_t src)
+{
+	int ret = CNN_NO_ERROR;
+	struct CNN_CONFIG* tmpCfg;
+
+	// Memory allocation
+	cnn_alloc(tmpCfg, 1, struct CNN_CONFIG, ret, RET);
+
+	// Clone config struct
+	cnn_run(cnn_config_struct_clone(tmpCfg, src), ret, ERR);
+
+	// Assing value
+	*cfgPtr = tmpCfg;
+
+	goto RET;
+
+ERR:
+	cnn_config_delete(tmpCfg);
+
+RET:
+	return ret;
+}
+
+int cnn_config_struct_clone(struct CNN_CONFIG* dst, const struct CNN_CONFIG* src)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Copy setting
+	memcpy(dst, src, sizeof(struct CNN_CONFIG));
+
+	// Memory allocation
+	cnn_alloc(dst->layerCfg, dst->layers, union CNN_CONFIG_LAYER, ret, ERR);
+
+	// Copy layer setting
+	memcpy(dst->layerCfg, src->layerCfg, dst->layers * sizeof(union CNN_CONFIG_LAYER));
+
+	goto RET;
+
+ERR:
+	cnn_config_struct_delete(dst);
+
+RET:
+	return ret;
+}
+
 int cnn_config_create(cnn_config_t* cfgPtr)
 {
 	int ret = CNN_NO_ERROR;

@@ -44,6 +44,9 @@ extern "C" {
 // Private config functions
 int cnn_config_init(cnn_config_t cfg);
 void cnn_config_struct_delete(struct CNN_CONFIG* cfg);
+int cnn_config_struct_clone(struct CNN_CONFIG* dstPtr, const struct CNN_CONFIG* src);
+
+// Private allocate functions
 
 #ifdef __cplusplus
 }
