@@ -55,7 +55,7 @@ int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr, int outSize, int bat
 	gradCols = outSize;
 
 	// Allocate memory
-	cnn_run(cnn_mat_alloc(&layerPtr->outMat, outRows, outCols, 1), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->gradMat, gradRows, gradCols, 0), ret, ERR);
 
 	goto RET;
@@ -85,7 +85,7 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr, int inSize, int outSize, i
 	bCols = outSize;
 
 	// Allocate memory
-	cnn_run(cnn_mat_alloc(&layerPtr->outMat, outRows, outCols, 1), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->weight, wRows, wCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 
