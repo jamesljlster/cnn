@@ -9,6 +9,7 @@
 #define CNN_DEFAULT_INPUT_WIDTH 32
 #define CNN_DEFAULT_INPUT_HEIGHT 32
 #define CNN_DEFAULT_OUTPUTS 2
+#define CNN_DEFAULT_BATCH 1
 #define CNN_DEFAULT_LAYERS 3
 #define CNN_DEFAULT_CONV_DIM 2
 #define CNN_DEFAULT_CONV_SIZE 3
@@ -94,6 +95,10 @@ int cnn_config_init(cnn_config_t cfg)
 	cnn_run(cnn_config_set_outputs(cfg, CNN_DEFAULT_OUTPUTS),
 			ret, RET);
 
+	// Set batch
+	cnn_run(cnn_config_set_batch_size(cfg, CNN_DEFAULT_BATCH),
+			ret, RET);
+
 	// Set total layers
 	cnn_run(cnn_config_set_layers(cfg, CNN_DEFAULT_LAYERS),
 			ret, RET);
@@ -155,8 +160,26 @@ int cnn_config_set_outputs(cnn_config_t cfg, int outputs)
 		goto RET;
 	}
 
-	// Assing value
+	// Assign value
 	cfg->outputs = outputs;
+
+RET:
+	return ret;
+}
+
+int cnn_config_set_batch_size(cnn_config_t cfg, int batchSize)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Checking
+	if(batchSize <= 0)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Assign value
+	cfg->batch = batchSize;
 
 RET:
 	return ret;

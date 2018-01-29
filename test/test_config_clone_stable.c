@@ -3,36 +3,8 @@
 #include <cnn.h>
 #include <cnn_types.h>
 
-void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
-{
-	printf("Layer %d config:\n", layerIndex);
-	switch(cfg->layerCfg[layerIndex].type)
-	{
-		case CNN_LAYER_FC:
-			printf("The layer is fully connected\n");
-			printf("Size: %d\n", cfg->layerCfg[layerIndex].fc.size);
-			break;
-
-		case CNN_LAYER_AFUNC:
-			printf("The layer is activation function\n");
-			printf("ID: %d\n", cfg->layerCfg[layerIndex].aFunc.id);
-			break;
-
-		case CNN_LAYER_CONV:
-			printf("The layer is convolution\n");
-			printf("Dimension: %d\n", cfg->layerCfg[layerIndex].conv.dim);
-			printf("Size: %d\n", cfg->layerCfg[layerIndex].conv.size);
-			break;
-
-		default:
-			printf("Not a cnn layer config?!\n");
-	}
-	printf("\n");
-}
-
 int main()
 {
-	int i;
 	int ret;
 	cnn_config_t cfg = NULL;
 	cnn_config_t cpy = NULL;

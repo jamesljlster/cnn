@@ -35,12 +35,13 @@ void cnn_config_delete(cnn_config_t cfg);
 
 int cnn_config_set_input_size(cnn_config_t cfg, int width, int height);
 int cnn_config_set_outputs(cnn_config_t cfg, int outputs);
+int cnn_config_set_batch_size(cnn_config_t cfg, int batchSize);
 int cnn_config_set_layers(cnn_config_t cfg, int layers);
 int cnn_config_set_full_connect(cnn_config_t cfg, int layerIndex, int size);
 int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, int aFuncID);
 int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, int convDim, int size);
 
-int cnn_create(cnn_t* cnnPtr);
+int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
 void cnn_delete(cnn_t cnn);
 
 #ifdef __cplusplus
