@@ -16,7 +16,7 @@ struct CNN_CONFIG_LAYER_AFUNC
 	// Layer type
 	int type;
 
-	int aFuncID;
+	int id;
 };
 
 struct CNN_CONFIG_LAYER_FC
