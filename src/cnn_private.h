@@ -47,6 +47,7 @@ void cnn_config_struct_delete(struct CNN_CONFIG* cfg);
 int cnn_config_struct_clone(struct CNN_CONFIG* dstPtr, const struct CNN_CONFIG* src);
 
 // Private allocate functions
+int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg);
 
 #ifdef __cplusplus
 }
