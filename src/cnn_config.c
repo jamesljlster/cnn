@@ -9,9 +9,11 @@
 #define CNN_DEFAULT_INPUT_WIDTH 32
 #define CNN_DEFAULT_INPUT_HEIGHT 32
 #define CNN_DEFAULT_OUTPUTS 2
-#define CNN_DEFAULT_LAYERS 2
-#define CNN_DEFAULT_AFUNC CNN_SOFTMAX
+#define CNN_DEFAULT_LAYERS 3
+#define CNN_DEFAULT_CONV_DIM 2
+#define CNN_DEFAULT_CONV_SIZE 3
 #define CNN_DEFAULT_FC_SIZE 16
+#define CNN_DEFAULT_AFUNC CNN_SOFTMAX
 
 int cnn_config_create(cnn_config_t* cfgPtr)
 {
@@ -40,12 +42,24 @@ int cnn_config_init(cnn_config_t cfg)
 {
 	int ret = CNN_NO_ERROR;
 
-	// Set default settings
-	cnn_run(cnn_config_set_input_size(cfg, CNN_DEFAULT_INPUT_WIDTH, CNN_DEFAULT_INPUT_HEIGHT), ret, RET);
-	cnn_run(cnn_config_set_outputs(cfg, CNN_DEFAULT_OUTPUTS), ret, RET);
-	cnn_run(cnn_config_set_layers(cfg, CNN_DEFAULT_LAYERS), ret, RET);
-	cnn_run(cnn_config_set_full_connect(cfg, 0, CNN_DEFAULT_FC_SIZE), ret, RET);
-	cnn_run(cnn_config_set_activation(cfg, 1, CNN_DEFAULT_AFUNC), ret, RET);
+	// Set default cnn settings
+	// Set input, output
+	cnn_run(cnn_config_set_input_size(cfg, CNN_DEFAULT_INPUT_WIDTH, CNN_DEFAULT_INPUT_HEIGHT),
+			ret, RET);
+	cnn_run(cnn_config_set_outputs(cfg, CNN_DEFAULT_OUTPUTS),
+			ret, RET);
+
+	// Set total layers
+	cnn_run(cnn_config_set_layers(cfg, CNN_DEFAULT_LAYERS),
+			ret, RET);
+
+	// Set config of layers
+	cnn_run(cnn_config_set_convolution(cfg, 0, CNN_DEFAULT_CONV_DIM, CNN_DEFAULT_CONV_SIZE),
+			ret, RET);
+	cnn_run(cnn_config_set_full_connect(cfg, 1, CNN_DEFAULT_FC_SIZE),
+			ret, RET);
+	cnn_run(cnn_config_set_activation(cfg, 2, CNN_DEFAULT_AFUNC),
+			ret, RET);
 
 RET:
 	return ret;
