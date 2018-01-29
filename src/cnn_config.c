@@ -117,7 +117,7 @@ RET:
 	return ret;
 }
 
-int cnn_set_layers(cnn_config_t cfg, int layers)
+int cnn_config_set_layers(cnn_config_t cfg, int layers)
 {
 	int ret = CNN_NO_ERROR;
 	int i, preLayers;
