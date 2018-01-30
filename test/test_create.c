@@ -81,6 +81,9 @@ int main()
 	// Check cnn arch
 	check_cnn_arch(cnn);
 
+	printf("Press any key to continue...");
+	getchar();
+
 	// Cleanup
 	cnn_delete(cnn);
 	cnn_config_delete(cfg);
