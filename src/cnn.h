@@ -45,6 +45,8 @@ int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, int convDim, in
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
 void cnn_delete(cnn_t cnn);
 
+void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat);
+
 #ifdef __cplusplus
 }
 #endif
