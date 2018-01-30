@@ -15,11 +15,11 @@ void cnn_delete(cnn_t cnn)
 
 void cnn_struct_delete(struct CNN* cnn)
 {
-	// Delete config
-	cnn_config_struct_delete(&cnn->cfg);
-
 	// Delete network
 	cnn_network_delete(cnn);
+
+	// Delete config
+	cnn_config_struct_delete(&cnn->cfg);
 
 	// Zero memroy
 	memset(cnn, 0, sizeof(struct CNN));
