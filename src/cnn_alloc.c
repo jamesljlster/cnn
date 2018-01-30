@@ -22,6 +22,12 @@ int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg)
 	{
 		switch(cfg->layerCfg[i].type)
 		{
+			case CNN_LAYER_INPUT:
+				cnn_run(cnn_layer_input_alloc(&cnn->layerList[i],
+							tmpWidth, tmpHeight, cfg->batch),
+						ret, ERR);
+				break;
+
 			case CNN_LAYER_FC:
 				cnn_run(cnn_layer_fc_alloc(&cnn->layerList[i].fc,
 							tmpWidth, tmpHeight, cfg->layerCfg[i].fc.size, cfg->batch),
@@ -85,6 +91,32 @@ int cnn_mat_alloc(struct CNN_MAT* matPtr, int rows, int cols, int needGrad)
 
 ERR:
 	cnn_mat_delete(matPtr);
+
+RET:
+	return ret;
+}
+
+int cnn_layer_input_alloc(union CNN_LAYER* layerPtr,
+		int inWidth, int inHeight, int batch)
+{
+	int ret = CNN_NO_ERROR;
+	int outRows, outCols;
+
+	// Find allocate size
+	outRows = batch;
+	outCols = inWidth * inHeight;
+
+	// Allocate memory
+	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 0), ret, ERR);
+
+	// Assign value
+	layerPtr->outMat.width = inWidth;
+	layerPtr->outMat.height = inHeight;
+
+	goto RET;
+
+ERR:
+	cnn_layer_input_delete(layerPtr);
 
 RET:
 	return ret;
