@@ -215,13 +215,13 @@ for iter = 1 : ITER
   input = dataset(:, 1 : INPUTS);
   desire = dataset(:, INPUTS + 1 : dataCols);
   
-  tmpHOut = input * hWeight + hBias;
+  tmpHOut = input * hWeight + repmat(hBias, dataRows, 1);
   hOut = [];
   for i = 1 : dataRows
     hOut = [hOut; sigmoid(tmpHOut(i, :))];
   endfor
   
-  tmpOOut = hOut * oWeight + oBias;
+  tmpOOut = hOut * oWeight + repmat(oBias, dataRows, 1);
   output = [];
   for i = 1 : dataRows
     output = [output; sigmoid(tmpOOut(i, :))];
