@@ -6,6 +6,22 @@
 #define INPUT_WIDTH 180
 #define INPUT_HEIGHT 150
 
+#define print_mat_info(str, matVar) \
+	printf("%s: %dx%d, %p, %p\n", str, matVar.rows, matVar.cols, matVar.mat, matVar.grad)
+
+#define test_mat(matVar) \
+{ \
+	int _i; \
+	for(_i = 0; _i < matVar.rows * matVar.cols; _i++) \
+	{ \
+		matVar.mat[_i] = -1; \
+		if(matVar.grad != NULL) \
+		{ \
+			matVar.grad[_i] = 1; \
+		} \
+	} \
+}
+
 void check_cnn_arch(cnn_t cnn)
 {
 	int i;
@@ -22,18 +38,14 @@ void check_cnn_arch(cnn_t cnn)
 				printf("Size: %d\n", cnn->cfg.layerCfg[i].fc.size);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
-				printf("Output mat: %dx%d, %p, %p\n", cnn->layerList[i].outMat.data.rows,
-						cnn->layerList[i].outMat.data.cols,
-						cnn->layerList[i].outMat.data.mat,
-						cnn->layerList[i].outMat.data.grad);
-				printf("Weight mat: %dx%d, %p, %p\n", cnn->layerList[i].fc.weight.rows,
-						cnn->layerList[i].fc.weight.cols,
-						cnn->layerList[i].fc.weight.mat,
-						cnn->layerList[i].fc.weight.grad);
-				printf("Bias mat: %dx%d, %p, %p\n", cnn->layerList[i].fc.bias.rows,
-						cnn->layerList[i].fc.bias.cols,
-						cnn->layerList[i].fc.bias.mat,
-						cnn->layerList[i].fc.bias.grad);
+
+				print_mat_info("Output size", cnn->layerList[i].outMat.data);
+				print_mat_info("Weight mat", cnn->layerList[i].fc.weight);
+				print_mat_info("Bias mat", cnn->layerList[i].fc.bias);
+
+				test_mat(cnn->layerList[i].outMat.data);
+				test_mat(cnn->layerList[i].fc.weight);
+				test_mat(cnn->layerList[i].fc.bias);
 				break;
 
 			case CNN_LAYER_AFUNC:
@@ -41,14 +53,12 @@ void check_cnn_arch(cnn_t cnn)
 				printf("ID: %d\n", cnn->cfg.layerCfg[i].aFunc.id);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
-				printf("Output mat: %dx%d, %p, %p\n", cnn->layerList[i].outMat.data.rows,
-						cnn->layerList[i].outMat.data.cols,
-						cnn->layerList[i].outMat.data.mat,
-						cnn->layerList[i].outMat.data.grad);
-				printf("Grad mat: %dx%d, %p, %p\n", cnn->layerList[i].aFunc.gradMat.rows,
-						cnn->layerList[i].aFunc.gradMat.cols,
-						cnn->layerList[i].aFunc.gradMat.mat,
-						cnn->layerList[i].aFunc.gradMat.grad);
+
+				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
+				print_mat_info("Grad mat", cnn->layerList[i].aFunc.gradMat);
+
+				test_mat(cnn->layerList[i].outMat.data);
+				test_mat(cnn->layerList[i].aFunc.gradMat);
 				break;
 
 			case CNN_LAYER_CONV:
@@ -57,18 +67,14 @@ void check_cnn_arch(cnn_t cnn)
 				printf("Size: %d\n", cnn->cfg.layerCfg[i].conv.size);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
-				printf("Output mat: %dx%d, %p, %p\n", cnn->layerList[i].outMat.data.rows,
-						cnn->layerList[i].outMat.data.cols,
-						cnn->layerList[i].outMat.data.mat,
-						cnn->layerList[i].outMat.data.grad);
-				printf("Kernel mat: %dx%d, %p, %p\n", cnn->layerList[i].conv.kernel.rows,
-						cnn->layerList[i].conv.kernel.cols,
-						cnn->layerList[i].conv.kernel.mat,
-						cnn->layerList[i].conv.kernel.grad);
-				printf("Bias mat: %dx%d, %p, %p\n", cnn->layerList[i].conv.bias.rows,
-						cnn->layerList[i].conv.bias.cols,
-						cnn->layerList[i].conv.bias.mat,
-						cnn->layerList[i].conv.bias.grad);
+
+				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
+				print_mat_info("Kernel mat", cnn->layerList[i].conv.kernel);
+				print_mat_info("Bias mat", cnn->layerList[i].conv.bias);
+
+				test_mat(cnn->layerList[i].outMat.data);
+				test_mat(cnn->layerList[i].conv.kernel);
+				test_mat(cnn->layerList[i].conv.bias);
 				break;
 
 			default:
