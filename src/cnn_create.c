@@ -16,6 +16,9 @@ int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg)
 	// Clone config
 	cnn_run(cnn_config_struct_clone(&tmpCnn->cfg, cfg), ret, ERR);
 
+	// Allocate network
+	cnn_run(cnn_network_alloc(tmpCnn, cfg), ret, ERR);
+
 	// Assing value
 	*cnnPtr = tmpCnn;
 

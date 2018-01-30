@@ -66,6 +66,7 @@ void cnn_layer_fc_delete(struct CNN_LAYER_FC* layerPtr);
 void cnn_layer_conv_delete(struct CNN_LAYER_CONV* layerPtr);
 
 void cnn_network_delete(struct CNN* cnn);
+void cnn_struct_delete(struct CNN* cnn);
 
 #ifdef __cplusplus
 }

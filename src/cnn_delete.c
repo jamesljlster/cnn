@@ -4,6 +4,27 @@
 #include "cnn.h"
 #include "cnn_private.h"
 
+void cnn_delete(cnn_t cnn)
+{
+	if(cnn != NULL)
+	{
+		cnn_struct_delete(cnn);
+		cnn_free(cnn);
+	}
+}
+
+void cnn_struct_delete(struct CNN* cnn)
+{
+	// Delete config
+	cnn_config_struct_delete(&cnn->cfg);
+
+	// Delete network
+	cnn_network_delete(cnn);
+
+	// Zero memroy
+	memset(cnn, 0, sizeof(struct CNN));
+}
+
 void cnn_mat_delete(struct CNN_MAT* matPtr)
 {
 	// Free memory
