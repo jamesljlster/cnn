@@ -41,7 +41,8 @@ RET:
 	return ret;
 }
 
-int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr, int outSize, int batch)
+int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr,
+		int inWidth, int inHeight, int batch)
 {
 	int ret = CNN_NO_ERROR;
 	int outRows, outCols;
@@ -49,14 +50,18 @@ int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr, int outSize, int bat
 
 	// Find allocate size
 	outRows = batch;
-	outCols = outSize;
+	outCols = inWidth * inHeight;
 
-	gradRows = outSize * batch;
-	gradCols = outSize;
+	gradRows = outCols * batch;
+	gradCols = outCols;
 
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->gradMat, gradRows, gradCols, 0), ret, ERR);
+
+	// Assign value
+	layerPtr->outMat.width = inWidth;
+	layerPtr->outMat.height = inHeight;
 
 	goto RET;
 
@@ -67,7 +72,8 @@ RET:
 	return ret;
 }
 
-int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr, int inSize, int outSize, int batch)
+int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
+		int inWidth, int inHeight, int outSize, int batch)
 {
 	int ret = CNN_NO_ERROR;
 	int outRows, outCols; // Output matrix size
@@ -78,7 +84,7 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr, int inSize, int outSize, i
 	outRows = batch;
 	outCols = outSize;
 
-	wRows = inSize;
+	wRows = inWidth * inHeight;
 	wCols = outSize;
 
 	bRows = 1;
