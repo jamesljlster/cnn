@@ -6,6 +6,55 @@
 #include "cnn_private.h"
 #include "cnn_builtin_math.h"
 
+int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg)
+{
+	int i;
+	int ret = CNN_NO_ERROR;
+	int tmpWidth, tmpHeight;
+
+	// Memory allocation
+	cnn_alloc(cnn->layerList, cfg->layers, union CNN_LAYER, ret, ERR);
+
+	// Allocate CNN layers
+	tmpWidth = cfg->width;
+	tmpHeight = cfg->height;
+	for(i = 0; i < cfg->layers; i++)
+	{
+		switch(cfg->layerCfg[i].type)
+		{
+			case CNN_LAYER_FC:
+				cnn_run(cnn_layer_fc_alloc(&cnn->layerList[i].fc,
+							tmpWidth, tmpHeight, cfg->layerCfg[i].fc.size, cfg->batch),
+						ret, ERR);
+				break;
+
+			case CNN_LAYER_AFUNC:
+				cnn_run(cnn_layer_afunc_alloc(&cnn->layerList[i].aFunc,
+							tmpWidth, tmpHeight, cfg->batch),
+						ret, ERR);
+				break;
+
+			case CNN_LAYER_CONV:
+				cnn_run(cnn_layer_conv_alloc(&cnn->layerList[i].conv,
+							tmpWidth, tmpHeight, cfg->layerCfg[i].conv.size, cfg->batch),
+						ret, ERR);
+				break;
+		}
+
+		// Find layer output image size
+		tmpWidth = cnn->layerList[i].outMat.width;
+		tmpHeight = cnn->layerList[i].outMat.height;
+	}
+
+	goto RET;
+
+ERR:
+	cnn_network_delete(cnn);
+
+RET:
+	return ret;
+}
+
 int cnn_mat_alloc(struct CNN_MAT* matPtr, int rows, int cols, int needGrad)
 {
 	int ret = CNN_NO_ERROR;

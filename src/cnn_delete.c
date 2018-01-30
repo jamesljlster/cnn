@@ -46,3 +46,31 @@ void cnn_layer_conv_delete(struct CNN_LAYER_CONV* layerPtr)
 	memset(layerPtr, 0, sizeof(struct CNN_LAYER_CONV));
 }
 
+void cnn_network_delete(struct CNN* cnn)
+{
+	int i;
+
+	// Delete CNN layers
+	for(i = 0; i < cnn->cfg.layers; i++)
+	{
+		switch(cnn->cfg.layerCfg[i].type)
+		{
+			case CNN_LAYER_FC:
+				cnn_layer_fc_delete(&cnn->layerList[i].fc);
+				break;
+
+			case CNN_LAYER_AFUNC:
+				cnn_layer_afunc_delete(&cnn->layerList[i].aFunc);
+				break;
+
+			case CNN_LAYER_CONV:
+				cnn_layer_conv_delete(&cnn->layerList[i].conv);
+				break;
+		}
+	}
+
+	// Free memory
+	cnn_free(cnn->layerList);
+	cnn->layerList = NULL;
+}
+
