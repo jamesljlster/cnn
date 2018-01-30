@@ -128,5 +128,15 @@ int main()
 	print_img(output, 1, OUTPUTS);
 	printf("\n");
 
+	// Print detail
+	printf("*** Network Detail ***\n");
+	for(i = 0; i < cnn->cfg.layers; i++)
+	{
+		printf("=== Layer %d output ===\n", i);
+		print_img(cnn->layerList[i].outMat.data.mat,
+				cnn->layerList[i].outMat.data.rows, cnn->layerList[i].outMat.data.cols);
+		printf("\n");
+	}
+
 	return 0;
 }
