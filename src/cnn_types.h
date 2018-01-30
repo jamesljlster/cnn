@@ -4,14 +4,20 @@
 // CNN matrix type
 struct CNN_MAT
 {
-	int width;
-	int height;
-
 	int rows;
 	int cols;
 
 	float* mat;
 	float* grad;
+};
+
+// CNN shape type
+struct CNN_SHAPE
+{
+	int width;
+	int height;
+
+	struct CNN_MAT data;
 };
 
 struct CNN_CONFIG_LAYER_AFUNC
@@ -66,7 +72,7 @@ struct CNN_CONFIG
 struct CNN_LAYER_AFUNC
 {
 	// Layer output matrix
-	struct CNN_MAT outMat;
+	struct CNN_SHAPE outMat;
 
 	// Gradient matrix
 	struct CNN_MAT gradMat;
@@ -75,7 +81,7 @@ struct CNN_LAYER_AFUNC
 struct CNN_LAYER_FC
 {
 	// Layer output matrix
-	struct CNN_MAT outMat;
+	struct CNN_SHAPE outMat;
 
 	// Weight matrix
 	struct CNN_MAT weight;
@@ -87,7 +93,7 @@ struct CNN_LAYER_FC
 struct CNN_LAYER_CONV
 {
 	// Layer output matrix
-	struct CNN_MAT outMat;
+	struct CNN_SHAPE outMat;
 
 	// Kernel matrix
 	struct CNN_MAT kernel;
@@ -96,7 +102,7 @@ struct CNN_LAYER_CONV
 union CNN_LAYER
 {
 	// Layer output matrix
-	struct CNN_MAT outMat;
+	struct CNN_SHAPE outMat;
 
 	struct CNN_LAYER_AFUNC aFunc;
 	struct CNN_LAYER_FC fc;
