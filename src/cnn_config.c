@@ -10,7 +10,7 @@
 #define CNN_DEFAULT_INPUT_HEIGHT 32
 #define CNN_DEFAULT_OUTPUTS 2
 #define CNN_DEFAULT_BATCH 1
-#define CNN_DEFAULT_LAYERS 4
+#define CNN_DEFAULT_LAYERS 5
 #define CNN_DEFAULT_CONV_DIM 2
 #define CNN_DEFAULT_CONV_SIZE 3
 #define CNN_DEFAULT_FC_SIZE 16
@@ -106,7 +106,9 @@ int cnn_config_init(cnn_config_t cfg)
 			ret, RET);
 	cnn_run(cnn_config_set_full_connect(cfg, 2, CNN_DEFAULT_FC_SIZE),
 			ret, RET);
-	cnn_run(cnn_config_set_activation(cfg, 3, CNN_DEFAULT_AFUNC),
+	cnn_run(cnn_config_set_full_connect(cfg, 3, CNN_DEFAULT_OUTPUTS),
+			ret, RET);
+	cnn_run(cnn_config_set_activation(cfg, 4, CNN_DEFAULT_AFUNC),
 			ret, RET);
 
 RET:
