@@ -97,6 +97,9 @@ struct CNN_LAYER_CONV
 
 	// Kernel matrix
 	struct CNN_MAT kernel;
+
+	// Bias vector
+	struct CNN_MAT bias;
 };
 
 union CNN_LAYER

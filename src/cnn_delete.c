@@ -35,3 +35,14 @@ void cnn_layer_fc_delete(struct CNN_LAYER_FC* layerPtr)
 	memset(layerPtr, 0, sizeof(struct CNN_LAYER_FC));
 }
 
+void cnn_layer_conv_delete(struct CNN_LAYER_CONV* layerPtr)
+{
+	// Free memory
+	cnn_mat_delete(&layerPtr->outMat.data);
+	cnn_mat_delete(&layerPtr->kernel);
+	cnn_mat_delete(&layerPtr->bias);
+
+	// Zero memory
+	memset(layerPtr, 0, sizeof(struct CNN_LAYER_CONV));
+}
+
