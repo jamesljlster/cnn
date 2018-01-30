@@ -95,6 +95,10 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
 	cnn_run(cnn_mat_alloc(&layerPtr->weight, wRows, wCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 
+	// Assign value
+	layerPtr->outMat.width = outRows;
+	layerPtr->outMat.height = 1;
+
 	goto RET;
 
 ERR:
