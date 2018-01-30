@@ -169,6 +169,13 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	outWidth = inWidth - size + 1;
 	outHeight = inHeight - size + 1;
 
+	// Checking
+	if(outWidth <= 0 || outHeight <= 0)
+	{
+		ret = CNN_INVALID_SHAPE;
+		goto RET;
+	}
+
 	// Find allocate size
 	outRows = batch;
 	outCols = outWidth * outHeight;
