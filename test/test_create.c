@@ -99,7 +99,6 @@ int main()
 
 	// Set config
 	cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT);
-	cnn_config_set_outputs(cfg, 3);
 
 	cnn_config_set_layers(cfg, 5);
 	cnn_config_set_convolution(cfg, 0, 1, 3);

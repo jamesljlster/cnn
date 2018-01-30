@@ -52,7 +52,6 @@ int main()
 
 	// Test set config
 	cnn_config_set_input_size(cfg, 640, 480);
-	cnn_config_set_outputs(cfg, 3);
 
 	cnn_config_set_layers(cfg, 5);
 	cnn_config_set_convolution(cfg, 0, 1, 3);

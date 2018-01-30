@@ -4,6 +4,9 @@
 #include "cnn.h"
 #include "cnn_types.h"
 
+// Definitions
+#define CNN_LAYER_INPUT 0 // Define input layer id
+
 // Macros
 #ifdef DEBUG
 #include <stdio.h>
