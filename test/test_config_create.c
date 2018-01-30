@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <cnn.h>
+#include <cnn_private.h>
 #include <cnn_types.h>
 
 void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
@@ -8,6 +9,10 @@ void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 	printf("Layer %d config:\n", layerIndex);
 	switch(cfg->layerCfg[layerIndex].type)
 	{
+		case CNN_LAYER_INPUT:
+			printf("The layer is input\n");
+			break;
+
 		case CNN_LAYER_FC:
 			printf("The layer is fully connected\n");
 			printf("Size: %d\n", cfg->layerCfg[layerIndex].fc.size);
@@ -52,7 +57,6 @@ int main()
 
 	// Test set config
 	cnn_config_set_input_size(cfg, 640, 480);
-	cnn_config_set_outputs(cfg, 3);
 
 	cnn_config_set_layers(cfg, 5);
 	cnn_config_set_convolution(cfg, 0, 1, 3);

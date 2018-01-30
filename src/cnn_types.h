@@ -59,7 +59,6 @@ struct CNN_CONFIG
 {
 	int width;
 	int height;
-	int outputs;
 
 	int batch;
 

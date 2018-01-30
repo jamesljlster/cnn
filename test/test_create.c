@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <cnn.h>
+#include <cnn_private.h>
 #include <cnn_types.h>
 
 #define INPUT_WIDTH 180
@@ -33,13 +34,22 @@ void check_cnn_arch(cnn_t cnn)
 		printf("Layer %d config:\n", i);
 		switch(cnn->cfg.layerCfg[i].type)
 		{
+			case CNN_LAYER_INPUT:
+				printf("The layer is input\n");
+				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
+						cnn->layerList[i].outMat.height);
+
+				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
+				test_mat(cnn->layerList[i].outMat.data);
+				break;
+
 			case CNN_LAYER_FC:
 				printf("The layer is fully connected\n");
 				printf("Size: %d\n", cnn->cfg.layerCfg[i].fc.size);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
 
-				print_mat_info("Output size", cnn->layerList[i].outMat.data);
+				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 				print_mat_info("Weight mat", cnn->layerList[i].fc.weight);
 				print_mat_info("Bias mat", cnn->layerList[i].fc.bias);
 
@@ -99,7 +109,6 @@ int main()
 
 	// Set config
 	cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT);
-	cnn_config_set_outputs(cfg, 3);
 
 	cnn_config_set_layers(cfg, 5);
 	cnn_config_set_convolution(cfg, 0, 1, 3);
