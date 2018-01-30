@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 # Set variables
 set(PROJECT_NAME cnn_test)
 set(PROJECT_LANGUAGE C)
-set(PROJECT_DEPS cnn m)
+set(PROJECT_DEPS cnn ${OpenBLAS_LIB} m)
 
 # Compile setting
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
