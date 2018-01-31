@@ -29,7 +29,7 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 			layerRef[cfgRef->layers - 1].outMat.data.cols);
 
 	// Backpropagation
-	for(i = cfgRef->layers - 1; i > 0; i++)
+	for(i = cfgRef->layers - 1; i > 0; i--)
 	{
 		switch(cfgRef->layerCfg[i].type)
 		{
