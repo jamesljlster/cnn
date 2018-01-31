@@ -139,6 +139,7 @@ int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr,
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->gradMat, gradRows, gradCols, 0), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->buf, outRows, outCols, 0), ret, ERR);
 
 	// Assign value
 	layerPtr->outMat.width = inWidth;

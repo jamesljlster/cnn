@@ -45,6 +45,7 @@ int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
 void cnn_delete(cnn_t cnn);
 
 void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat);
+void cnn_bp(cnn_t cnn, float lRate, float* errGrad);
 
 #ifdef __cplusplus
 }

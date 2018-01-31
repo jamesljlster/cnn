@@ -75,6 +75,9 @@ struct CNN_LAYER_AFUNC
 
 	// Gradient matrix
 	struct CNN_MAT gradMat;
+
+	// Calculate buffer
+	struct CNN_MAT buf;
 };
 
 struct CNN_LAYER_FC

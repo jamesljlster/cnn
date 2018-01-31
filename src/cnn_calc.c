@@ -8,6 +8,181 @@
 #include "cnn_builtin_math.h"
 #include "cnn_calc.h"
 
+void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
+{
+	int i, j;
+	int srcShift, dstShift;
+
+	float* srcPtr;
+	float* dstPtr;
+
+	struct CNN_CONFIG* cfgRef;
+	union CNN_LAYER* layerRef;
+
+	// Set reference
+	layerRef = cnn->layerList;
+	cfgRef = &cnn->cfg;
+
+	// Copy gradient vector
+	memcpy(layerRef[cfgRef->layers - 1].outMat.data.grad, errGrad, sizeof(float) *
+			layerRef[cfgRef->layers - 1].outMat.data.rows *
+			layerRef[cfgRef->layers - 1].outMat.data.cols);
+
+	// Backpropagation
+	for(i = cfgRef->layers - 1; i > 0; i++)
+	{
+		switch(cfgRef->layerCfg[i].type)
+		{
+			// Fully connected
+			case CNN_LAYER_FC:
+				// Find weight delta matrix
+				cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+						layerRef[i - 1].outMat.data.rows,
+						layerRef[i - 1].outMat.data.cols,
+						layerRef[i].outMat.data.cols,
+						1.0,
+						layerRef[i - 1].outMat.data.mat, layerRef[i - 1].outMat.data.cols,
+						layerRef[i].outMat.data.grad, layerRef[i].outMat.data.cols, 0.0,
+						layerRef[i].fc.weight.grad, layerRef[i].fc.weight.cols);
+
+				// Find bias delta matrix
+				memset(cnn->layerList[i].fc.bias.grad, 0, sizeof(float) *
+						cnn->layerList[i].fc.bias.cols);
+
+				for(j = 0; j < cfgRef->batch; j++)
+				{
+					srcShift = j * cnn->layerList[i].outMat.data.cols;
+					cblas_saxpy(cnn->layerList[i].fc.bias.cols, 1.0,
+							&cnn->layerList[i].outMat.data.grad[srcShift],
+							1, cnn->layerList[i].fc.bias.grad, 1);
+				}
+
+				// Find layer gradient
+				cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+						layerRef[i].outMat.data.rows,
+						layerRef[i].outMat.data.cols,
+						layerRef[i].fc.weight.cols,
+						1.0,
+						layerRef[i].outMat.data.grad, layerRef[i].outMat.data.cols,
+						layerRef[i].fc.weight.mat, layerRef[i].fc.weight.cols, 0.0,
+						layerRef[i - 1].outMat.data.grad, layerRef[i - 1].outMat.data.cols);
+
+				// Update weight
+				cblas_saxpy(cnn->layerList[i].fc.weight.rows * cnn->layerList[i].fc.weight.cols,
+						lRate,
+						cnn->layerList[i].fc.weight.grad, 1,
+						cnn->layerList[i].fc.weight.mat, 1);
+
+				// Update bias
+				cblas_saxpy(cnn->layerList[i].fc.bias.cols, lRate,
+						cnn->layerList[i].fc.bias.grad, 1,
+						cnn->layerList[i].fc.bias.mat, 1);
+
+				break;
+
+			// Activation function
+			case CNN_LAYER_AFUNC:
+				for(j = 0; j < cfgRef->batch; j++)
+				{
+					srcShift = j * layerRef[i - 1].outMat.data.cols;
+					dstShift = srcShift * layerRef[i].outMat.data.cols;
+
+					srcPtr = &layerRef[i - 1].outMat.data.mat[srcShift];
+					dstPtr = &layerRef[i].aFunc.gradMat.mat[dstShift];
+
+					// Find gradient matrix
+					cnn_afunc_grad_list[cfgRef->layerCfg[i].aFunc.id](dstPtr,
+							srcPtr, layerRef[i].outMat.data.cols,
+							&layerRef[i].aFunc.buf.mat[srcShift]);
+
+					// Find layer gradient
+					cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+							layerRef[i].outMat.data.rows,
+							layerRef[i].outMat.data.cols,
+							layerRef[i].outMat.data.cols,
+							1.0,
+							layerRef[i].outMat.data.grad, layerRef[i].outMat.data.cols,
+							dstPtr, layerRef[i].aFunc.gradMat.cols, 0.0,
+							&layerRef[i].outMat.data.grad[srcShift],
+							layerRef[i].outMat.data.cols);
+				}
+
+				break;
+
+			// Convolution
+			case CNN_LAYER_CONV:
+				// Find kernel delta matrix
+				memset(cnn->layerList[i].conv.kernel.grad, 0, sizeof(float) *
+						cnn->layerList[i].conv.kernel.rows *
+						cnn->layerList[i].conv.kernel.cols);
+
+				for(j = 0; j < cfgRef->batch; j++)
+				{
+					srcShift = j * cnn->layerList[i].outMat.data.cols;
+					dstShift = j * cnn->layerList[i - 1].outMat.data.cols;
+
+					cnn_conv_2d_kernel_grad((&cnn->layerList[i].outMat.data.grad[srcShift]),
+							cnn->layerList[i].outMat.height,
+							cnn->layerList[i].outMat.width,
+							cnn->layerList[i].conv.kernel.grad,
+							cnn->layerList[i].conv.kernel.cols,
+							(&cnn->layerList[i - 1].outMat.data.mat[dstShift]),
+							cnn->layerList[i - 1].outMat.height,
+							cnn->layerList[i - 1].outMat.width);
+				}
+
+				// Find bias delta matrix
+				memset(cnn->layerList[i].conv.bias.grad, 0, sizeof(float) *
+						cnn->layerList[i].conv.bias.cols);
+
+				for(j = 0; j < cfgRef->batch; j++)
+				{
+					srcShift = j * cnn->layerList[i].outMat.data.cols;
+					cblas_saxpy(cnn->layerList[i].conv.bias.cols, 1.0,
+							&cnn->layerList[i].outMat.data.grad[srcShift],
+							1, cnn->layerList[i].conv.bias.grad, 1);
+				}
+
+				// Find layer gradient
+				memset(cnn->layerList[i - 1].outMat.data.grad, 0, sizeof(float) *
+						cnn->layerList[i - 1].outMat.data.rows *
+						cnn->layerList[i - 1].outMat.data.cols);
+
+				for(j = 0; j < cfgRef->batch; j++)
+				{
+					srcShift = j * cnn->layerList[i].outMat.data.cols;
+					dstShift = j * cnn->layerList[i - 1].outMat.data.cols;
+
+					cnn_conv_2d_grad((&cnn->layerList[i - 1].outMat.data.grad[dstShift]),
+							cnn->layerList[i - 1].outMat.height,
+							cnn->layerList[i - 1].outMat.width,
+							cnn->layerList[i].conv.kernel.mat,
+							cnn->layerList[i].conv.kernel.cols,
+							(&cnn->layerList[i].outMat.data.grad[srcShift]),
+							cnn->layerList[i].outMat.height,
+							cnn->layerList[i].outMat.width);
+				}
+
+				// Update kernel
+				cblas_saxpy(cnn->layerList[i].conv.kernel.cols *
+							cnn->layerList[i].conv.kernel.rows, lRate,
+						cnn->layerList[i].conv.kernel.grad, 1,
+						cnn->layerList[i].conv.kernel.mat, 1);
+
+				// Update bias
+				cblas_saxpy(cnn->layerList[i].conv.bias.cols, lRate,
+						cnn->layerList[i].conv.bias.grad, 1,
+						cnn->layerList[i].conv.bias.mat, 1);
+
+				break;
+
+			default:
+				assert((cfgRef->layerCfg[i].type) > 0 &&
+						(cfgRef->layerCfg[i].type <= CNN_LAYER_CONV));
+		}
+	}
+}
+
 void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
 {
 	int i, j;
@@ -96,7 +271,8 @@ void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
 	// Copy output
 	if(outputMat != NULL)
 	{
-		memcpy(outputMat, layerRef[i].outMat.data.mat, sizeof(float) *
-				layerRef[i].outMat.data.rows * layerRef[i].outMat.data.cols);
+		memcpy(outputMat, layerRef[cfgRef->layers - 1].outMat.data.mat, sizeof(float) *
+				layerRef[cfgRef->layers - 1].outMat.data.rows *
+				layerRef[cfgRef->layers - 1].outMat.data.cols);
 	}
 }
