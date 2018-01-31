@@ -107,7 +107,7 @@ int cnn_layer_input_alloc(union CNN_LAYER* layerPtr,
 	outCols = inWidth * inHeight;
 
 	// Allocate memory
-	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 0), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
 
 	// Assign value
 	layerPtr->outMat.width = inWidth;

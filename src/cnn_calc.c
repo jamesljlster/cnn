@@ -37,9 +37,9 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 			case CNN_LAYER_FC:
 				// Find weight delta matrix
 				cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
-						layerRef[i - 1].outMat.data.rows,
-						layerRef[i - 1].outMat.data.cols,
-						layerRef[i].outMat.data.cols,
+						layerRef[i].fc.weight.rows,
+						layerRef[i].fc.weight.cols,
+						cfgRef->batch,
 						1.0,
 						layerRef[i - 1].outMat.data.mat, layerRef[i - 1].outMat.data.cols,
 						layerRef[i].outMat.data.grad, layerRef[i].outMat.data.cols, 0.0,
@@ -59,9 +59,9 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 
 				// Find layer gradient
 				cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-						layerRef[i].outMat.data.rows,
+						layerRef[i - 1].outMat.data.rows,
+						layerRef[i - 1].outMat.data.cols,
 						layerRef[i].outMat.data.cols,
-						layerRef[i].fc.weight.cols,
 						1.0,
 						layerRef[i].outMat.data.grad, layerRef[i].outMat.data.cols,
 						layerRef[i].fc.weight.mat, layerRef[i].fc.weight.cols, 0.0,
