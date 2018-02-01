@@ -30,7 +30,7 @@ void print_img(float* src, int rows, int cols)
 	{
 		for(j = 0; j < cols; j++)
 		{
-			printf("%+5.2f", src[i * cols + j]);
+			printf("%+5g", src[i * cols + j]);
 			if(j < cols - 1)
 			{
 				printf("  ");
@@ -53,9 +53,9 @@ int main()
 	cnn_t cnn = NULL;
 
 	float kernel[KERNEL_SIZE * KERNEL_SIZE] = {
-		-4, -3, -2,
-		-1,  0,  1,
-		 2,  3,  4
+		-0.4, -0.3, -0.2,
+		-0.1,  0.0,  0.1,
+		 0.2,  0.3,  0.4
 	};
 
 	float weight[(IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_HEIGHT - KERNEL_SIZE + 1) * OUTPUTS];
@@ -144,6 +144,27 @@ int main()
 
 	// CNN Backpropagation
 	cnn_bp(cnn, 0.01, err);
+
+	// Print detail
+	printf("*** Network Gradient Detail ***\n");
+	for(i = cnn->cfg.layers - 1; i > 0; i--)
+	{
+		printf("=== Layer %d ===\n", i);
+		printf("Gradient:\n");
+		print_img(cnn->layerList[i].outMat.data.grad,
+				cnn->layerList[i].outMat.data.rows, cnn->layerList[i].outMat.data.cols);
+		printf("\n");
+
+		switch(cnn->cfg.layerCfg[i].type)
+		{
+			case CNN_LAYER_AFUNC:
+				printf("Activation derivative:\n");
+				print_img(cnn->layerList[i].aFunc.gradMat.mat,
+						cnn->layerList[i].aFunc.gradMat.rows,
+						cnn->layerList[i].aFunc.gradMat.cols);
+				printf("\n");
+		}
+	}
 
 	return 0;
 }

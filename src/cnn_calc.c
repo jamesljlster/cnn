@@ -97,14 +97,13 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 
 					// Find layer gradient
 					cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-							layerRef[i].outMat.data.rows,
-							layerRef[i].outMat.data.cols,
+							1, layerRef[i - 1].outMat.data.cols,
 							layerRef[i].outMat.data.cols,
 							1.0,
-							layerRef[i].outMat.data.grad, layerRef[i].outMat.data.cols,
+							&layerRef[i].outMat.data.grad[srcShift], layerRef[i].outMat.data.cols,
 							dstPtr, layerRef[i].aFunc.gradMat.cols, 0.0,
-							&layerRef[i].outMat.data.grad[srcShift],
-							layerRef[i].outMat.data.cols);
+							&layerRef[i - 1].outMat.data.grad[srcShift],
+							layerRef[i - 1].outMat.data.cols);
 				}
 
 				break;
