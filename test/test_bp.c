@@ -26,21 +26,31 @@ void print_img(float* src, int rows, int cols)
 {
 	int i, j;
 
+	printf("[\n");
 	for(i = 0; i < rows; i++)
 	{
+		printf("[ ");
 		for(j = 0; j < cols; j++)
 		{
-			printf("%+5g", src[i * cols + j]);
+			printf("%+5e", src[i * cols + j]);
 			if(j < cols - 1)
 			{
-				printf("  ");
+				printf(", ");
 			}
 			else
 			{
-				printf("\n");
+				if(i < rows - 1)
+				{
+					printf(" ],\n");
+				}
+				else
+				{
+					printf(" ]\n");
+				}
 			}
 		}
 	}
+	printf("]\n");
 }
 
 int main()
@@ -127,12 +137,14 @@ int main()
 	printf("\n");
 
 	// Print detail
-	printf("*** Network Detail ***\n");
+	printf("***** Network Detail *****\n");
 	for(i = 0; i < cnn->cfg.layers; i++)
 	{
 		printf("=== Layer %d output ===\n", i);
 		print_img(cnn->layerList[i].outMat.data.mat,
-				cnn->layerList[i].outMat.data.rows, cnn->layerList[i].outMat.data.cols);
+				cnn->layerList[i].outMat.height,
+				cnn->layerList[i].outMat.width);
+
 		printf("\n");
 	}
 
@@ -146,24 +158,57 @@ int main()
 	cnn_bp(cnn, 0.01, err);
 
 	// Print detail
-	printf("*** Network Gradient Detail ***\n");
-	for(i = cnn->cfg.layers - 1; i > 0; i--)
+	printf("***** Network Gradient Detail *****\n");
+	for(i = cnn->cfg.layers - 1; i >= 0; i--)
 	{
 		printf("=== Layer %d ===\n", i);
 		printf("Gradient:\n");
 		print_img(cnn->layerList[i].outMat.data.grad,
-				cnn->layerList[i].outMat.data.rows, cnn->layerList[i].outMat.data.cols);
+				cnn->layerList[i].outMat.data.rows,
+				cnn->layerList[i].outMat.data.cols);
 		printf("\n");
+	}
 
+	// Print updated network
+	printf("***** Updated Network Detail *****\n");
+	for(i = cnn->cfg.layers - 1; i >= 0; i--)
+	{
+		printf("=== Layer %d ===\n", i);
 		switch(cnn->cfg.layerCfg[i].type)
 		{
-			case CNN_LAYER_AFUNC:
-				printf("Activation derivative:\n");
-				print_img(cnn->layerList[i].aFunc.gradMat.mat,
-						cnn->layerList[i].aFunc.gradMat.rows,
-						cnn->layerList[i].aFunc.gradMat.cols);
+			case CNN_LAYER_FC:
+				printf("- Fully Connected -\n");
+				printf("Weight:\n");
+				print_img(cnn->layerList[i].fc.weight.mat,
+						cnn->layerList[i].fc.weight.rows,
+						cnn->layerList[i].fc.weight.cols);
 				printf("\n");
+				printf("Bias:\n");
+				print_img(cnn->layerList[i].fc.bias.mat,
+						cnn->layerList[i].fc.bias.rows,
+						cnn->layerList[i].fc.bias.cols);
+				printf("\n");
+				break;
+
+			case CNN_LAYER_CONV:
+				printf("- Convolution -\n");
+				printf("Kernel:\n");
+				print_img(cnn->layerList[i].conv.kernel.mat,
+						cnn->layerList[i].conv.kernel.rows,
+						cnn->layerList[i].conv.kernel.cols);
+				printf("\n");
+				printf("Bias:\n");
+				print_img(cnn->layerList[i].conv.bias.mat,
+						cnn->layerList[i].conv.bias.rows,
+						cnn->layerList[i].conv.bias.cols);
+				printf("\n");
+				break;
+
+			case CNN_LAYER_AFUNC:
+				printf("- Activation Function -\n");
+				break;
 		}
+		printf("\n");
 	}
 
 	return 0;
