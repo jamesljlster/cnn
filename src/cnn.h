@@ -49,6 +49,9 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad);
 int cnn_training(cnn_t cnn, float* inputMat, float* desireMat, float* outputMat, float* errMat);
 int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMat, float* outputMat, float* errMat);
 
+void cnn_rand_network(cnn_t cnn);
+void cnn_zero_network(cnn_t cnn);
+
 #ifdef __cplusplus
 }
 #endif

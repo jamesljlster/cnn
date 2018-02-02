@@ -58,20 +58,10 @@ int main()
 {
 	int i, j;
 	int ret;
-	int wRows, wCols;
 	float mse;
 
 	cnn_config_t cfg = NULL;
 	cnn_t cnn = NULL;
-
-	float kernel[KERNEL_SIZE * KERNEL_SIZE] = {
-		-0.4, -0.3, -0.2,
-		-0.1,  0.0,  0.1,
-		 0.2,  0.3,  0.4
-	};
-
-	float weight[(IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_HEIGHT - KERNEL_SIZE + 1) * OUTPUTS];
-	float bias[OUTPUTS];
 
 	float src[IMG_WIDTH * IMG_HEIGHT];
 	float output[OUTPUTS];
@@ -82,20 +72,6 @@ int main()
 	for(i = 0; i < IMG_WIDTH * IMG_HEIGHT; i++)
 	{
 		src[i] = i;
-	}
-
-	// Set weight
-	wRows = (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_HEIGHT - KERNEL_SIZE + 1);
-	wCols = OUTPUTS;
-	for(i = 0; i < wRows * wCols; i++)
-	{
-		weight[i] = (float)i / 10.0;
-	}
-
-	// Set bias
-	for(i = 0; i < OUTPUTS; i++)
-	{
-		bias[i] = (float)i / 10.0 + 0.5;
 	}
 
 	// Set config
@@ -109,15 +85,6 @@ int main()
 
 	// Create cnn
 	test(cnn_create(&cnn, cfg));
-
-	// Set kernel
-	memcpy(cnn->layerList[1].conv.kernel.mat, kernel, KERNEL_SIZE * KERNEL_SIZE * sizeof(float));
-
-	// Set weight
-	memcpy(cnn->layerList[3].fc.weight.mat, weight, wRows * wCols * sizeof(float));
-
-	// Set bias
-	memcpy(cnn->layerList[3].fc.bias.mat, bias, OUTPUTS * sizeof(float));
 
 	// Training
 	for(i = 0; i < ITER; i++)
