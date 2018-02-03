@@ -10,7 +10,7 @@
 
 void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 {
-	int i, j;
+	int i, j, k;
 	int srcShift, dstShift;
 
 	float* srcPtr;
@@ -88,7 +88,14 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 				for(j = 0; j < cfgRef->batch; j++)
 				{
 					srcShift = j * layerRef[i - 1].outMat.data.cols;
-					dstShift = srcShift * layerRef[i].outMat.data.cols;
+					if(cfgRef->layerCfg[i].aFunc.id == CNN_SOFTMAX)
+					{
+						dstShift = srcShift * layerRef[i].outMat.data.cols;
+					}
+					else
+					{
+						dstShift = srcShift;
+					}
 
 					srcPtr = &layerRef[i - 1].outMat.data.mat[srcShift];
 					dstPtr = &layerRef[i].aFunc.gradMat.mat[dstShift];
@@ -101,15 +108,26 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 					// Find layer gradient
 					if(i > 1)
 					{
-						cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-								1, layerRef[i - 1].outMat.data.cols,
-								layerRef[i].outMat.data.cols,
-								1.0,
-								&layerRef[i].outMat.data.grad[srcShift],
-								layerRef[i].outMat.data.cols,
-								dstPtr, layerRef[i].aFunc.gradMat.cols, 0.0,
-								&layerRef[i - 1].outMat.data.grad[srcShift],
-								layerRef[i - 1].outMat.data.cols);
+						if(cfgRef->layerCfg[i].aFunc.id == CNN_SOFTMAX)
+						{
+							cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+									1, layerRef[i - 1].outMat.data.cols,
+									layerRef[i].outMat.data.cols,
+									1.0,
+									&layerRef[i].outMat.data.grad[srcShift],
+									layerRef[i].outMat.data.cols,
+									dstPtr, layerRef[i].aFunc.gradMat.cols, 0.0,
+									&layerRef[i - 1].outMat.data.grad[srcShift],
+									layerRef[i - 1].outMat.data.cols);
+						}
+						else
+						{
+							for(k = 0; k < layerRef[i - 1].outMat.data.cols; k++)
+							{
+								layerRef[i - 1].outMat.data.grad[srcShift + k] = dstPtr[k] *
+									layerRef[i].outMat.data.grad[srcShift + k];
+							}
+						}
 					}
 				}
 

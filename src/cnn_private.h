@@ -55,7 +55,7 @@ int cnn_mat_alloc(struct CNN_MAT* matPtr, int rows, int cols, int needGrad);
 int cnn_layer_input_alloc(union CNN_LAYER* layerPtr,
 		int inWidth, int inHeight, int batch);
 int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr,
-		int inWidth, int inHeight, int batch);
+		int inWidth, int inHeight, int batch, int aFuncID);
 int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
 		int inWidth, int inHeight, int outSize, int batch);
 int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
