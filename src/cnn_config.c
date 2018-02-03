@@ -202,7 +202,16 @@ int cnn_config_set_layers(cnn_config_t cfg, int layers)
 	}
 
 	// Set default layer config
-	i = (preLayers > 0) ? preLayers - 1 : 1;
+	if(preLayers <= 0)
+	{
+		i = 1;
+		cfg->layerCfg[0].type = CNN_LAYER_INPUT;
+	}
+	else
+	{
+		i = preLayers - 1;
+	}
+
 	for( ; i < layers; i++)
 	{
 		ret = cnn_config_set_full_connect(cfg, i, CNN_DEFAULT_FC_SIZE);

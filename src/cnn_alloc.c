@@ -45,6 +45,9 @@ int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg)
 							tmpWidth, tmpHeight, cfg->layerCfg[i].conv.size, cfg->batch),
 						ret, ERR);
 				break;
+
+			default:
+				assert(cfg->layerCfg[i].type >= 0 && cfg->layerCfg[i].type <= CNN_LAYER_CONV);
 		}
 
 		// Find layer output image size
