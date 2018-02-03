@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <cnn.h>
 #include <cnn_private.h>
@@ -9,9 +10,9 @@
 
 #define KERNEL_SIZE 3
 
-#define OUTPUTS 10
-#define BATCH 5
+#define BATCH 10
 #define ITER 10000
+#define L_RATE 0.001
 
 struct DATASET
 {
@@ -28,6 +29,7 @@ struct DATASET
 };
 
 int make_dataset(struct DATASET* ptr, int batch, const char* binPath);
+int parse_class(float* out, int len);
 
 #define test(func) \
 	ret = func; \
@@ -41,7 +43,9 @@ int main(int argc, char* argv[])
 {
 	int iter;
 	int i, j;
+	int tmpIndex;
 	int ret;
+	int hit;
 	float mse;
 
 	cnn_config_t cfg = NULL;
@@ -97,13 +101,14 @@ int main(int argc, char* argv[])
 	// Set config
 	test(cnn_config_create(&cfg));
 	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight));
+	test(cnn_config_set_batch_size(cfg, BATCH));
 	test(cnn_config_set_layers(cfg, 8));
 
 	test(cnn_config_set_convolution(cfg, 1, 2, 3));
 	test(cnn_config_set_activation(cfg, 2, CNN_RELU));
 	test(cnn_config_set_convolution(cfg, 3, 2, 3));
 	test(cnn_config_set_activation(cfg, 4, CNN_RELU));
-	test(cnn_config_set_full_connect(cfg, 5, 128));
+	test(cnn_config_set_full_connect(cfg, 5, 16));
 	test(cnn_config_set_full_connect(cfg, 6, labelCols));
 	test(cnn_config_set_activation(cfg, 7, CNN_SOFTMAX));
 
@@ -115,25 +120,54 @@ int main(int argc, char* argv[])
 	for(iter = 0; iter < ITER; iter++)
 	{
 		mse = 0;
+		hit = 0;
 
-		for(i = 0; i < data.instances; i++)
+		for(i = 0; i < data.instances; i += BATCH)
 		{
-			test(cnn_training_custom(cnn, 0.001,
+			test(cnn_training_custom(cnn, L_RATE,
 						&data.input[i * dataCols],
 						&data.output[i * labelCols],
 						output, err));
 
-			for(j = 0; j < OUTPUTS; j++)
+			for(j = 0; j < labelCols * BATCH; j++)
 			{
 				mse += err[j] * err[j];
+			}
+
+			for(j = 0; j < BATCH; j++)
+			{
+				tmpIndex = parse_class(&output[j * labelCols], labelCols);
+				if(data.output[(i + j) * labelCols + tmpIndex] > 0)
+				{
+					hit++;
+				}
 			}
 		}
 
 		mse /= (float)(labelCols * data.instances);
-		printf("Iter %d, mse: %f\n", iter, mse);
+		printf("Iter %d, mse: %f, accuracy: %.2f %%\n", iter, mse,
+				(float)hit * 100 / (float)(data.instances));
 	}
 
 	return 0;
+}
+
+int parse_class(float* out, int len)
+{
+	int i;
+	int index = 0;
+	float hold = out[0];
+
+	for(i = 1; i < len; i++)
+	{
+		if(hold < out[i])
+		{
+			hold = out[i];
+			index = i;
+		}
+	}
+
+	return index;
 }
 
 int make_dataset(struct DATASET* ptr, int batch, const char* binPath)
