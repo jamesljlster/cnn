@@ -159,7 +159,7 @@ int main()
 
 	// Print detail
 	printf("***** Network Gradient Detail *****\n");
-	for(i = cnn->cfg.layers - 1; i >= 0; i--)
+	for(i = cnn->cfg.layers - 1; i > 0; i--)
 	{
 		printf("=== Layer %d ===\n", i);
 		printf("Gradient:\n");

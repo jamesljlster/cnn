@@ -36,7 +36,7 @@ int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg)
 
 			case CNN_LAYER_AFUNC:
 				cnn_run(cnn_layer_afunc_alloc(&cnn->layerList[i].aFunc,
-							tmpWidth, tmpHeight, cfg->batch),
+							tmpWidth, tmpHeight, cfg->batch, cfg->layerCfg[i].aFunc.id),
 						ret, ERR);
 				break;
 
@@ -110,7 +110,7 @@ int cnn_layer_input_alloc(union CNN_LAYER* layerPtr,
 	outCols = inWidth * inHeight;
 
 	// Allocate memory
-	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 0), ret, ERR);
 
 	// Assign value
 	layerPtr->outMat.width = inWidth;
@@ -126,7 +126,7 @@ RET:
 }
 
 int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr,
-		int inWidth, int inHeight, int batch)
+		int inWidth, int inHeight, int batch, int aFuncID)
 {
 	int ret = CNN_NO_ERROR;
 	int outRows, outCols;
@@ -136,8 +136,13 @@ int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr,
 	outRows = batch;
 	outCols = inWidth * inHeight;
 
-	gradRows = outCols * batch;
+	gradRows = batch;
 	gradCols = outCols;
+
+	if(aFuncID == CNN_SOFTMAX)
+	{
+		gradRows = batch * outCols;
+	}
 
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);

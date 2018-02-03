@@ -81,10 +81,10 @@ CNN_AFUNC_DEF(cnn_relu_grad)
 	int i;
 
 	// Find relu gradient
-	memset(dst, 0, len * len * sizeof(float));
+	memset(dst, 0, len * sizeof(float));
 	for(i = 0; i < len; i++)
 	{
-		dst[i * len + i] = (src[i] < 0.0f) ? 0 : 1;
+		dst[i] = (src[i] < 0.0f) ? 0 : 1;
 	}
 }
 
@@ -102,11 +102,11 @@ CNN_AFUNC_DEF(cnn_swish_grad)
 	int i;
 
 	// Find swish gradient
-	memset(dst, 0, len * len * sizeof(float));
+	memset(dst, 0, len * sizeof(float));
 	cnn_swish(buf, src, len, NULL);
 	for(i = 0; i < len; i++)
 	{
-		dst[i * len + i] = buf[i] + (buf[i] / src[i]) * (1.0f - buf[i]);
+		dst[i] = buf[i] + (buf[i] / src[i]) * (1.0f - buf[i]);
 	}
 }
 

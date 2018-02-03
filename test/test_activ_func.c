@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <math.h>
 
+#include <cnn.h>
 #include <cnn_builtin_math.h>
 
 void print_mat(float* src, int rows, int cols);
@@ -55,23 +57,45 @@ int main(int argc, char* argv[])
 		}
 
 		// Find grad
+		memset(grad, 0, len * len * sizeof(float));
 		cnn_afunc_list[id](dst, src, len, NULL);
-		for(i = 0; i < len; i++)
+		if(id == CNN_SOFTMAX)
 		{
-			for(j = 0; j < len; j++)
+			for(i = 0; i < len; i++)
 			{
-				src[j] = atof(argv[j + 1]);
-				if(i == j)
+				for(j = 0; j < len; j++)
 				{
-					src[j] += dx;
+					src[j] = atof(argv[j + 1]);
+					if(i == j)
+					{
+						src[j] += dx;
+					}
+				}
+
+				cnn_afunc_list[id](buf, src, len, NULL);
+
+				for(j = 0; j < len; j++)
+				{
+					grad[i * len + j] = (buf[j] - dst[j]) / dx;
 				}
 			}
-
-			cnn_afunc_list[id](buf, src, len, NULL);
-
-			for(j = 0; j < len; j++)
+		}
+		else
+		{
+			for(i = 0; i < len; i++)
 			{
-				grad[i * len + j] = (buf[j] - dst[j]) / dx;
+				for(j = 0; j < len; j++)
+				{
+					src[j] = atof(argv[j + 1]);
+					if(i == j)
+					{
+						src[j] += dx;
+					}
+				}
+
+				cnn_afunc_list[id](buf, src, len, NULL);
+
+				grad[i] = (buf[i] - dst[i]) / dx;
 			}
 		}
 
@@ -81,6 +105,7 @@ int main(int argc, char* argv[])
 			src[i] = atof(argv[i + 1]);
 		}
 
+		memset(deri, 0, len * len * sizeof(float));
 		cnn_afunc_grad_list[id](deri, src, len, buf);
 
 		// Find error
