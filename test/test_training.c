@@ -84,14 +84,14 @@ int main(int argc, char* argv[])
 	printf("Instances: %d\n", data.instances);
 
 	// Memory allocation
-	output = calloc(labelCols, sizeof(float));
+	output = calloc(labelCols * BATCH, sizeof(float));
 	if(output == NULL)
 	{
 		printf("Memory allocation failed!\n");
 		return -1;
 	}
 
-	err = calloc(labelCols, sizeof(float));
+	err = calloc(labelCols * BATCH, sizeof(float));
 	if(err == NULL)
 	{
 		printf("Memory allocation failed!\n");

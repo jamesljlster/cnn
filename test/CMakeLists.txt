@@ -3,20 +3,15 @@ cmake_minimum_required(VERSION 2.8)
 # Set variables
 set(PROJECT_NAME cnn_test)
 set(PROJECT_LANGUAGE C)
-set(PROJECT_DEPS cnn ${OpenBLAS_LIB} m)
+set(PROJECT_DEPS cnn ${OpenBLAS_LIB})
+
+if(UNIX)
+	set(PROJECT_DEPS ${PROJECT_DEPS} m)
+endif()
 
 # Compile setting
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
-
-# Variables
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Build confugure" FORCE)
-if(DEFINED CMAKE_BUILD_TYPE)
-	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES})
-endif()
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Release)
-endif()
 
 # Set project
 project(${PROJECT_NAME} ${PROJECT_LANGUAGE})
