@@ -58,14 +58,17 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 				}
 
 				// Find layer gradient
-				cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-						layerRef[i - 1].outMat.data.rows,
-						layerRef[i - 1].outMat.data.cols,
-						layerRef[i].outMat.data.cols,
-						1.0,
-						layerRef[i].outMat.data.grad, layerRef[i].outMat.data.cols,
-						layerRef[i].fc.weight.mat, layerRef[i].fc.weight.cols, 0.0,
-						layerRef[i - 1].outMat.data.grad, layerRef[i - 1].outMat.data.cols);
+				if(i > 1)
+				{
+					cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+							layerRef[i - 1].outMat.data.rows,
+							layerRef[i - 1].outMat.data.cols,
+							layerRef[i].outMat.data.cols,
+							1.0,
+							layerRef[i].outMat.data.grad, layerRef[i].outMat.data.cols,
+							layerRef[i].fc.weight.mat, layerRef[i].fc.weight.cols, 0.0,
+							layerRef[i - 1].outMat.data.grad, layerRef[i - 1].outMat.data.cols);
+				}
 
 				// Update weight
 				cblas_saxpy(cnn->layerList[i].fc.weight.rows * cnn->layerList[i].fc.weight.cols,
@@ -96,14 +99,18 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 							&layerRef[i].aFunc.buf.mat[srcShift]);
 
 					// Find layer gradient
-					cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-							1, layerRef[i - 1].outMat.data.cols,
-							layerRef[i].outMat.data.cols,
-							1.0,
-							&layerRef[i].outMat.data.grad[srcShift], layerRef[i].outMat.data.cols,
-							dstPtr, layerRef[i].aFunc.gradMat.cols, 0.0,
-							&layerRef[i - 1].outMat.data.grad[srcShift],
-							layerRef[i - 1].outMat.data.cols);
+					if(i > 1)
+					{
+						cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+								1, layerRef[i - 1].outMat.data.cols,
+								layerRef[i].outMat.data.cols,
+								1.0,
+								&layerRef[i].outMat.data.grad[srcShift],
+								layerRef[i].outMat.data.cols,
+								dstPtr, layerRef[i].aFunc.gradMat.cols, 0.0,
+								&layerRef[i - 1].outMat.data.grad[srcShift],
+								layerRef[i - 1].outMat.data.cols);
+					}
 				}
 
 				break;
@@ -143,23 +150,26 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 				}
 
 				// Find layer gradient
-				memset(cnn->layerList[i - 1].outMat.data.grad, 0, sizeof(float) *
-						cnn->layerList[i - 1].outMat.data.rows *
-						cnn->layerList[i - 1].outMat.data.cols);
-
-				for(j = 0; j < cfgRef->batch; j++)
+				if(i > 1)
 				{
-					srcShift = j * cnn->layerList[i].outMat.data.cols;
-					dstShift = j * cnn->layerList[i - 1].outMat.data.cols;
+					memset(cnn->layerList[i - 1].outMat.data.grad, 0, sizeof(float) *
+							cnn->layerList[i - 1].outMat.data.rows *
+							cnn->layerList[i - 1].outMat.data.cols);
 
-					cnn_conv_2d_grad((&cnn->layerList[i - 1].outMat.data.grad[dstShift]),
-							cnn->layerList[i - 1].outMat.height,
-							cnn->layerList[i - 1].outMat.width,
-							cnn->layerList[i].conv.kernel.mat,
-							cnn->layerList[i].conv.kernel.cols,
-							(&cnn->layerList[i].outMat.data.grad[srcShift]),
-							cnn->layerList[i].outMat.height,
-							cnn->layerList[i].outMat.width);
+					for(j = 0; j < cfgRef->batch; j++)
+					{
+						srcShift = j * cnn->layerList[i].outMat.data.cols;
+						dstShift = j * cnn->layerList[i - 1].outMat.data.cols;
+
+						cnn_conv_2d_grad((&cnn->layerList[i - 1].outMat.data.grad[dstShift]),
+								cnn->layerList[i - 1].outMat.height,
+								cnn->layerList[i - 1].outMat.width,
+								cnn->layerList[i].conv.kernel.mat,
+								cnn->layerList[i].conv.kernel.cols,
+								(&cnn->layerList[i].outMat.data.grad[srcShift]),
+								cnn->layerList[i].outMat.height,
+								cnn->layerList[i].outMat.width);
+					}
 				}
 
 				// Update kernel
