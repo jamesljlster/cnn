@@ -56,7 +56,7 @@ void print_img(float* src, int rows, int cols)
 
 int main()
 {
-	int i;
+	int i, j;
 	int ret;
 	int wRows, wCols;
 
@@ -82,9 +82,17 @@ int main()
 	float err[OUTPUTS * BATCH];
 
 	// Set input image
-	for(i = 0; i < IMG_WIDTH * IMG_HEIGHT * BATCH; i++)
+	for(i = 0; i < IMG_WIDTH * IMG_HEIGHT; i++)
 	{
 		src[i] = i;
+	}
+
+	for(i = 0; i < IMG_HEIGHT; i++)
+	{
+		for(j = 0; j < IMG_WIDTH; j++)
+		{
+			src[(i * IMG_WIDTH + j) + IMG_WIDTH * IMG_HEIGHT] = i;
+		}
 	}
 
 	// Set weight
@@ -142,20 +150,24 @@ int main()
 	print_img(bias, 1, OUTPUTS);
 	printf("\n");
 
+	printf("=== Desire ===\n");
+	print_img(desire, BATCH, OUTPUTS);
+	printf("\n");
+
 	// Print detail
 	printf("***** Network Detail *****\n");
 	for(i = 0; i < cnn->cfg.layers; i++)
 	{
 		printf("=== Layer %d output ===\n", i);
 		print_img(cnn->layerList[i].outMat.data.mat,
-				cnn->layerList[i].outMat.height,
-				cnn->layerList[i].outMat.width);
+				cnn->layerList[i].outMat.data.rows,
+				cnn->layerList[i].outMat.data.cols);
 
 		printf("\n");
 	}
 
 	// Find error
-	for(i = 0; i < OUTPUTS; i++)
+	for(i = 0; i < OUTPUTS * BATCH; i++)
 	{
 		err[i] = desire[i] - output[i];
 	}
