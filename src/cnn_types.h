@@ -51,6 +51,7 @@ struct CNN_CONFIG_LAYER_POOL
 	int type;
 
 	int poolType;
+	int dim;
 	int size;
 };
 

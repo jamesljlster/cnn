@@ -48,6 +48,7 @@ int cnn_config_set_layers(cnn_config_t cfg, int layers);
 int cnn_config_set_full_connect(cnn_config_t cfg, int layerIndex, int size);
 int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, int aFuncID);
 int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, int convDim, int size);
+int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, int dim, int type, int size);
 
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
 void cnn_delete(cnn_t cnn);
