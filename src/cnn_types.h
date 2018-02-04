@@ -62,6 +62,7 @@ union CNN_CONFIG_LAYER
 	struct CNN_CONFIG_LAYER_AFUNC aFunc;
 	struct CNN_CONFIG_LAYER_FC fc;
 	struct CNN_CONFIG_LAYER_CONV conv;
+	struct CNN_CONFIG_LAYER_POOL pool;
 };
 
 struct CNN_CONFIG
@@ -117,6 +118,9 @@ struct CNN_LAYER_POOL
 {
 	// Layer output matrix
 	struct CNN_SHAPE outMat;
+
+	// Pooling index
+	struct CNN_MAT indexMat;
 };
 
 union CNN_LAYER

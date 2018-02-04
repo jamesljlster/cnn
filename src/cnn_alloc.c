@@ -46,8 +46,15 @@ int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg)
 						ret, ERR);
 				break;
 
+			case CNN_LAYER_POOL:
+				cnn_run(cnn_layer_pool_alloc(&cnn->layerList[i].pool,
+							tmpWidth, tmpHeight, cfg->layerCfg[i].pool.size, cfg->batch),
+						ret, ERR);
+
+				break;
+
 			default:
-				assert(cfg->layerCfg[i].type >= 0 && cfg->layerCfg[i].type <= CNN_LAYER_CONV);
+				assert(cfg->layerCfg[i].type >= 0 && cfg->layerCfg[i].type <= CNN_LAYER_POOL);
 		}
 
 		// Find layer output image size
@@ -222,6 +229,7 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
 
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->indexMat, outRows, outCols, 0), ret, ERR);
 
 	// Assing value
 	layerPtr->outMat.width = outWidth;
