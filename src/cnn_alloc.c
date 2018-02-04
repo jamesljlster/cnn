@@ -46,8 +46,15 @@ int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg)
 						ret, ERR);
 				break;
 
+			case CNN_LAYER_POOL:
+				cnn_run(cnn_layer_pool_alloc(&cnn->layerList[i].pool,
+							tmpWidth, tmpHeight, cfg->layerCfg[i].pool.size, cfg->batch),
+						ret, ERR);
+
+				break;
+
 			default:
-				assert(cfg->layerCfg[i].type >= 0 && cfg->layerCfg[i].type <= CNN_LAYER_CONV);
+				assert(cfg->layerCfg[i].type >= 0 && cfg->layerCfg[i].type <= CNN_LAYER_POOL);
 		}
 
 		// Find layer output image size
@@ -193,6 +200,45 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
 
 ERR:
 	cnn_layer_fc_delete(layerPtr);
+
+RET:
+	return ret;
+}
+
+int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
+		int inWidth, int inHeight, int size, int batch)
+{
+	int ret = CNN_NO_ERROR;
+	int outRows, outCols; // Output matrix size
+	int outWidth, outHeight; // Valid pooling output size
+
+	// Find output image size
+	outWidth = inWidth / size;
+	outHeight = inHeight / size;
+
+	// Checking
+	if(outWidth <= 0 || outHeight <= 0)
+	{
+		ret = CNN_INVALID_SHAPE;
+		goto RET;
+	}
+
+	// Find allocate size
+	outRows = batch;
+	outCols = outWidth * outHeight;
+
+	// Allocate memory
+	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
+	cnn_alloc(layerPtr->indexMat, outRows * outCols, int, ret, ERR);
+
+	// Assing value
+	layerPtr->outMat.width = outWidth;
+	layerPtr->outMat.height = outHeight;
+
+	goto RET;
+
+ERR:
+	cnn_layer_pool_delete(layerPtr);
 
 RET:
 	return ret;

@@ -6,8 +6,8 @@
 #include <cnn_calc.h>
 
 #define KERNEL_SIZE 3
-#define IMG_WIDTH 5
-#define IMG_HEIGHT 5
+#define IMG_WIDTH 6
+#define IMG_HEIGHT 6
 
 #define DST_WIDTH 3
 #define DST_HEIGHT 3
@@ -99,11 +99,12 @@ int main()
 	// Set config
 	test(cnn_config_create(&cfg));
 	test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT));
-	test(cnn_config_set_layers(cfg, 5));
+	test(cnn_config_set_layers(cfg, 6));
 	test(cnn_config_set_convolution(cfg, 1, 2, 3));
-	test(cnn_config_set_activation(cfg, 2, CNN_RELU));
-	test(cnn_config_set_full_connect(cfg, 3, OUTPUTS));
-	test(cnn_config_set_activation(cfg, 4, CNN_SOFTMAX));
+	test(cnn_config_set_pooling(cfg, 2, 2, CNN_POOL_MAX, 2));
+	test(cnn_config_set_activation(cfg, 3, CNN_RELU));
+	test(cnn_config_set_full_connect(cfg, 4, OUTPUTS));
+	test(cnn_config_set_activation(cfg, 5, CNN_SOFTMAX));
 
 	// Create cnn
 	test(cnn_create(&cnn, cfg));
@@ -112,10 +113,10 @@ int main()
 	memcpy(cnn->layerList[1].conv.kernel.mat, kernel, KERNEL_SIZE * KERNEL_SIZE * sizeof(float));
 
 	// Set weight
-	memcpy(cnn->layerList[3].fc.weight.mat, weight, wRows * wCols * sizeof(float));
+	memcpy(cnn->layerList[4].fc.weight.mat, weight, wRows * wCols * sizeof(float));
 
 	// Set bias
-	memcpy(cnn->layerList[3].fc.bias.mat, bias, OUTPUTS * sizeof(float));
+	memcpy(cnn->layerList[4].fc.bias.mat, bias, OUTPUTS * sizeof(float));
 
 	// CNN forward
 	cnn_forward(cnn, src, output);
@@ -206,6 +207,10 @@ int main()
 
 			case CNN_LAYER_AFUNC:
 				printf("- Activation Function -\n");
+				break;
+
+			case CNN_LAYER_POOL:
+				printf("- Pooling -\n");
 				break;
 		}
 		printf("\n");

@@ -282,3 +282,25 @@ RET:
 	return ret;
 }
 
+int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, int dim, int type, int size)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Checking
+	if(layerIndex <= 0 || layerIndex >= cfg->layers ||
+			dim <= 0 || dim > 2 || size <= 0)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Set config
+	cfg->layerCfg[layerIndex].type = CNN_LAYER_POOL;
+	cfg->layerCfg[layerIndex].pool.poolType = type;
+	cfg->layerCfg[layerIndex].pool.dim = dim;
+	cfg->layerCfg[layerIndex].pool.size = size;
+
+RET:
+	return ret;
+}
+

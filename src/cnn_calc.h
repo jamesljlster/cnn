@@ -52,4 +52,39 @@
 		} \
 	}
 
+#define cnn_pool_2d_max(dst, indexMat, dstRows, dstCols, poolSize, src, srcRows, srcCols) \
+	for(int __row = 0; __row < dstRows; __row++) \
+	{ \
+		for(int __col = 0; __col < dstCols; __col++) \
+		{ \
+			float __tmp, __max; \
+			int __maxIndex, __index; \
+			int __rowShift = __row * poolSize; \
+			int __colShift = __col * poolSize; \
+			__max = src[__rowShift * srcCols + __colShift]; \
+			__maxIndex = __rowShift * srcCols + __colShift; \
+			for(int __poolRow = 0; __poolRow < poolSize; __poolRow++) \
+			{ \
+				for(int __poolCol = 0; __poolCol < poolSize; __poolCol++) \
+				{ \
+					__index = (__rowShift + __poolRow) * srcCols + (__colShift + __poolCol); \
+					__tmp = src[__index]; \
+					if(__tmp > __max) \
+					{ \
+						__max = __tmp; \
+						__maxIndex = __index; \
+					} \
+				} \
+			} \
+			dst[__row * dstCols + __col] = __max; \
+			indexMat[__row * dstCols + __col] = __maxIndex; \
+		} \
+	}
+
+#define cnn_pool_2d_max_grad(grad, indexMat, iGrad, iGradRows, iGradCols) \
+	for(int __i = 0; __i < iGradRows * iGradCols; __i++) \
+	{ \
+		grad[indexMat[__i]] = iGrad[__i]; \
+	}
+
 #endif

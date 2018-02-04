@@ -45,6 +45,16 @@ struct CNN_CONFIG_LAYER_CONV
 	int size;
 };
 
+struct CNN_CONFIG_LAYER_POOL
+{
+	// Layer type
+	int type;
+
+	int poolType;
+	int dim;
+	int size;
+};
+
 union CNN_CONFIG_LAYER
 {
 	// Layer type
@@ -53,6 +63,7 @@ union CNN_CONFIG_LAYER
 	struct CNN_CONFIG_LAYER_AFUNC aFunc;
 	struct CNN_CONFIG_LAYER_FC fc;
 	struct CNN_CONFIG_LAYER_CONV conv;
+	struct CNN_CONFIG_LAYER_POOL pool;
 };
 
 struct CNN_CONFIG
@@ -104,6 +115,15 @@ struct CNN_LAYER_CONV
 	struct CNN_MAT bias;
 };
 
+struct CNN_LAYER_POOL
+{
+	// Layer output matrix
+	struct CNN_SHAPE outMat;
+
+	// Pooling index
+	int* indexMat;
+};
+
 union CNN_LAYER
 {
 	// Layer output matrix
@@ -112,6 +132,7 @@ union CNN_LAYER
 	struct CNN_LAYER_AFUNC aFunc;
 	struct CNN_LAYER_FC fc;
 	struct CNN_LAYER_CONV conv;
+	struct CNN_LAYER_POOL pool;
 };
 
 struct CNN

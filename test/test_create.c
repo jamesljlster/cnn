@@ -87,6 +87,19 @@ void check_cnn_arch(cnn_t cnn)
 				test_mat(cnn->layerList[i].conv.bias);
 				break;
 
+			case CNN_LAYER_POOL:
+				printf("The layer is pooling\n");
+				printf("Pooling type: %d\n", cnn->cfg.layerCfg[i].pool.poolType);
+				printf("Dimension: %d\n", cnn->cfg.layerCfg[i].pool.dim);
+				printf("Size: %d\n", cnn->cfg.layerCfg[i].pool.size);
+				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
+						cnn->layerList[i].outMat.height);
+
+				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
+
+				test_mat(cnn->layerList[i].outMat.data);
+				break;
+
 			default:
 				printf("Not a cnn layer config?!\n");
 		}
@@ -109,15 +122,15 @@ int main()
 
 	// Set config
 	cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT);
-	cnn_config_set_layers(cfg, 8);
+	cnn_config_set_layers(cfg, 9);
 	cnn_config_set_convolution(cfg, 1, 1, 3);
 	cnn_config_set_activation(cfg, 2, CNN_RELU);
 	cnn_config_set_convolution(cfg, 3, 1, 3);
 	cnn_config_set_activation(cfg, 4, CNN_RELU);
-	cnn_config_set_full_connect(cfg, 5, 128);
-	cnn_config_set_full_connect(cfg, 6, 2);
-	cnn_config_set_activation(cfg, 7, CNN_SOFTMAX);
-
+	cnn_config_set_pooling(cfg, 5, 2, CNN_POOL_MAX, 2);
+	cnn_config_set_full_connect(cfg, 6, 128);
+	cnn_config_set_full_connect(cfg, 7, 2);
+	cnn_config_set_activation(cfg, 8, CNN_SOFTMAX);
 
 	// Create cnn
 	ret = cnn_create(&cnn, cfg);
