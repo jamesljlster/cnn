@@ -42,7 +42,7 @@ int cnn_config_create(cnn_config_t* cfgPtr);
 int cnn_config_clone(cnn_config_t* dstPtr, const cnn_config_t src);
 void cnn_config_delete(cnn_config_t cfg);
 
-int cnn_config_set_input_size(cnn_config_t cfg, int width, int height);
+int cnn_config_set_input_size(cnn_config_t cfg, int width, int height, int channel);
 int cnn_config_set_batch_size(cnn_config_t cfg, int batchSize);
 int cnn_config_set_layers(cnn_config_t cfg, int layers);
 int cnn_config_set_full_connect(cnn_config_t cfg, int layerIndex, int size);

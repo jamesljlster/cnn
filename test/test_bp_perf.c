@@ -40,7 +40,7 @@ int main()
 
 	// Set config
 	test(cnn_config_create(&cfg));
-	test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT));
+	test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, 1));
 	test(cnn_config_set_layers(cfg, 8));
 
 	test(cnn_config_set_convolution(cfg, 1, 2, 3));

@@ -50,15 +50,15 @@ int cnn_config_struct_clone(struct CNN_CONFIG* dstPtr, const struct CNN_CONFIG* 
 int cnn_mat_alloc(struct CNN_MAT* matPtr, int rows, int cols, int needGrad);
 
 int cnn_layer_input_alloc(union CNN_LAYER* layerPtr,
-		int inWidth, int inHeight, int batch);
+		int inWidth, int inHeight, int inChannel, int batch);
 int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr,
-		int inWidth, int inHeight, int batch, int aFuncID);
+		int inWidth, int inHeight, int inChannel, int batch, int aFuncID);
 int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
-		int inWidth, int inHeight, int outSize, int batch);
+		int inWidth, int inHeight, int inChannel, int outSize, int batch);
 int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
-		int inWidth, int inHeight, int size, int batch);
+		int inWidth, int inHeight, int inChannel,  int size, int batch);
 int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
-		int inWidth, int inHeight, int size, int batch);
+		int inWidth, int inHeight, int inChannel, int size, int batch);
 
 int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg);
 

@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 
 	// Set config
 	test(cnn_config_create(&cfg));
-	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight));
+	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight, 1));
 	test(cnn_config_set_batch_size(cfg, BATCH));
 	test(cnn_config_set_layers(cfg, 8));
 

@@ -121,7 +121,7 @@ int main()
 	}
 
 	// Set config
-	cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT);
+	cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT, 1);
 	cnn_config_set_layers(cfg, 9);
 	cnn_config_set_convolution(cfg, 1, 1, 3);
 	cnn_config_set_activation(cfg, 2, CNN_RELU);

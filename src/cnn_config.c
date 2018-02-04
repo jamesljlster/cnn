@@ -8,6 +8,7 @@
 
 #define CNN_DEFAULT_INPUT_WIDTH 32
 #define CNN_DEFAULT_INPUT_HEIGHT 32
+#define CNN_DEFAULT_INPUT_CHANNEL 3
 #define CNN_DEFAULT_OUTPUTS 2
 #define CNN_DEFAULT_BATCH 1
 #define CNN_DEFAULT_LAYERS 5
@@ -90,7 +91,8 @@ int cnn_config_init(cnn_config_t cfg)
 
 	// Set default cnn settings
 	// Set input size
-	cnn_run(cnn_config_set_input_size(cfg, CNN_DEFAULT_INPUT_WIDTH, CNN_DEFAULT_INPUT_HEIGHT),
+	cnn_run(cnn_config_set_input_size(cfg, CNN_DEFAULT_INPUT_WIDTH, CNN_DEFAULT_INPUT_HEIGHT,
+				CNN_DEFAULT_INPUT_CHANNEL),
 			ret, RET);
 
 	// Set batch
@@ -130,7 +132,7 @@ void cnn_config_delete(cnn_config_t cfg)
 	}
 }
 
-int cnn_config_set_input_size(cnn_config_t cfg, int width, int height)
+int cnn_config_set_input_size(cnn_config_t cfg, int width, int height, int channel)
 {
 	int ret = CNN_NO_ERROR;
 
@@ -144,6 +146,7 @@ int cnn_config_set_input_size(cnn_config_t cfg, int width, int height)
 	// Assign value
 	cfg->width = width;
 	cfg->height = height;
+	cfg->channel = channel;
 
 RET:
 	return ret;

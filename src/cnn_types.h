@@ -16,6 +16,7 @@ struct CNN_SHAPE
 {
 	int width;
 	int height;
+	int channel;
 
 	struct CNN_MAT data;
 };
@@ -70,6 +71,7 @@ struct CNN_CONFIG
 {
 	int width;
 	int height;
+	int channel;
 
 	int batch;
 
@@ -113,6 +115,9 @@ struct CNN_LAYER_CONV
 
 	// Bias vector
 	struct CNN_MAT bias;
+
+	// Channel
+	int inChannel;
 };
 
 struct CNN_LAYER_POOL
