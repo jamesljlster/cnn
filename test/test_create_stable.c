@@ -21,14 +21,15 @@ int main()
 
 	// Set config
 	cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT);
-	cnn_config_set_layers(cfg, 8);
+	cnn_config_set_layers(cfg, 9);
 	cnn_config_set_convolution(cfg, 1, 1, 3);
 	cnn_config_set_activation(cfg, 2, CNN_RELU);
 	cnn_config_set_convolution(cfg, 3, 1, 3);
 	cnn_config_set_activation(cfg, 4, CNN_RELU);
-	cnn_config_set_full_connect(cfg, 5, 128);
-	cnn_config_set_full_connect(cfg, 6, 2);
-	cnn_config_set_activation(cfg, 7, CNN_SOFTMAX);
+	cnn_config_set_pooling(cfg, 5, 2, CNN_POOL_MAX, 2);
+	cnn_config_set_full_connect(cfg, 6, 128);
+	cnn_config_set_full_connect(cfg, 7, 2);
+	cnn_config_set_activation(cfg, 8, CNN_SOFTMAX);
 
 	while(1)
 	{

@@ -229,7 +229,7 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
 
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
-	cnn_run(cnn_mat_alloc(&layerPtr->indexMat, outRows, outCols, 0), ret, ERR);
+	cnn_alloc(layerPtr->indexMat, outRows * outCols, int, ret, ERR);
 
 	// Assing value
 	layerPtr->outMat.width = outWidth;

@@ -121,7 +121,7 @@ struct CNN_LAYER_POOL
 	struct CNN_SHAPE outMat;
 
 	// Pooling index
-	struct CNN_MAT indexMat;
+	int* indexMat;
 };
 
 union CNN_LAYER

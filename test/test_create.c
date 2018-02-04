@@ -96,10 +96,8 @@ void check_cnn_arch(cnn_t cnn)
 						cnn->layerList[i].outMat.height);
 
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
-				print_mat_info("Kernel mat", cnn->layerList[i].pool.indexMat);
 
 				test_mat(cnn->layerList[i].outMat.data);
-				test_mat(cnn->layerList[i].pool.indexMat);
 				break;
 
 			default:
@@ -133,7 +131,6 @@ int main()
 	cnn_config_set_full_connect(cfg, 6, 128);
 	cnn_config_set_full_connect(cfg, 7, 2);
 	cnn_config_set_activation(cfg, 8, CNN_SOFTMAX);
-
 
 	// Create cnn
 	ret = cnn_create(&cnn, cfg);

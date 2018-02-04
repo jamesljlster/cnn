@@ -81,7 +81,7 @@ void cnn_layer_pool_delete(struct CNN_LAYER_POOL* layerPtr)
 {
 	// Free memory
 	cnn_mat_delete(&layerPtr->outMat.data);
-	cnn_mat_delete(&layerPtr->indexMat);
+	cnn_free(layerPtr->indexMat);
 
 	// Zero memory
 	memset(layerPtr, 0, sizeof(struct CNN_LAYER_POOL));
