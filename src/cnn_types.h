@@ -45,6 +45,15 @@ struct CNN_CONFIG_LAYER_CONV
 	int size;
 };
 
+struct CNN_CONFIG_LAYER_POOL
+{
+	// Layer type
+	int type;
+
+	int poolType;
+	int size;
+};
+
 union CNN_CONFIG_LAYER
 {
 	// Layer type
