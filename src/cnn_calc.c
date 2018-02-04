@@ -85,29 +85,29 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 
 			// Activation function
 			case CNN_LAYER_AFUNC:
-				for(j = 0; j < cfgRef->batch; j++)
+				if(i > 1)
 				{
-					srcShift = j * layerRef[i - 1].outMat.data.cols;
-					if(cfgRef->layerCfg[i].aFunc.id == CNN_SOFTMAX)
+					for(j = 0; j < cfgRef->batch; j++)
 					{
-						dstShift = srcShift * layerRef[i].outMat.data.cols;
-					}
-					else
-					{
-						dstShift = srcShift;
-					}
+						srcShift = j * layerRef[i - 1].outMat.data.cols;
+						if(cfgRef->layerCfg[i].aFunc.id == CNN_SOFTMAX)
+						{
+							dstShift = srcShift * layerRef[i].outMat.data.cols;
+						}
+						else
+						{
+							dstShift = srcShift;
+						}
 
-					srcPtr = &layerRef[i - 1].outMat.data.mat[srcShift];
-					dstPtr = &layerRef[i].aFunc.gradMat.mat[dstShift];
+						srcPtr = &layerRef[i - 1].outMat.data.mat[srcShift];
+						dstPtr = &layerRef[i].aFunc.gradMat.mat[dstShift];
 
-					// Find gradient matrix
-					cnn_afunc_grad_list[cfgRef->layerCfg[i].aFunc.id](dstPtr,
-							srcPtr, layerRef[i].outMat.data.cols,
-							&layerRef[i].aFunc.buf.mat[srcShift]);
+						// Find gradient matrix
+						cnn_afunc_grad_list[cfgRef->layerCfg[i].aFunc.id](dstPtr,
+								srcPtr, layerRef[i].outMat.data.cols,
+								&layerRef[i].aFunc.buf.mat[srcShift]);
 
-					// Find layer gradient
-					if(i > 1)
-					{
+						// Find layer gradient
 						if(cfgRef->layerCfg[i].aFunc.id == CNN_SOFTMAX)
 						{
 							cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
@@ -205,19 +205,24 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 
 			// Pooling
 			case CNN_LAYER_POOL:
-				for(j = 0; j < cfgRef->batch; j++)
+				if(i > 1)
 				{
-					srcShift = j * layerRef[i].outMat.data.cols;
-					dstShift = j * layerRef[i - 1].outMat.data.cols;
+					// Zero layer gradient
+					memset(layerRef[i - 1].outMat.data.grad, 0, sizeof(float) *
+							layerRef[i - 1].outMat.data.rows *
+							layerRef[i - 1].outMat.data.cols);
 
-					srcPtr = &layerRef[i].outMat.data.grad[srcShift];
-
-					// Find layer gradient
-					if(i > 1)
+					for(j = 0; j < cfgRef->batch; j++)
 					{
-						cnn_pool_2d_max_grad((&layerRef[i - 1].outMat.data.grad[dstShift]),
-								(&layerRef[i].pool.indexMat[srcShift]),
-								srcPtr, layerRef[i].outMat.height, layerRef[i].outMat.width);
+						srcShift = j * layerRef[i].outMat.data.cols;
+						dstShift = j * layerRef[i - 1].outMat.data.cols;
+
+						srcPtr = &layerRef[i].outMat.data.grad[srcShift];
+
+						// Find layer gradient
+							cnn_pool_2d_max_grad((&layerRef[i - 1].outMat.data.grad[dstShift]),
+									(&layerRef[i].pool.indexMat[srcShift]),
+									srcPtr, layerRef[i].outMat.height, layerRef[i].outMat.width);
 					}
 				}
 
