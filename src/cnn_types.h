@@ -113,6 +113,12 @@ struct CNN_LAYER_CONV
 	struct CNN_MAT bias;
 };
 
+struct CNN_LAYER_POOL
+{
+	// Layer output matrix
+	struct CNN_SHAPE outMat;
+};
+
 union CNN_LAYER
 {
 	// Layer output matrix
@@ -121,6 +127,7 @@ union CNN_LAYER
 	struct CNN_LAYER_AFUNC aFunc;
 	struct CNN_LAYER_FC fc;
 	struct CNN_LAYER_CONV conv;
+	struct CNN_LAYER_POOL pool;
 };
 
 struct CNN
