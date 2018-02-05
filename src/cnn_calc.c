@@ -150,6 +150,7 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 							cnn->layerList[i].outMat.width,
 							cnn->layerList[i].conv.kernel.grad,
 							cnn->layerList[i].conv.kernel.cols,
+							cnn->layerList[i].conv.inChannel,
 							(&cnn->layerList[i - 1].outMat.data.mat[dstShift]),
 							cnn->layerList[i - 1].outMat.height,
 							cnn->layerList[i - 1].outMat.width);
@@ -184,6 +185,7 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 								cnn->layerList[i - 1].outMat.width,
 								cnn->layerList[i].conv.kernel.mat,
 								cnn->layerList[i].conv.kernel.cols,
+								cnn->layerList[i].conv.inChannel,
 								(&cnn->layerList[i].outMat.data.grad[srcShift]),
 								cnn->layerList[i].outMat.height,
 								cnn->layerList[i].outMat.width);
@@ -309,6 +311,7 @@ void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
 
 					cnn_conv_2d(dstPtr, layerRef[i].outMat.height, layerRef[i].outMat.width,
 							layerRef[i].conv.kernel.mat, cfgRef->layerCfg[i].conv.size,
+							cnn->layerList[i].conv.inChannel,
 							srcPtr, layerRef[i - 1].outMat.height, layerRef[i - 1].outMat.width);
 				}
 
