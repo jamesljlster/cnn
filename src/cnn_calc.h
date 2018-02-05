@@ -1,6 +1,13 @@
 #ifndef __CNN_CALC_H__
 #define __CNN_CALC_H__
 
+#include <string.h>
+#include <cblas.h>
+
+#include "cnn.h"
+#include "cnn_types.h"
+#include "cnn_builtin_math.h"
+
 inline void cnn_conv_2d(float* dst, int dstRows, int dstCols,
 		float* kernel, int kernelSize, int channel, float* src, int srcRows, int srcCols)
 {
@@ -108,6 +115,292 @@ inline void cnn_pool_2d_max_grad(float* grad, int* indexMat,
 	for(int __i = 0; __i < iGradRows * iGradCols; __i++)
 	{
 		grad[indexMat[__i]] = iGrad[__i];
+	}
+}
+
+inline void cnn_forward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex)
+{
+	// Weight matrix multiplication
+	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+			layerRef[layerIndex - 1].outMat.data.rows,
+			layerRef[layerIndex].outMat.data.cols,
+			layerRef[layerIndex - 1].outMat.data.cols,
+			1.0,
+			layerRef[layerIndex - 1].outMat.data.mat, layerRef[layerIndex - 1].outMat.data.cols,
+			layerRef[layerIndex].fc.weight.mat, layerRef[layerIndex].fc.weight.cols,
+			0.0, layerRef[layerIndex].outMat.data.mat, layerRef[layerIndex].outMat.data.cols);
+
+	// Add bias
+	for(int j = 0; j < cfgRef->batch; j++)
+	{
+		int dstIndex = j * layerRef[layerIndex].outMat.data.cols;
+		cblas_saxpy(layerRef[layerIndex].fc.bias.cols, 1.0,
+				layerRef[layerIndex].fc.bias.mat, 1,
+				&layerRef[layerIndex].outMat.data.mat[dstIndex], 1);
+	}
+}
+
+inline void cnn_forward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+		int layerIndex)
+{
+	for(int j = 0; j < cfgRef->batch; j++)
+	{
+		int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+		int dstShift = j * layerRef[layerIndex].outMat.data.cols;
+
+		float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
+		float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
+
+		cnn_afunc_list[cfgRef->layerCfg[layerIndex].aFunc.id](dstPtr,
+				srcPtr, layerRef[layerIndex].outMat.data.cols, NULL);
+	}
+}
+
+inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+		int layerIndex)
+{
+	for(int j = 0; j < cfgRef->batch; j++)
+	{
+		int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+		int dstShift = j * layerRef[layerIndex].outMat.data.cols;
+
+		float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
+		float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
+
+		cnn_conv_2d(dstPtr, layerRef[layerIndex].outMat.height, layerRef[layerIndex].outMat.width,
+				layerRef[layerIndex].conv.kernel.mat, cfgRef->layerCfg[layerIndex].conv.size,
+				layerRef[layerIndex].conv.inChannel,
+				srcPtr, layerRef[layerIndex - 1].outMat.height,
+				layerRef[layerIndex - 1].outMat.width);
+	}
+}
+
+inline void cnn_forward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+		int layerIndex)
+{
+	for(int j = 0; j < cfgRef->batch; j++)
+	{
+		int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+		int dstShift = j * layerRef[layerIndex].outMat.data.cols;
+
+		float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
+		float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
+
+		cnn_pool_2d_max(dstPtr, (&layerRef[layerIndex].pool.indexMat[dstShift]),
+				layerRef[layerIndex].outMat.height, layerRef[layerIndex].outMat.width,
+				cfgRef->layerCfg[layerIndex].pool.size, srcPtr,
+				layerRef[layerIndex - 1].outMat.height, layerRef[layerIndex - 1].outMat.width);
+	}
+}
+
+inline void cnn_bp_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
+		float lRate)
+{
+	int srcShift;
+
+	// Find weight delta matrix
+	cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+			layerRef[layerIndex].fc.weight.rows,
+			layerRef[layerIndex].fc.weight.cols,
+			cfgRef->batch,
+			1.0,
+			layerRef[layerIndex - 1].outMat.data.mat, layerRef[layerIndex - 1].outMat.data.cols,
+			layerRef[layerIndex].outMat.data.grad, layerRef[layerIndex].outMat.data.cols, 0.0,
+			layerRef[layerIndex].fc.weight.grad, layerRef[layerIndex].fc.weight.cols);
+
+	// Find bias delta matrix
+	memset(layerRef[layerIndex].fc.bias.grad, 0, sizeof(float) *
+			layerRef[layerIndex].fc.bias.cols);
+
+	for(int j = 0; j < cfgRef->batch; j++)
+	{
+		srcShift = j * layerRef[layerIndex].outMat.data.cols;
+		cblas_saxpy(layerRef[layerIndex].fc.bias.cols, 1.0,
+				&layerRef[layerIndex].outMat.data.grad[srcShift],
+				1, layerRef[layerIndex].fc.bias.grad, 1);
+	}
+
+	// Find layer gradient
+	if(layerIndex > 1)
+	{
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+				layerRef[layerIndex - 1].outMat.data.rows,
+				layerRef[layerIndex - 1].outMat.data.cols,
+				layerRef[layerIndex].outMat.data.cols,
+				1.0,
+				layerRef[layerIndex].outMat.data.grad, layerRef[layerIndex].outMat.data.cols,
+				layerRef[layerIndex].fc.weight.mat, layerRef[layerIndex].fc.weight.cols, 0.0,
+				layerRef[layerIndex - 1].outMat.data.grad,
+				layerRef[layerIndex - 1].outMat.data.cols);
+	}
+
+	// Update weight
+	cblas_saxpy(layerRef[layerIndex].fc.weight.rows * layerRef[layerIndex].fc.weight.cols,
+			lRate,
+			layerRef[layerIndex].fc.weight.grad, 1,
+			layerRef[layerIndex].fc.weight.mat, 1);
+
+	// Update bias
+	cblas_saxpy(layerRef[layerIndex].fc.bias.cols, lRate,
+			layerRef[layerIndex].fc.bias.grad, 1,
+			layerRef[layerIndex].fc.bias.mat, 1);
+}
+
+inline void cnn_bp_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
+		float lRate)
+{
+	int srcShift, dstShift;
+	float* srcPtr;
+	float* dstPtr;
+
+	if(layerIndex > 1)
+	{
+		for(int j = 0; j < cfgRef->batch; j++)
+		{
+			srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+			if(cfgRef->layerCfg[layerIndex].aFunc.id == CNN_SOFTMAX)
+			{
+				dstShift = srcShift * layerRef[layerIndex].outMat.data.cols;
+			}
+			else
+			{
+				dstShift = srcShift;
+			}
+
+			srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
+			dstPtr = &layerRef[layerIndex].aFunc.gradMat.mat[dstShift];
+
+			// Find gradient matrix
+			cnn_afunc_grad_list[cfgRef->layerCfg[layerIndex].aFunc.id](dstPtr,
+					srcPtr, layerRef[layerIndex].outMat.data.cols,
+					&layerRef[layerIndex].aFunc.buf.mat[srcShift]);
+
+			// Find layer gradient
+			if(cfgRef->layerCfg[layerIndex].aFunc.id == CNN_SOFTMAX)
+			{
+				cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+						1, layerRef[layerIndex - 1].outMat.data.cols,
+						layerRef[layerIndex].outMat.data.cols,
+						1.0,
+						&layerRef[layerIndex].outMat.data.grad[srcShift],
+						layerRef[layerIndex].outMat.data.cols,
+						dstPtr, layerRef[layerIndex].aFunc.gradMat.cols, 0.0,
+						&layerRef[layerIndex - 1].outMat.data.grad[srcShift],
+						layerRef[layerIndex - 1].outMat.data.cols);
+			}
+			else
+			{
+				for(int k = 0; k < layerRef[layerIndex - 1].outMat.data.cols; k++)
+				{
+					layerRef[layerIndex - 1].outMat.data.grad[srcShift + k] = dstPtr[k] *
+						layerRef[layerIndex].outMat.data.grad[srcShift + k];
+				}
+			}
+		}
+	}
+}
+
+inline void cnn_bp_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
+		float lRate)
+{
+	int j;
+	int srcShift, dstShift;
+
+	// Find kernel delta matrix
+	memset(layerRef[layerIndex].conv.kernel.grad, 0, sizeof(float) *
+			layerRef[layerIndex].conv.kernel.rows *
+			layerRef[layerIndex].conv.kernel.cols);
+
+	for(j = 0; j < cfgRef->batch; j++)
+	{
+		srcShift = j * layerRef[layerIndex].outMat.data.cols;
+		dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+
+		cnn_conv_2d_kernel_grad((&layerRef[layerIndex].outMat.data.grad[srcShift]),
+				layerRef[layerIndex].outMat.height,
+				layerRef[layerIndex].outMat.width,
+				layerRef[layerIndex].conv.kernel.grad,
+				layerRef[layerIndex].conv.kernel.cols,
+				layerRef[layerIndex].conv.inChannel,
+				(&layerRef[layerIndex - 1].outMat.data.mat[dstShift]),
+				layerRef[layerIndex - 1].outMat.height,
+				layerRef[layerIndex - 1].outMat.width);
+	}
+
+	// Find bias delta matrix
+	memset(layerRef[layerIndex].conv.bias.grad, 0, sizeof(float) *
+			layerRef[layerIndex].conv.bias.cols);
+
+	for(j = 0; j < cfgRef->batch; j++)
+	{
+		srcShift = j * layerRef[layerIndex].outMat.data.cols;
+		cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
+				&layerRef[layerIndex].outMat.data.grad[srcShift],
+				1, layerRef[layerIndex].conv.bias.grad, 1);
+	}
+
+	// Find layer gradient
+	if(layerIndex > 1)
+	{
+		memset(layerRef[layerIndex - 1].outMat.data.grad, 0, sizeof(float) *
+				layerRef[layerIndex - 1].outMat.data.rows *
+				layerRef[layerIndex - 1].outMat.data.cols);
+
+		for(j = 0; j < cfgRef->batch; j++)
+		{
+			srcShift = j * layerRef[layerIndex].outMat.data.cols;
+			dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+
+			cnn_conv_2d_grad((&layerRef[layerIndex - 1].outMat.data.grad[dstShift]),
+					layerRef[layerIndex - 1].outMat.height,
+					layerRef[layerIndex - 1].outMat.width,
+					layerRef[layerIndex].conv.kernel.mat,
+					layerRef[layerIndex].conv.kernel.cols,
+					layerRef[layerIndex].conv.inChannel,
+					(&layerRef[layerIndex].outMat.data.grad[srcShift]),
+					layerRef[layerIndex].outMat.height,
+					layerRef[layerIndex].outMat.width);
+		}
+	}
+
+	// Update kernel
+	cblas_saxpy(layerRef[layerIndex].conv.kernel.cols *
+			layerRef[layerIndex].conv.kernel.rows, lRate,
+			layerRef[layerIndex].conv.kernel.grad, 1,
+			layerRef[layerIndex].conv.kernel.mat, 1);
+
+	// Update bias
+	cblas_saxpy(layerRef[layerIndex].conv.bias.cols, lRate,
+			layerRef[layerIndex].conv.bias.grad, 1,
+			layerRef[layerIndex].conv.bias.mat, 1);
+}
+
+inline void cnn_bp_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
+		float lRate)
+{
+	int srcShift, dstShift;
+	float* srcPtr;
+
+	if(layerIndex > 1)
+	{
+		// Zero layer gradient
+		memset(layerRef[layerIndex - 1].outMat.data.grad, 0, sizeof(float) *
+				layerRef[layerIndex - 1].outMat.data.rows *
+				layerRef[layerIndex - 1].outMat.data.cols);
+
+		for(int j = 0; j < cfgRef->batch; j++)
+		{
+			srcShift = j * layerRef[layerIndex].outMat.data.cols;
+			dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+
+			srcPtr = &layerRef[layerIndex].outMat.data.grad[srcShift];
+
+			// Find layer gradient
+			cnn_pool_2d_max_grad((&layerRef[layerIndex - 1].outMat.data.grad[dstShift]),
+					(&layerRef[layerIndex].pool.indexMat[srcShift]),
+					srcPtr, layerRef[layerIndex].outMat.height,
+					layerRef[layerIndex].outMat.width);
+		}
 	}
 }
 
