@@ -167,11 +167,18 @@ inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 		float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
 		float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
 
-		cnn_conv_2d(dstPtr, layerRef[layerIndex].outMat.height, layerRef[layerIndex].outMat.width,
+		// Convolution
+		cnn_conv_2d(dstPtr,
+				layerRef[layerIndex].outMat.height, layerRef[layerIndex].outMat.width,
 				layerRef[layerIndex].conv.kernel.mat, cfgRef->layerCfg[layerIndex].conv.size,
 				layerRef[layerIndex].conv.inChannel,
 				srcPtr, layerRef[layerIndex - 1].outMat.height,
 				layerRef[layerIndex - 1].outMat.width);
+
+		// Add bias
+		cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
+				layerRef[layerIndex].conv.bias.mat, 1,
+				&layerRef[layerIndex].outMat.data.mat[dstShift], 1);
 	}
 }
 
