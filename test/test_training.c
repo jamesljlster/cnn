@@ -10,8 +10,8 @@
 
 #define KERNEL_SIZE 3
 
-#define BATCH 10
-#define ITER 10000
+#define BATCH 7
+#define ITER 50000
 #define L_RATE 0.001
 
 struct DATASET
@@ -100,17 +100,20 @@ int main(int argc, char* argv[])
 
 	// Set config
 	test(cnn_config_create(&cfg));
-	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight));
+	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight, 1));
 	test(cnn_config_set_batch_size(cfg, BATCH));
-	test(cnn_config_set_layers(cfg, 8));
+	test(cnn_config_set_layers(cfg, 10));
 
-	test(cnn_config_set_convolution(cfg, 1, 2, 3));
-	test(cnn_config_set_activation(cfg, 2, CNN_RELU));
-	test(cnn_config_set_convolution(cfg, 3, 2, 3));
-	test(cnn_config_set_activation(cfg, 4, CNN_RELU));
-	test(cnn_config_set_full_connect(cfg, 5, 16));
-	test(cnn_config_set_full_connect(cfg, 6, labelCols));
-	test(cnn_config_set_activation(cfg, 7, CNN_SOFTMAX));
+	i = 1;
+	test(cnn_config_set_convolution (cfg, i++, 2, 3));
+	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
+	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
+	test(cnn_config_set_convolution (cfg, i++, 2, 3));
+	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
+	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
+	test(cnn_config_set_full_connect(cfg, i++, 16));
+	test(cnn_config_set_full_connect(cfg, i++, labelCols));
+	test(cnn_config_set_activation  (cfg, i++, CNN_SOFTMAX));
 
 	// Create cnn
 	test(cnn_create(&cnn, cfg));

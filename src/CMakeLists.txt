@@ -34,6 +34,7 @@ file(GLOB PROJECT_SRCS
 add_library(${PROJECT_NAME} STATIC ${PROJECT_SRCS})
 set_target_properties(${PROJECT_NAME}
 	PROPERTIES
+	C_STANDARD 99
 	OUTPUT_NAME			${PROJECT_NAME}
 		PREFIX			"lib"
 	)

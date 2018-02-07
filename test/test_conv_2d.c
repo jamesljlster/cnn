@@ -47,7 +47,7 @@ int main()
 		src[i] = i;
 	}
 
-	cnn_conv_2d(dst, DST_HEIGHT, DST_WIDTH, kernel, KERNEL_SIZE, src, IMG_HEIGHT, IMG_WIDTH);
+	cnn_conv_2d(dst, DST_HEIGHT, DST_WIDTH, kernel, KERNEL_SIZE, 1, src, IMG_HEIGHT, IMG_WIDTH);
 
 	printf("kernel:\n");
 	print_img(kernel, KERNEL_SIZE, KERNEL_SIZE);

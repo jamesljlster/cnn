@@ -9,27 +9,33 @@ enum CNN_RETVAL
 	CNN_INVALID_SHAPE = -4
 };
 
-enum CNN_LAYER_TYPE
+typedef enum CNN_LAYER_TYPE
 {
 	CNN_LAYER_INPUT = 0,
 	CNN_LAYER_FC = 1,
 	CNN_LAYER_AFUNC = 2,
 	CNN_LAYER_CONV = 3,
 	CNN_LAYER_POOL = 4
-};
+} cnn_layer_t;
 
-enum CNN_POOL_TYPE
+typedef enum CNN_POOL_TYPE
 {
 	CNN_POOL_MAX = 0,
 	CNN_POOL_AVG = 1
-};
+} cnn_pool_t;
 
-enum CNN_ACTIVATION_FUNC
+typedef enum CNN_DIM_TYPE
+{
+	CNN_DIM_1D = 1,
+	CNN_DIM_2D = 2
+} cnn_dim_t;
+
+typedef enum CNN_ACTIVATION_FUNC
 {
 	CNN_SOFTMAX = 0,
 	CNN_RELU = 1,
 	CNN_SWISH = 2
-};
+} cnn_afunc_t;
 
 typedef struct CNN* cnn_t;
 typedef struct CNN_CONFIG* cnn_config_t;
@@ -42,13 +48,14 @@ int cnn_config_create(cnn_config_t* cfgPtr);
 int cnn_config_clone(cnn_config_t* dstPtr, const cnn_config_t src);
 void cnn_config_delete(cnn_config_t cfg);
 
-int cnn_config_set_input_size(cnn_config_t cfg, int width, int height);
+int cnn_config_set_input_size(cnn_config_t cfg, int width, int height, int channel);
 int cnn_config_set_batch_size(cnn_config_t cfg, int batchSize);
 int cnn_config_set_layers(cnn_config_t cfg, int layers);
 int cnn_config_set_full_connect(cnn_config_t cfg, int layerIndex, int size);
-int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, int aFuncID);
-int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, int convDim, int size);
-int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, int dim, int type, int size);
+int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFuncID);
+int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim, int size);
+int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_pool_t type,
+		int size);
 
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
 void cnn_delete(cnn_t cnn);
