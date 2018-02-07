@@ -244,7 +244,7 @@ RET:
 	return ret;
 }
 
-int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, int aFuncID)
+int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFuncID)
 {
 	int ret = CNN_NO_ERROR;
 
@@ -263,7 +263,7 @@ RET:
 	return ret;
 }
 
-int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, int convDim, int size)
+int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim, int size)
 {
 	int ret = CNN_NO_ERROR;
 
@@ -285,7 +285,8 @@ RET:
 	return ret;
 }
 
-int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, int dim, int type, int size)
+int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_pool_t type,
+		int size)
 {
 	int ret = CNN_NO_ERROR;
 
