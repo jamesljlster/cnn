@@ -15,7 +15,14 @@ if(NOT OpenBLAS_INCLUDE_DIR OR NOT OpenBLAS_LIB)
 	message(FATAL "Failed to find OpenBlas")
 endif()
 
-include_directories(${DEPS_PATHS} ${OpenBLAS_INCLUDE_DIR})
+# Find libxml2
+find_package(LibXml2 REQUIRED)
+
+# Include directories
+include_directories(${DEPS_PATHS}
+	${OpenBLAS_INCLUDE_DIR}
+	${LIBXML2_INCLUDE_DIR}
+	)
 
 # Find check
 #if(BUILD_TEST)
