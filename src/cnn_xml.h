@@ -12,6 +12,7 @@
 	{ \
 		fprintf(stderr, "%s(), %d: %s failed with error: %d\n", __FUNCTION__, __LINE__, \
 			#func, retVal); \
+		ret = CNN_FILE_OP_FAILED; \
 		goto errLabel; \
 	}
 #else
@@ -19,6 +20,7 @@
 	retVal = func; \
 	if(retVal < 0) \
 	{ \
+		ret = CNN_FILE_OP_FAILED; \
 		goto errLabel; \
 	}
 #endif
