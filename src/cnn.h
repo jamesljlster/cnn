@@ -7,7 +7,8 @@ enum CNN_RETVAL
 	CNN_MEM_FAILED = -1,
 	CNN_INVALID_ARG = -3,
 	CNN_INVALID_SHAPE = -4,
-	CNN_PARSE_FAILED = -5
+	CNN_FILE_OP_FAILED = -5,
+	CNN_PARSE_FAILED = -6,
 };
 
 typedef enum CNN_LAYER_TYPE
@@ -57,6 +58,8 @@ int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFun
 int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim, int size);
 int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_pool_t type,
 		int size);
+
+int cnn_config_export(cnn_config_t cfg, const char* fPath);
 
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
 void cnn_delete(cnn_t cnn);

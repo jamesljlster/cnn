@@ -1,11 +1,9 @@
 #ifndef __CNN_PARSE_H__
 #define __CNN_PARSE_H__
 
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
-
 #include "cnn.h"
 #include "cnn_private.h"
+#include "cnn_xml.h"
 
 #ifdef __cplusplus
 extern "C" {

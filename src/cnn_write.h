@@ -1,10 +1,9 @@
 #ifndef __CNN_WRITE_H__
 #define __CNN_WRITE_H__
 
-#include <libxml/xmlwriter.h>
-
 #include "cnn.h"
 #include "cnn_private.h"
+#include "cnn_xml.h"
 
 #ifdef __cplusplus
 extern "C" {
