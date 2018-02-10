@@ -26,15 +26,15 @@ int cnn_export_root(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef, const 
 int cnn_write_config_xml(struct CNN_CONFIG* cfgRef, xmlTextWriterPtr writer);
 int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 		xmlTextWriterPtr writer);
-int cnn_write_layer_input_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
-		xmlTextWriterPtr writer);
+
+int cnn_write_layer_input_xml(xmlTextWriterPtr writer);
 int cnn_write_layer_fc_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
-		xmlTextWriterPtr writer);
-int cnn_write_layer_afunc_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
+		int layerIndex, xmlTextWriterPtr writer);
+int cnn_write_layer_afunc_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
 		xmlTextWriterPtr writer);
 int cnn_write_layer_conv_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
-		xmlTextWriterPtr writer);
-int cnn_write_layer_pool_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
+		int layerIndex, xmlTextWriterPtr writer);
+int cnn_write_layer_pool_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
 		xmlTextWriterPtr writer);
 
 #ifdef __cplusplus

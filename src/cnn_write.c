@@ -57,6 +57,130 @@ RET:
 	return ret;
 }
 
+int cnn_write_layer_input_xml(xmlTextWriterPtr writer)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Write layer type
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_TYPE],
+				(xmlChar*)cnn_str_list[CNN_STR_INPUT]), ret, RET);
+
+RET:
+	return ret;
+}
+
+int cnn_write_layer_fc_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
+		int layerIndex, xmlTextWriterPtr writer)
+{
+	int ret = CNN_NO_ERROR;
+	char buf[CNN_XML_BUFLEN] = {0};
+
+	// Write layer type
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer,
+				(xmlChar*)cnn_str_list[CNN_STR_TYPE],
+				(xmlChar*)cnn_str_list[CNN_STR_FC]),
+			ret, RET);
+
+	// Write size
+	cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].fc.size);
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer,
+				(xmlChar*)cnn_str_list[CNN_STR_SIZE],
+				(xmlChar*)buf),
+			ret, RET);
+
+RET:
+	return ret;
+}
+
+int cnn_write_layer_afunc_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
+		xmlTextWriterPtr writer)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Write layer type
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_TYPE],
+				(xmlChar*)cnn_str_list[CNN_STR_AFUNC]),
+			ret, RET);
+
+	// Write activation function id
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_ID],
+				(xmlChar*)cnn_afunc_name[cfgRef->layerCfg[layerIndex].aFunc.id]),
+			ret, RET);
+
+RET:
+	return ret;
+}
+
+int cnn_write_layer_conv_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
+		int layerIndex, xmlTextWriterPtr writer)
+{
+	int ret = CNN_NO_ERROR;
+	char buf[CNN_XML_BUFLEN] = {0};
+
+	// Write layer type
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_TYPE],
+				(xmlChar*)cnn_str_list[CNN_STR_CONV]),
+			ret, RET);
+
+	// Write dimension
+	cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].conv.dim);
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_DIM],
+				(xmlChar*)buf),
+			ret, RET);
+
+	// Write size
+	cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].conv.size);
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_SIZE],
+				(xmlChar*)buf),
+			ret, RET);
+
+RET:
+	return ret;
+}
+
+int cnn_write_layer_pool_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
+		xmlTextWriterPtr writer)
+{
+	int ret = CNN_NO_ERROR;
+	char buf[CNN_XML_BUFLEN] = {0};
+
+	// Write layer type
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_TYPE],
+				(xmlChar*)cnn_str_list[CNN_STR_POOL]),
+			ret, RET);
+
+	// Write pooling type
+	switch(cfgRef->layerCfg[layerIndex].pool.poolType)
+	{
+		case CNN_POOL_MAX:
+			cnn_xml_run(xmlTextWriterWriteAttribute(writer,
+						(xmlChar*)cnn_str_list[CNN_STR_POOL_TYPE],
+						(xmlChar*)cnn_str_list[CNN_STR_MAX]),
+					ret, RET);
+			break;
+
+		case CNN_POOL_AVG:
+			cnn_xml_run(xmlTextWriterWriteAttribute(writer,
+						(xmlChar*)cnn_str_list[CNN_STR_POOL_TYPE],
+						(xmlChar*)cnn_str_list[CNN_STR_MIN]),
+					ret, RET);
+			break;
+
+		default:
+			assert(!"Invalid pooling type");
+	}
+
+	// Write size
+	cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].pool.size);
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer,
+				(xmlChar*)cnn_str_list[CNN_STR_SIZE],
+				(xmlChar*)buf),
+			ret, RET);
+
+RET:
+	return ret;
+}
+
 int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 		xmlTextWriterPtr writer)
 {
@@ -83,8 +207,7 @@ int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 
 		// Write layer index
 		cnn_itostr(buf, CNN_XML_BUFLEN, i);
-		cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-					(xmlChar*)cnn_str_list[CNN_STR_INDEX],
+		cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_INDEX],
 					(xmlChar*)buf),
 				ret, RET);
 
@@ -92,102 +215,23 @@ int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 		switch(cfgRef->layerCfg[i].type)
 		{
 			case CNN_LAYER_INPUT:
-				// Write layer type
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_TYPE],
-							(xmlChar*)cnn_str_list[CNN_STR_INPUT]),
-						ret, RET);
+				cnn_run(cnn_write_layer_input_xml(writer), ret, RET);
 				break;
 
 			case CNN_LAYER_FC:
-				// Write layer type
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_TYPE],
-							(xmlChar*)cnn_str_list[CNN_STR_FC]),
-						ret, RET);
-
-				// Write size
-				cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[i].fc.size);
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_SIZE],
-							(xmlChar*)buf),
-						ret, RET);
-
+				cnn_run(cnn_write_layer_fc_xml(cfgRef, layerRef, i, writer), ret, RET);
 				break;
 
 			case CNN_LAYER_AFUNC:
-				// Write layer type
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_TYPE],
-							(xmlChar*)cnn_str_list[CNN_STR_AFUNC]),
-						ret, RET);
-
-				// Write activation function id
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_ID],
-							(xmlChar*)cnn_afunc_name[cfgRef->layerCfg[i].aFunc.id]),
-						ret, RET);
-
+				cnn_run(cnn_write_layer_afunc_xml(cfgRef, i, writer), ret, RET);
 				break;
 
 			case CNN_LAYER_CONV:
-				// Write layer type
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_TYPE],
-							(xmlChar*)cnn_str_list[CNN_STR_CONV]),
-						ret, RET);
-
-				// Write dimension
-				cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[i].conv.dim);
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_DIM],
-							(xmlChar*)buf),
-						ret, RET);
-
-				// Write size
-				cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[i].conv.size);
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_SIZE],
-							(xmlChar*)buf),
-						ret, RET);
-
+				cnn_run(cnn_write_layer_conv_xml(cfgRef, layerRef, i, writer), ret, RET);
 				break;
 
 			case CNN_LAYER_POOL:
-				// Write layer type
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_TYPE],
-							(xmlChar*)cnn_str_list[CNN_STR_POOL]),
-						ret, RET);
-
-				// Write pooling type
-				switch(cfgRef->layerCfg[i].pool.poolType)
-				{
-					case CNN_POOL_MAX:
-						cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-									(xmlChar*)cnn_str_list[CNN_STR_POOL_TYPE],
-									(xmlChar*)cnn_str_list[CNN_STR_MAX]),
-								ret, RET);
-						break;
-
-					case CNN_POOL_AVG:
-						cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-									(xmlChar*)cnn_str_list[CNN_STR_POOL_TYPE],
-									(xmlChar*)cnn_str_list[CNN_STR_MIN]),
-								ret, RET);
-						break;
-
-					default:
-						assert(!"Invalid pooling type");
-				}
-
-				// Write size
-				cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[i].pool.size);
-				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_SIZE],
-							(xmlChar*)buf),
-						ret, RET);
-
+				cnn_run(cnn_write_layer_pool_xml(cfgRef, i, writer), ret, RET);
 				break;
 
 			default:
