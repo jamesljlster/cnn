@@ -9,6 +9,7 @@ const char* cnn_str_list[] = {
 	"cnn_model",
 	"arch",
 	"layer",
+	"index",
 	"type",
 	"dim",
 	"size",
@@ -23,7 +24,7 @@ const char* cnn_str_list[] = {
 	"activ",
 	"conv",
 	"pool",
-	"name",
+	"id",
 	"pool_type",
 	"max",
 	"min"

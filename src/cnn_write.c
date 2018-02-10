@@ -87,11 +87,25 @@ int cnn_write_config_xml(struct CNN_CONFIG* cfgRef, xmlTextWriterPtr writer)
 	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_ARCH]),
 				ret, RET);
 
+	// Write size (layers)
+	cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layers);
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer,
+				(xmlChar*)cnn_str_list[CNN_STR_SIZE],
+				(xmlChar*)buf),
+			ret, RET);
+
 	// Write network architecture
 	for(int i = 0; i < cfgRef->layers; i++)
 	{
 		// Start layer node
 		cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_LAYER]),
+				ret, RET);
+
+		// Write layer index
+		cnn_itostr(buf, CNN_XML_BUFLEN, i);
+		cnn_xml_run(xmlTextWriterWriteAttribute(writer,
+					(xmlChar*)cnn_str_list[CNN_STR_INDEX],
+					(xmlChar*)buf),
 				ret, RET);
 
 		// Write layer attribute
@@ -130,7 +144,7 @@ int cnn_write_config_xml(struct CNN_CONFIG* cfgRef, xmlTextWriterPtr writer)
 
 				// Write activation function id
 				cnn_xml_run(xmlTextWriterWriteAttribute(writer,
-							(xmlChar*)cnn_str_list[CNN_STR_NAME],
+							(xmlChar*)cnn_str_list[CNN_STR_ID],
 							(xmlChar*)cnn_afunc_name[cfgRef->layerCfg[i].aFunc.id]),
 						ret, RET);
 

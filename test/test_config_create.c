@@ -4,7 +4,7 @@
 #include <cnn_private.h>
 #include <cnn_types.h>
 
-#define CFG_PATH "test_config_create.cfg"
+#define CFG_PATH "test.xml"
 
 void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 {
