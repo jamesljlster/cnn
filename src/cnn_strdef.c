@@ -6,7 +6,19 @@
 
 const char* cnn_str_list[] = {
 	"config",
-	"cnn_model"
+	"cnn_model",
+	"arch",
+	"layer",
+	"type",
+	"dim",
+	"size",
+	"channel",
+	"batch",
+	"learning_rate",
+	"value",
+	"input",
+	"width",
+	"height",
 };
 
 int cnn_strdef_get_id(const char* str)

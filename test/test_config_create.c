@@ -4,6 +4,8 @@
 #include <cnn_private.h>
 #include <cnn_types.h>
 
+#define CFG_PATH "test_config_create.cfg"
+
 void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 {
 	printf("Layer %d config:\n", layerIndex);
@@ -71,6 +73,13 @@ int main()
 	for(i = 0; i < cfg->layers; i++)
 	{
 		check_cnn_layer_config(cfg, i);
+	}
+
+	// Export config
+	ret = cnn_config_export(cfg, CFG_PATH);
+	if(ret != CNN_NO_ERROR)
+	{
+		printf("cnn_config_export() failed with error: %d\n", ret);
 	}
 
 	// Cleanup

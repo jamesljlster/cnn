@@ -1,6 +1,8 @@
 #ifndef __CNN_XML_H__
 #define __CNN_XML_H__
 
+#include <assert.h>
+
 #include <libxml/xmlwriter.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
@@ -14,6 +16,10 @@
 			#func, retVal); \
 		ret = CNN_FILE_OP_FAILED; \
 		goto errLabel; \
+	} \
+	else \
+	{ \
+		retVal = CNN_NO_ERROR; \
 	}
 #else
 #define cnn_xml_run(func, retVal, errLabel) \
@@ -22,7 +28,13 @@
 	{ \
 		ret = CNN_FILE_OP_FAILED; \
 		goto errLabel; \
+	} \
+	else \
+	{ \
+		retVal = CNN_NO_ERROR; \
 	}
 #endif
+
+#define CNN_XML_BUFLEN 64
 
 #endif
