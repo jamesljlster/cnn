@@ -19,6 +19,8 @@ int cnn_config_export(cnn_config_t cfg, const char* fPath)
 	}
 
 	cnn_xml_run(xmlTextWriterSetIndent(xmlWriter, 1), ret, RET);
+	cnn_xml_run(xmlTextWriterStartDocument(xmlWriter, CNN_XML_VER_STR, CNN_XML_ENC_STR, NULL),
+			ret, RET);
 
 	// Write root
 	cnn_xml_run(xmlTextWriterStartElement(xmlWriter, (xmlChar*)cnn_str_list[CNN_STR_MODEL]),
@@ -29,6 +31,7 @@ int cnn_config_export(cnn_config_t cfg, const char* fPath)
 
 	// End root
 	cnn_xml_run(xmlTextWriterEndElement(xmlWriter), ret, RET);
+	cnn_xml_run(xmlTextWriterEndDocument(xmlWriter), ret, RET);
 
 RET:
 	if(xmlWriter != NULL)

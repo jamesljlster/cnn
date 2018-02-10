@@ -37,4 +37,7 @@
 
 #define CNN_XML_BUFLEN 64
 
+#define CNN_XML_VER_STR "1.0"
+#define CNN_XML_ENC_STR "utf-8"
+
 #endif
