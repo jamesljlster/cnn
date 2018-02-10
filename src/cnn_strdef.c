@@ -7,7 +7,7 @@
 const char* cnn_str_list[] = {
 	"config",
 	"cnn_model",
-	"arch",
+	"network",
 	"layer",
 	"index",
 	"type",
