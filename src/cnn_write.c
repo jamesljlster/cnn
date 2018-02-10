@@ -9,28 +9,10 @@ int cnn_config_export(cnn_config_t cfg, const char* fPath)
 	return cnn_export_root(cfg, NULL, fPath);
 }
 
-int cnn_export_root(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef, const char* fPath)
+int cnn_write_config_xml(struct CNN_CONFIG* cfgRef, xmlTextWriterPtr writer)
 {
 	int ret = CNN_NO_ERROR;
 	char buf[CNN_XML_BUFLEN] = {0};
-
-	xmlTextWriterPtr writer = NULL;
-
-	// Create xml writer
-	writer = xmlNewTextWriterFilename(fPath, 0);
-	if(writer == NULL)
-	{
-		ret = CNN_FILE_OP_FAILED;
-		goto RET;
-	}
-
-	cnn_xml_run(xmlTextWriterSetIndent(writer, 1), ret, RET);
-	cnn_xml_run(xmlTextWriterStartDocument(writer, CNN_XML_VER_STR, CNN_XML_ENC_STR, NULL),
-			ret, RET);
-
-	// Write root
-	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_MODEL]),
-			ret, RET);
 
 	// Start config node
 	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_CONFIG]),
@@ -70,6 +52,16 @@ int cnn_export_root(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef, const 
 
 	// End config node
 	cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
+
+RET:
+	return ret;
+}
+
+int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
+		xmlTextWriterPtr writer)
+{
+	int ret = CNN_NO_ERROR;
+	char buf[CNN_XML_BUFLEN] = {0};
 
 	// Start network node
 	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_NETWORK]),
@@ -208,6 +200,38 @@ int cnn_export_root(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef, const 
 
 	// End network node
 	cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
+
+RET:
+	return ret;
+}
+
+int cnn_export_root(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef, const char* fPath)
+{
+	int ret = CNN_NO_ERROR;
+
+	xmlTextWriterPtr writer = NULL;
+
+	// Create xml writer
+	writer = xmlNewTextWriterFilename(fPath, 0);
+	if(writer == NULL)
+	{
+		ret = CNN_FILE_OP_FAILED;
+		goto RET;
+	}
+
+	cnn_xml_run(xmlTextWriterSetIndent(writer, 1), ret, RET);
+	cnn_xml_run(xmlTextWriterStartDocument(writer, CNN_XML_VER_STR, CNN_XML_ENC_STR, NULL),
+			ret, RET);
+
+	// Write root
+	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_MODEL]),
+			ret, RET);
+
+	// Write config
+	cnn_run(cnn_write_config_xml(cfgRef, writer), ret, RET);
+
+	// Write netowrk
+	cnn_run(cnn_write_network_xml(cfgRef, layerRef, writer), ret, RET);
 
 	// End root
 	cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
