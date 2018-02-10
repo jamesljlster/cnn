@@ -21,7 +21,7 @@ inline void cnn_itostr(char* buf, int bufSize, int val)
 extern "C" {
 #endif
 
-int cnn_write_config_xml(struct CNN_CONFIG* cfgRef, xmlTextWriterPtr writer);
+int cnn_export_root(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef, const char* fPath);
 
 #ifdef __cplusplus
 }

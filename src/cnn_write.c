@@ -6,46 +6,31 @@
 
 int cnn_config_export(cnn_config_t cfg, const char* fPath)
 {
-	int ret = CNN_NO_ERROR;
+	return cnn_export_root(cfg, NULL, fPath);
+}
 
-	xmlTextWriterPtr xmlWriter = NULL;
+int cnn_export_root(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef, const char* fPath)
+{
+	int ret = CNN_NO_ERROR;
+	char buf[CNN_XML_BUFLEN] = {0};
+
+	xmlTextWriterPtr writer = NULL;
 
 	// Create xml writer
-	xmlWriter = xmlNewTextWriterFilename(fPath, 0);
-	if(xmlWriter == NULL)
+	writer = xmlNewTextWriterFilename(fPath, 0);
+	if(writer == NULL)
 	{
 		ret = CNN_FILE_OP_FAILED;
 		goto RET;
 	}
 
-	cnn_xml_run(xmlTextWriterSetIndent(xmlWriter, 1), ret, RET);
-	cnn_xml_run(xmlTextWriterStartDocument(xmlWriter, CNN_XML_VER_STR, CNN_XML_ENC_STR, NULL),
+	cnn_xml_run(xmlTextWriterSetIndent(writer, 1), ret, RET);
+	cnn_xml_run(xmlTextWriterStartDocument(writer, CNN_XML_VER_STR, CNN_XML_ENC_STR, NULL),
 			ret, RET);
 
 	// Write root
-	cnn_xml_run(xmlTextWriterStartElement(xmlWriter, (xmlChar*)cnn_str_list[CNN_STR_MODEL]),
+	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_MODEL]),
 			ret, RET);
-
-	// Write config
-	cnn_run(cnn_write_config_xml(cfg, xmlWriter), ret, RET);
-
-	// End root
-	cnn_xml_run(xmlTextWriterEndElement(xmlWriter), ret, RET);
-	cnn_xml_run(xmlTextWriterEndDocument(xmlWriter), ret, RET);
-
-RET:
-	if(xmlWriter != NULL)
-	{
-		xmlFreeTextWriter(xmlWriter);
-	}
-
-	return ret;
-}
-
-int cnn_write_config_xml(struct CNN_CONFIG* cfgRef, xmlTextWriterPtr writer)
-{
-	int ret = CNN_NO_ERROR;
-	char buf[CNN_XML_BUFLEN] = {0};
 
 	// Start config node
 	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_CONFIG]),
@@ -83,8 +68,11 @@ int cnn_write_config_xml(struct CNN_CONFIG* cfgRef, xmlTextWriterPtr writer)
 	cnn_xml_run(xmlTextWriterWriteElement(writer, (xmlChar*)cnn_str_list[CNN_STR_LRATE],
 				(xmlChar*)buf), ret, RET);
 
-	// Start arch node
-	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_ARCH]),
+	// End config node
+	cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
+
+	// Start network node
+	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_NETWORK]),
 				ret, RET);
 
 	// Write size (layers)
@@ -218,13 +206,19 @@ int cnn_write_config_xml(struct CNN_CONFIG* cfgRef, xmlTextWriterPtr writer)
 		cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
 	}
 
-	// End arch node
+	// End network node
 	cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
 
-	// End config node
+	// End root
 	cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
+	cnn_xml_run(xmlTextWriterEndDocument(writer), ret, RET);
 
 RET:
+	if(writer != NULL)
+	{
+		xmlFreeTextWriter(writer);
+	}
+
 	return ret;
 }
 
