@@ -8,7 +8,12 @@
 inline int cnn_strtoi(int* valPtr, const char* str)
 {
 	char* __ptr;
-	int __tmp = strtol(str, &__ptr, 10);
+	int __tmp;
+	if(str == NULL)
+	{
+		return CNN_INFO_NOT_FOUND;
+	}
+	__tmp = strtol(str, &__ptr, 10);
 	if(__ptr == str)
 	{
 		return CNN_PARSE_FAILED;
@@ -23,7 +28,12 @@ inline int cnn_strtoi(int* valPtr, const char* str)
 inline int cnn_strtof(float* valPtr, const char* str)
 {
 	char* __ptr;
-	float __tmp = strtod(str, &__ptr);
+	float __tmp;
+	if(str == NULL)
+	{
+		return CNN_INFO_NOT_FOUND;
+	}
+	__tmp = strtod(str, &__ptr);
 	if(__ptr == str)
 	{
 		return CNN_PARSE_FAILED;
@@ -39,7 +49,14 @@ inline int cnn_strtof(float* valPtr, const char* str)
 extern "C" {
 #endif
 
-int cnn_parse_config_xml(struct CNN_CONFIG* cfgRef, xmlNodePtr node);
+int cnn_import_root(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr, const char* fPath);
+
+int cnn_parse_config_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node);
+int cnn_parse_config_input_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node);
+
+int cnn_parse_network_xml(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr,
+		xmlNodePtr node);
+
 int cnn_parse_config_afunc_xml(struct CNN_CONFIG* cfgRef, xmlNodePtr node);
 int cnn_parse_config_layer_xml(struct CNN_CONFIG* cfgRef, xmlNodePtr node);
 
