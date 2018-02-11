@@ -4,6 +4,11 @@
 #include "cnn_write.h"
 #include "cnn_strdef.h"
 
+int cnn_export(cnn_t cnn, const char* fPath)
+{
+	return cnn_export_root(&cnn->cfg, cnn->layerList, fPath);
+}
+
 int cnn_config_export(cnn_config_t cfg, const char* fPath)
 {
 	return cnn_export_root(cfg, NULL, fPath);
@@ -88,6 +93,20 @@ int cnn_write_layer_fc_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 				(xmlChar*)buf),
 			ret, RET);
 
+	// Write network detail
+	if(layerRef != NULL)
+	{
+		// Write weight
+		cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].fc.weight,
+					cnn_str_list[CNN_STR_WEIGHT], writer),
+				ret, RET);
+
+		// Write bias
+		cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].fc.bias,
+					cnn_str_list[CNN_STR_BIAS], writer),
+				ret, RET);
+	}
+
 RET:
 	return ret;
 }
@@ -133,6 +152,55 @@ int cnn_write_layer_conv_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRe
 	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_SIZE],
 				(xmlChar*)buf),
 			ret, RET);
+
+	// Write network detail
+	if(layerRef != NULL)
+	{
+		// Write kernel
+		cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].conv.kernel,
+					cnn_str_list[CNN_STR_KERNEL], writer),
+				ret, RET);
+
+		// Write bias
+		cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].conv.bias,
+					cnn_str_list[CNN_STR_BIAS], writer),
+				ret, RET);
+	}
+
+RET:
+	return ret;
+}
+
+int cnn_write_mat_xml(struct CNN_MAT* matPtr, const char* nodeName, xmlTextWriterPtr writer)
+{
+	int i;
+	int ret = CNN_NO_ERROR;
+	char buf[CNN_XML_BUFLEN] = {0};
+
+	// Start node
+	cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)nodeName), ret, RET);
+
+	for(i = 0; i < matPtr->rows * matPtr->cols; i++)
+	{
+		// Start value node
+		cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)nodeName), ret, RET);
+
+		// Write index
+		cnn_itostr(buf, CNN_XML_BUFLEN, i);
+		cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_INDEX],
+					(xmlChar*)buf),
+				ret, RET);
+
+		// Write value
+		cnn_ftostr(buf, CNN_XML_BUFLEN, matPtr->mat[i]);
+		cnn_xml_run(xmlTextWriterWriteString(writer, (xmlChar*)buf), ret, RET);
+
+		// End value node
+		cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
+	}
+
+	// End node
+	cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
 
 RET:
 	return ret;

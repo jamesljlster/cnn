@@ -72,6 +72,8 @@ int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMa
 void cnn_rand_network(cnn_t cnn);
 void cnn_zero_network(cnn_t cnn);
 
+int cnn_export(cnn_t cnn, const char* fPath);
+
 #ifdef __cplusplus
 }
 #endif

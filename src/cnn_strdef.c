@@ -27,7 +27,10 @@ const char* cnn_str_list[] = {
 	"id",
 	"pool_type",
 	"max",
-	"min"
+	"min",
+	"kernel",
+	"bias",
+	"weight"
 };
 
 int cnn_strdef_get_id(const char* str)
