@@ -183,7 +183,8 @@ int cnn_write_mat_xml(struct CNN_MAT* matPtr, const char* nodeName, xmlTextWrite
 	for(i = 0; i < matPtr->rows * matPtr->cols; i++)
 	{
 		// Start value node
-		cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)nodeName), ret, RET);
+		cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)cnn_str_list[CNN_STR_VALUE]),
+				ret, RET);
 
 		// Write index
 		cnn_itostr(buf, CNN_XML_BUFLEN, i);

@@ -11,8 +11,10 @@
 #define KERNEL_SIZE 3
 
 #define BATCH 7
-#define ITER 50000
+#define ITER 10000
 #define L_RATE 0.001
+
+#define MODEL_PATH "test.xml"
 
 struct DATASET
 {
@@ -151,6 +153,9 @@ int main(int argc, char* argv[])
 		printf("Iter %d, mse: %f, accuracy: %.2f %%\n", iter, mse,
 				(float)hit * 100 / (float)(data.instances));
 	}
+
+	// Export
+	test(cnn_export(cnn, MODEL_PATH));
 
 	return 0;
 }
