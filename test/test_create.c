@@ -4,8 +4,9 @@
 #include <cnn_private.h>
 #include <cnn_types.h>
 
-#define INPUT_WIDTH 180
-#define INPUT_HEIGHT 150
+#define INPUT_WIDTH 32
+#define INPUT_HEIGHT 32
+#define BATCH 7
 
 #define print_mat_info(str, matVar) \
 	printf("%s: %dx%d, %p, %p\n", str, matVar.rows, matVar.cols, matVar.mat, matVar.grad)
@@ -22,6 +23,14 @@
 		} \
 	} \
 }
+
+#define test(func) \
+	ret = func; \
+	if(ret < 0) \
+	{ \
+		printf("%s failed with error: %d\n", #func, ret); \
+		return -1; \
+	}
 
 void check_cnn_arch(cnn_t cnn)
 {
@@ -109,6 +118,7 @@ void check_cnn_arch(cnn_t cnn)
 
 int main()
 {
+	int i;
 	int ret;
 	cnn_config_t cfg = NULL;
 	cnn_t cnn = NULL;
@@ -121,16 +131,20 @@ int main()
 	}
 
 	// Set config
-	cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT, 1);
-	cnn_config_set_layers(cfg, 9);
-	cnn_config_set_convolution(cfg, 1, 1, 3);
-	cnn_config_set_activation(cfg, 2, CNN_RELU);
-	cnn_config_set_convolution(cfg, 3, 1, 3);
-	cnn_config_set_activation(cfg, 4, CNN_RELU);
-	cnn_config_set_pooling(cfg, 5, 2, CNN_POOL_MAX, 2);
-	cnn_config_set_full_connect(cfg, 6, 128);
-	cnn_config_set_full_connect(cfg, 7, 2);
-	cnn_config_set_activation(cfg, 8, CNN_SOFTMAX);
+	test(cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT, 1));
+	test(cnn_config_set_batch_size(cfg, BATCH));
+	test(cnn_config_set_layers(cfg, 10));
+
+	i = 1;
+	test(cnn_config_set_convolution (cfg, i++, 2, 3));
+	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
+	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
+	test(cnn_config_set_convolution (cfg, i++, 2, 3));
+	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
+	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
+	test(cnn_config_set_full_connect(cfg, i++, 16));
+	test(cnn_config_set_full_connect(cfg, i++, 2));
+	test(cnn_config_set_activation  (cfg, i++, CNN_SOFTMAX));
 
 	// Create cnn
 	ret = cnn_create(&cnn, cfg);
