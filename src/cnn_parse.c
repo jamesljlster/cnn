@@ -376,8 +376,13 @@ int cnn_import_root(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr, const
 	int ret = CNN_NO_ERROR;
 	int strId;
 
+	struct CNN tmpCnn;
+
 	xmlDocPtr doc = NULL;
 	xmlNodePtr cur, cfg, net;
+
+	// Zero memory
+	memset(&tmpCnn, 0, sizeof(struct CNN));
 
 	// Parse xml
 	doc = xmlParseFile(fPath);
@@ -435,11 +440,29 @@ int cnn_import_root(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr, const
 	// Parse network config
 	cnn_run(cnn_parse_network_xml(cfgPtr, net), ret, RET);
 
+	// Parse network detail
+	if(layerPtr != NULL)
+	{
+		// Allocate network
+		cnn_run(cnn_config_struct_clone(&tmpCnn.cfg, cfgPtr), ret, RET);
+		cnn_run(cnn_network_alloc(&tmpCnn, cfgPtr), ret, RET);
+
+		// Parsing
+		cnn_run(cnn_parse_network_detail_xml(&tmpCnn, net), ret, RET);
+
+		// Assign value
+		*layerPtr = tmpCnn.layerList;
+		tmpCnn.layerList = NULL;
+	}
+
 RET:
 	if(doc != NULL)
 	{
 		xmlFreeDoc(doc);
 	}
 
+	cnn_struct_delete(&tmpCnn);
+
 	return ret;
 }
+
