@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include "cnn_parse.h"
 #include "cnn_strdef.h"
 #include "cnn_builtin_math.h"
 
-int cnn_parse_network_xml(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr,
-		xmlNodePtr node)
+int cnn_parse_network_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 {
 	int ret = CNN_NO_ERROR;
 	int strId;
@@ -51,7 +51,7 @@ int cnn_parse_network_xml(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr,
 		switch(strId)
 		{
 			case CNN_STR_LAYER:
-				cnn_run(cnn_parse_network_layer_xml(cfgPtr, layerPtr, cur), ret, RET);
+				cnn_run(cnn_parse_network_layer_xml(cfgPtr, cur), ret, RET);
 				break;
 		}
 
@@ -62,8 +62,7 @@ RET:
 	return ret;
 }
 
-int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr,
-		xmlNodePtr node)
+int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 {
 	int ret = CNN_NO_ERROR;
 	int tmpType, tmpIndex;
@@ -433,8 +432,8 @@ int cnn_import_root(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr, const
 	// Parse config
 	cnn_run(cnn_parse_config_xml(cfgPtr, cfg), ret, RET);
 
-	// Parse network
-	cnn_run(cnn_parse_network_xml(cfgPtr, layerPtr, net), ret, RET);
+	// Parse network config
+	cnn_run(cnn_parse_network_xml(cfgPtr, net), ret, RET);
 
 RET:
 	if(doc != NULL)
