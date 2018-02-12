@@ -27,7 +27,7 @@ const char* cnn_str_list[] = {
 	"id",
 	"pool_type",
 	"max",
-	"min",
+	"avg",
 	"kernel",
 	"bias",
 	"weight",
@@ -40,13 +40,16 @@ int cnn_strdef_get_id(const char* str)
 	int i;
 	int ret = CNN_PARSE_FAILED;
 
-	for(i = 0; i < CNN_STR_AMOUNT; i++)
+	if(str != NULL)
 	{
-		ret = strcmp(str, cnn_str_list[i]);
-		if(ret == 0)
+		for(i = 0; i < CNN_STR_AMOUNT; i++)
 		{
-			ret = i;
-			goto RET;
+			ret = strcmp(str, cnn_str_list[i]);
+			if(ret == 0)
+			{
+				ret = i;
+				goto RET;
+			}
 		}
 	}
 

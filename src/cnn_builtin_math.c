@@ -110,3 +110,24 @@ CNN_AFUNC_DEF(cnn_swish_grad)
 	}
 }
 
+int cnn_get_afunc_id(const char* name)
+{
+	int i;
+	int ret = CNN_PARSE_FAILED;
+
+	if(name != NULL)
+	{
+		for(i = 0; i < CNN_AFUNC_AMOUNT; i++)
+		{
+			ret = strcmp(name, cnn_afunc_name[i]);
+			if(ret == 0)
+			{
+				ret = i;
+				goto RET;
+			}
+		}
+	}
+
+RET:
+	return ret;
+}

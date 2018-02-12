@@ -258,7 +258,7 @@ int cnn_write_layer_pool_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
 		case CNN_POOL_AVG:
 			cnn_xml_run(xmlTextWriterWriteAttribute(writer,
 						(xmlChar*)cnn_str_list[CNN_STR_POOL_TYPE],
-						(xmlChar*)cnn_str_list[CNN_STR_MIN]),
+						(xmlChar*)cnn_str_list[CNN_STR_AVG]),
 					ret, RET);
 			break;
 

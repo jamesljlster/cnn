@@ -29,6 +29,8 @@ CNN_AFUNC_DEF(cnn_relu_grad);
 CNN_AFUNC_DEF(cnn_swish);
 CNN_AFUNC_DEF(cnn_swish_grad);
 
+int cnn_get_afunc_id(const char* name);
+
 #ifdef __cplusplus
 }
 #endif
