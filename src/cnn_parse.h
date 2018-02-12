@@ -57,6 +57,11 @@ int cnn_parse_config_input_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node);
 int cnn_parse_network_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node);
 int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node);
 
+int cnn_parse_network_detail_xml(struct CNN* cnn, xmlDocPtr doc);
+int cnn_parse_network_detail_fc_xml(struct CNN* cnn, int layerIndex, xmlNodePtr node);
+int cnn_parse_network_detail_conv_xml(struct CNN* cnn, int layerIndex, xmlNodePtr node);
+int cnn_parse_mat(struct CNN_MAT* mat, xmlNodePtr node);
+
 #ifdef __cplusplus
 }
 #endif

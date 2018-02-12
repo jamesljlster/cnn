@@ -445,10 +445,10 @@ int cnn_import_root(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr, const
 	{
 		// Allocate network
 		cnn_run(cnn_config_struct_clone(&tmpCnn.cfg, cfgPtr), ret, RET);
-		cnn_run(cnn_network_alloc(&tmpCnn, cfgPtr), ret, RET);
+		cnn_run(cnn_network_alloc(&tmpCnn), ret, RET);
 
 		// Parsing
-		cnn_run(cnn_parse_network_detail_xml(&tmpCnn, net), ret, RET);
+		cnn_run(cnn_parse_network_detail_xml(&tmpCnn, doc), ret, RET);
 
 		// Assign value
 		*layerPtr = tmpCnn.layerList;
@@ -466,3 +466,203 @@ RET:
 	return ret;
 }
 
+int cnn_parse_network_detail_xml(struct CNN* cnn, xmlDocPtr doc)
+{
+	int i;
+	int ret = CNN_NO_ERROR;
+
+	char buf[CNN_XML_BUFLEN] = {0};
+
+	xmlXPathContextPtr cont;
+	xmlXPathObjectPtr obj = NULL;
+
+	// Create XPath context
+	cont = xmlXPathNewContext(doc);
+	if(cont == NULL)
+	{
+		ret = CNN_MEM_FAILED;
+		goto RET;
+	}
+
+	// Parse layer detail
+	for(i = 0; i < cnn->cfg.layers; i++)
+	{
+		switch(cnn->cfg.layerCfg[i].type)
+		{
+			case CNN_LAYER_FC:
+				// Select node
+				ret = snprintf(buf, CNN_XML_BUFLEN, "/%s/%s/%s[@%s='%d']",
+						cnn_str_list[CNN_STR_MODEL],
+						cnn_str_list[CNN_STR_NETWORK], cnn_str_list[CNN_STR_LAYER],
+						cnn_str_list[CNN_STR_INDEX], i);
+				assert(ret > 0 && ret < CNN_XML_BUFLEN && "Insufficient buffer size");
+
+				obj = xmlXPathEval((xmlChar*)buf, cont);
+				if(obj == NULL)
+				{
+					ret = CNN_MEM_FAILED;
+					goto RET;
+				}
+
+				// Parse
+				if(!xmlXPathNodeSetIsEmpty(obj->nodesetval))
+				{
+					cnn_run(cnn_parse_network_detail_fc_xml(cnn, i,
+								obj->nodesetval->nodeTab[0]),
+							ret, RET);
+				}
+
+				break;
+
+			case CNN_LAYER_CONV:
+				// Select node
+				ret = snprintf(buf, CNN_XML_BUFLEN, "/%s/%s/%s[@%s='%d']",
+						cnn_str_list[CNN_STR_MODEL],
+						cnn_str_list[CNN_STR_NETWORK], cnn_str_list[CNN_STR_LAYER],
+						cnn_str_list[CNN_STR_INDEX], i);
+				assert(ret > 0 && ret < CNN_XML_BUFLEN && "Insufficient buffer size");
+
+				obj = xmlXPathEval((xmlChar*)buf, cont);
+				if(obj == NULL)
+				{
+					ret = CNN_MEM_FAILED;
+					goto RET;
+				}
+
+				// Parse
+				if(!xmlXPathNodeSetIsEmpty(obj->nodesetval))
+				{
+					cnn_run(cnn_parse_network_detail_conv_xml(cnn, i,
+								obj->nodesetval->nodeTab[0]),
+							ret, RET);
+				}
+
+				break;
+		}
+
+		if(obj != NULL)
+		{
+			xmlXPathFreeObject(obj);
+			obj = NULL;
+		}
+	}
+
+RET:
+	if(cont != NULL)
+	{
+		xmlXPathFreeContext(cont);
+	}
+
+	return ret;
+}
+
+int cnn_parse_network_detail_fc_xml(struct CNN* cnn, int layerIndex, xmlNodePtr node)
+{
+	int ret = CNN_NO_ERROR;
+	int strId;
+
+	xmlNodePtr cur;
+
+	// Parsing
+	cur = node->xmlChildrenNode;
+	while(cur != NULL)
+	{
+		strId = cnn_strdef_get_id((const char*)cur->name);
+		switch(strId)
+		{
+			case CNN_STR_WEIGHT:
+				cnn_run(cnn_parse_mat(&cnn->layerList[layerIndex].fc.weight, cur),
+						ret, RET);
+				break;
+
+			case CNN_STR_BIAS:
+				cnn_run(cnn_parse_mat(&cnn->layerList[layerIndex].fc.bias, cur),
+						ret, RET);
+				break;
+		}
+
+		cur = cur->next;
+	}
+
+RET:
+	return ret;
+}
+
+int cnn_parse_network_detail_conv_xml(struct CNN* cnn, int layerIndex, xmlNodePtr node)
+{
+	int ret = CNN_NO_ERROR;
+	int strId;
+
+	xmlNodePtr cur;
+
+	// Parsing
+	cur = node->xmlChildrenNode;
+	while(cur != NULL)
+	{
+		strId = cnn_strdef_get_id((const char*)cur->name);
+		switch(strId)
+		{
+			case CNN_STR_KERNEL:
+				cnn_run(cnn_parse_mat(&cnn->layerList[layerIndex].conv.kernel, cur),
+						ret, RET);
+				break;
+
+			case CNN_STR_BIAS:
+				cnn_run(cnn_parse_mat(&cnn->layerList[layerIndex].conv.bias, cur),
+						ret, RET);
+				break;
+		}
+
+		cur = cur->next;
+	}
+
+RET:
+	return ret;
+}
+
+int cnn_parse_mat(struct CNN_MAT* mat, xmlNodePtr node)
+{
+	int ret = CNN_NO_ERROR;
+	int strId;
+	int tmpIndex;
+
+	xmlNodePtr cur;
+
+	xmlChar* xStr = NULL;
+
+	cur = node->xmlChildrenNode;
+	while(cur != NULL)
+	{
+		strId = cnn_strdef_get_id((const char*)cur->name);
+		switch(strId)
+		{
+			case CNN_STR_VALUE:
+				// Get value index
+				xStr = xmlGetProp(cur, (xmlChar*)cnn_str_list[CNN_STR_INDEX]);
+				cnn_run(cnn_strtoi(&tmpIndex, (const char*)xStr), ret, RET);
+				xmlFree(xStr);
+				xStr = NULL;
+
+				// Parse value
+				if(tmpIndex >= 0 && tmpIndex < mat->rows * mat->cols)
+				{
+					xStr = xmlNodeGetContent(cur);
+					cnn_run(cnn_strtof(&mat->mat[tmpIndex], (const char*)xStr), ret, RET);
+					xmlFree(xStr);
+					xStr = NULL;
+				}
+
+				break;
+		}
+
+		cur = cur->next;
+	}
+
+RET:
+	if(xStr != NULL)
+	{
+		xmlFree(xStr);
+	}
+
+	return ret;
+}

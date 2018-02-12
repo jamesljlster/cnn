@@ -25,7 +25,8 @@
 	retVal = func; \
 	if(retVal != CNN_NO_ERROR) \
 	{ \
-		fprintf(stderr, "%s(): %s failed with error: %d\n", __FUNCTION__, #func, retVal); \
+		fprintf(stderr, "%s(), %d: %s failed with error: %d\n", __FUNCTION__, __LINE__, \
+				#func, retVal); \
 		goto errLabel; \
 	}
 #else
@@ -60,7 +61,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
 		int inWidth, int inHeight, int inChannel, int size, int batch);
 
-int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg);
+int cnn_network_alloc(struct CNN* cnn);
 
 // Private delete functions
 void cnn_mat_delete(struct CNN_MAT* matPtr);

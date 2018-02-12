@@ -6,11 +6,16 @@
 #include "cnn_private.h"
 #include "cnn_builtin_math.h"
 
-int cnn_network_alloc(struct CNN* cnn, const struct CNN_CONFIG* cfg)
+int cnn_network_alloc(struct CNN* cnn)
 {
 	int i;
 	int ret = CNN_NO_ERROR;
 	int tmpWidth, tmpHeight, tmpChannel;
+
+	struct CNN_CONFIG* cfg;
+
+	// Set reference
+	cfg = &cnn->cfg;
 
 	// Memory allocation
 	cnn_alloc(cnn->layerList, cfg->layers, union CNN_LAYER, ret, ERR);
