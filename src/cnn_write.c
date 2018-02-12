@@ -142,9 +142,7 @@ int cnn_write_layer_conv_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRe
 			ret, RET);
 
 	// Write dimension
-	cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].conv.dim);
-	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_DIM],
-				(xmlChar*)buf),
+	cnn_run(cnn_write_dim_attr_xml(cfgRef->layerCfg[layerIndex].conv.dim, writer),
 			ret, RET);
 
 	// Write size
@@ -207,6 +205,35 @@ RET:
 	return ret;
 }
 
+int cnn_write_dim_attr_xml(int dim, xmlTextWriterPtr writer)
+{
+	int ret = CNN_NO_ERROR;
+	const char* str;
+
+	// Write dimension attribute
+	switch(dim)
+	{
+		case CNN_DIM_1D:
+			str = cnn_str_list[CNN_STR_1D];
+			break;
+
+		case CNN_DIM_2D:
+			str = cnn_str_list[CNN_STR_2D];
+			break;
+
+		default:
+			assert(!"Invalid dimension type");
+	}
+
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer,
+				(xmlChar*)cnn_str_list[CNN_STR_DIM],
+				(xmlChar*)str),
+			ret, RET);
+
+RET:
+	return ret;
+}
+
 int cnn_write_layer_pool_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
 		xmlTextWriterPtr writer)
 {
@@ -238,6 +265,10 @@ int cnn_write_layer_pool_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
 		default:
 			assert(!"Invalid pooling type");
 	}
+
+	// Write dimension
+	cnn_run(cnn_write_dim_attr_xml(cfgRef->layerCfg[layerIndex].pool.dim, writer),
+			ret, RET);
 
 	// Write size
 	cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].pool.size);

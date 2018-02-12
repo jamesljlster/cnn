@@ -59,14 +59,18 @@ int main()
 
 	// Test set config
 	cnn_config_set_input_size(cfg, 640, 480, 1);
-	cnn_config_set_layers(cfg, 8);
-	cnn_config_set_convolution(cfg, 1, 1, 3);
-	cnn_config_set_activation(cfg, 2, CNN_RELU);
-	cnn_config_set_convolution(cfg, 3, 1, 3);
-	cnn_config_set_activation(cfg, 4, CNN_RELU);
-	cnn_config_set_full_connect(cfg, 5, 128);
-	cnn_config_set_full_connect(cfg, 6, 2);
-	cnn_config_set_activation(cfg, 7, CNN_SOFTMAX);
+	cnn_config_set_layers(cfg, 10);
+
+	i = 1;
+	cnn_config_set_convolution	(cfg, i++, 1, 3);
+	cnn_config_set_pooling		(cfg, i++, 2, CNN_POOL_MAX, 2);
+	cnn_config_set_activation	(cfg, i++, CNN_RELU);
+	cnn_config_set_convolution	(cfg, i++, 1, 3);
+	cnn_config_set_pooling		(cfg, i++, 2, CNN_POOL_MAX, 2);
+	cnn_config_set_activation	(cfg, i++, CNN_RELU);
+	cnn_config_set_full_connect	(cfg, i++, 128);
+	cnn_config_set_full_connect	(cfg, i++, 2);
+	cnn_config_set_activation	(cfg, i++, CNN_SOFTMAX);
 
 	// Check default setting
 	printf("=== Modify CNN Config ===\n");

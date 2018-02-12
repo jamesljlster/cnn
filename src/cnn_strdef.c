@@ -30,7 +30,9 @@ const char* cnn_str_list[] = {
 	"min",
 	"kernel",
 	"bias",
-	"weight"
+	"weight",
+	"1d",
+	"2d"
 };
 
 int cnn_strdef_get_id(const char* str)
