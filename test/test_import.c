@@ -1,7 +1,7 @@
 #include <cnn.h>
 #include <cnn_parse.h>
 
-#define EXPORT_PATH "test_config_import.xml"
+#define EXPORT_PATH "test_import.xml"
 
 #define test(func) \
 	ret = func; \
@@ -14,7 +14,7 @@
 int main(int argc, char* argv[])
 {
 	int ret;
-	cnn_config_t cfg;
+	cnn_t cnn;
 
 	if(argc < 2)
 	{
@@ -22,8 +22,8 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	test(cnn_config_import(&cfg, argv[1]));
-	test(cnn_config_export(cfg, EXPORT_PATH));
+	test(cnn_import(&cnn, argv[1]));
+	test(cnn_export(cnn, EXPORT_PATH));
 
 	return 0;
 }

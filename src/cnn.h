@@ -61,6 +61,7 @@ int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convD
 int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_pool_t type,
 		int size);
 
+int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath);
 int cnn_config_export(cnn_config_t cfg, const char* fPath);
 
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
@@ -74,6 +75,7 @@ int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMa
 void cnn_rand_network(cnn_t cnn);
 void cnn_zero_network(cnn_t cnn);
 
+int cnn_import(cnn_t* cnnPtr, const char* fPath);
 int cnn_export(cnn_t cnn, const char* fPath);
 
 #ifdef __cplusplus
