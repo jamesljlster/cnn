@@ -7,6 +7,52 @@
 #include "cnn_strdef.h"
 #include "cnn_builtin_math.h"
 
+int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath)
+{
+	int ret = CNN_NO_ERROR;
+	cnn_config_t tmpCfg = NULL;
+
+	// Create config
+	cnn_run(cnn_config_create(&tmpCfg), ret, RET);
+
+	// Import config
+	cnn_run(cnn_import_root(tmpCfg, NULL, fPath), ret, ERR);
+
+	// Assign value
+	*cfgPtr = tmpCfg;
+
+	goto RET;
+
+ERR:
+	cnn_config_delete(tmpCfg);
+
+RET:
+	return ret;
+}
+
+int cnn_import(cnn_t* cnnPtr, const char* fPath)
+{
+	int ret = CNN_NO_ERROR;
+	cnn_t tmpCnn = NULL;
+
+	// Memory allocation
+	cnn_alloc(tmpCnn, 1, struct CNN, ret, RET);
+
+	// Import
+	cnn_run(cnn_import_root(&tmpCnn->cfg, &tmpCnn->layerList, fPath), ret, ERR);
+
+	// Assign value
+	*cnnPtr = tmpCnn;
+
+	goto RET;
+
+ERR:
+	cnn_delete(tmpCnn);
+
+RET:
+	return ret;
+}
+
 int cnn_parse_network_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 {
 	int ret = CNN_NO_ERROR;

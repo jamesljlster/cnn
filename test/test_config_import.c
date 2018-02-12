@@ -22,8 +22,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	test(cnn_config_create(&cfg));
-	test(cnn_import_root(cfg, NULL, argv[1]));
+	test(cnn_config_import(&cfg, argv[1]));
 	test(cnn_config_export(cfg, EXPORT_PATH));
 
 	return 0;

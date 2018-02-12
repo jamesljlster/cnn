@@ -14,7 +14,7 @@
 int main(int argc, char* argv[])
 {
 	int ret;
-	struct CNN cnn = {0};
+	cnn_t cnn;
 
 	if(argc < 2)
 	{
@@ -22,8 +22,8 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	test(cnn_import_root(&cnn.cfg, &cnn.layerList, argv[1]));
-	test(cnn_export(&cnn, EXPORT_PATH));
+	test(cnn_import(&cnn, argv[1]));
+	test(cnn_export(cnn, EXPORT_PATH));
 
 	return 0;
 }
