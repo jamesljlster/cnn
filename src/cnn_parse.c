@@ -62,6 +62,8 @@ int cnn_parse_network_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 	xmlNodePtr cur;
 	xmlAttrPtr attrCur, layers;
 
+	xmlChar* xStr = NULL;
+
 	// Find layers
 	layers = NULL;
 	attrCur = node->properties;
@@ -86,7 +88,11 @@ int cnn_parse_network_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 	}
 
 	// Parse and set layers
-	cnn_run(cnn_strtoi(&tmp, (const char*)xmlNodeGetContent(layers->children)), ret, RET);
+	xStr = xmlNodeGetContent(layers->children);
+	cnn_run(cnn_strtoi(&tmp, (const char*)xStr), ret, RET);
+	xmlFree(xStr);
+	xStr = NULL;
+
 	cnn_run(cnn_config_set_layers(cfgPtr, tmp), ret, RET);
 
 	cur = node->xmlChildrenNode;
@@ -105,6 +111,7 @@ int cnn_parse_network_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 	}
 
 RET:
+	xmlFree(xStr);
 	return ret;
 }
 
@@ -117,6 +124,8 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 	xmlAttrPtr attrCur;
 	xmlAttrPtr index = NULL, type = NULL;
 	xmlAttrPtr dim = NULL, size = NULL, poolType = NULL, id = NULL;
+
+	xmlChar* xStr = NULL;
 
 	// Parse attribute
 	attrCur = node->properties;
@@ -161,8 +170,15 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 	}
 
 	// Parse type and index
-	cnn_run(cnn_strtoi(&tmpIndex, (const char*)xmlNodeGetContent(index->children)), ret, RET);
-	strId = cnn_strdef_get_id((const char*)xmlNodeGetContent(type->children));
+	xStr = xmlNodeGetContent(index->children);
+	cnn_run(cnn_strtoi(&tmpIndex, (const char*)xStr), ret, RET);
+	xmlFree(xStr);
+
+	xStr = xmlNodeGetContent(type->children);
+	strId = cnn_strdef_get_id((const char*)xStr);
+	xmlFree(xStr);
+	xStr = NULL;
+
 	switch(strId)
 	{
 		case CNN_STR_INPUT:
@@ -204,9 +220,11 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			}
 
 			// Parse size
-			cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].fc.size,
-						(const char*)xmlNodeGetContent(size->children)),
+			xStr = xmlNodeGetContent(size->children);
+			cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].fc.size, (const char*)xStr),
 					ret, RET);
+			xmlFree(xStr);
+			xStr = NULL;
 			break;
 
 		case CNN_LAYER_AFUNC:
@@ -217,7 +235,11 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			}
 
 			// Parse id
-			strId = cnn_get_afunc_id((const char*)xmlNodeGetContent(id->children));
+			xStr = xmlNodeGetContent(id->children);
+			strId = cnn_get_afunc_id((const char*)xStr);
+			xmlFree(xStr);
+			xStr = NULL;
+
 			assert(strId >= 0 && "Invalid activation function ID");
 			cfgPtr->layerCfg[tmpIndex].aFunc.id = strId;
 
@@ -231,7 +253,11 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			}
 
 			// Parse dimension
-			strId = cnn_strdef_get_id((const char*)xmlNodeGetContent(dim->children));
+			xStr = xmlNodeGetContent(dim->children);
+			strId = cnn_strdef_get_id((const char*)xStr);
+			xmlFree(xStr);
+			xStr = NULL;
+
 			switch(strId)
 			{
 				case CNN_STR_1D:
@@ -247,9 +273,11 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			}
 
 			// Parse size
-			cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].conv.size,
-						(const char*)xmlNodeGetContent(size->children)),
+			xStr = xmlNodeGetContent(size->children);
+			cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].conv.size, (const char*)xStr),
 					ret, RET);
+			xmlFree(xStr);
+			xStr = NULL;
 			break;
 
 		case CNN_LAYER_POOL:
@@ -260,7 +288,11 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			}
 
 			// Parse pooling type
-			strId = cnn_strdef_get_id((const char*)xmlNodeGetContent(poolType->children));
+			xStr = xmlNodeGetContent(poolType->children);
+			strId = cnn_strdef_get_id((const char*)xStr);
+			xmlFree(xStr);
+			xStr = NULL;
+
 			switch(strId)
 			{
 				case CNN_STR_MAX:
@@ -276,7 +308,10 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			}
 
 			// Parse dimension
-			strId = cnn_strdef_get_id((const char*)xmlNodeGetContent(dim->children));
+			xStr = xmlNodeGetContent(dim->children);
+			strId = cnn_strdef_get_id((const char*)xStr);
+			xmlFree(xStr);
+			xStr = NULL;
 			switch(strId)
 			{
 				case CNN_STR_1D:
@@ -292,9 +327,11 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			}
 
 			// Parse size
-			cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].pool.size,
-						(const char*)xmlNodeGetContent(size->children)),
+			xStr = xmlNodeGetContent(size->children);
+			cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].pool.size, (const char*)xStr),
 					ret, RET);
+			xmlFree(xStr);
+			xStr = NULL;
 
 			break;
 
@@ -303,6 +340,7 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 	}
 
 RET:
+	xmlFree(xStr);
 	return ret;
 }
 
@@ -314,6 +352,8 @@ int cnn_parse_config_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 	xmlNodePtr cur;
 	xmlNodePtr input; // Must exist
 	xmlNodePtr lRate, batch;
+
+	xmlChar* xStr = NULL;
 
 	// Find node
 	input = NULL;
@@ -354,16 +394,23 @@ int cnn_parse_config_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 	// Parse batch
 	if(batch != NULL)
 	{
-		cnn_run(cnn_strtoi(&cfgPtr->batch, (const char*)xmlNodeGetContent(batch)), ret, RET);
+		xStr = xmlNodeGetContent(batch);
+		cnn_run(cnn_strtoi(&cfgPtr->batch, (const char*)xStr), ret, RET);
+		xmlFree(xStr);
+		xStr = NULL;
 	}
 
 	// Parse learning rate
 	if(lRate != NULL)
 	{
-		cnn_run(cnn_strtof(&cfgPtr->lRate, (const char*)xmlNodeGetContent(lRate)), ret, RET);
+		xStr = xmlNodeGetContent(lRate);
+		cnn_run(cnn_strtof(&cfgPtr->lRate, (const char*)xStr), ret, RET);
+		xmlFree(xStr);
+		xStr = NULL;
 	}
 
 RET:
+	xmlFree(xStr);
 	return ret;
 }
 
@@ -374,6 +421,8 @@ int cnn_parse_config_input_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
 	xmlNodePtr cur;
 	xmlNodePtr width, height, channel;
+
+	xmlChar* xStr = NULL;
 
 	// Find node
 	width = NULL;
@@ -409,11 +458,19 @@ int cnn_parse_config_input_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 	}
 
 	// Parse information
-	cnn_run(cnn_strtoi(&cfgPtr->width, (const char*)xmlNodeGetContent(width)), ret, RET);
-	cnn_run(cnn_strtoi(&cfgPtr->height, (const char*)xmlNodeGetContent(height)), ret, RET);
-	cnn_run(cnn_strtoi(&cfgPtr->channel, (const char*)xmlNodeGetContent(channel)), ret, RET);
+	xStr = xmlNodeGetContent(width);
+	cnn_run(cnn_strtoi(&cfgPtr->width, (const char*)xStr), ret, RET);
+	xmlFree(xStr);
+
+	xStr = xmlNodeGetContent(height);
+	cnn_run(cnn_strtoi(&cfgPtr->height, (const char*)xStr), ret, RET);
+	xmlFree(xStr);
+
+	xStr = xmlNodeGetContent(channel);
+	cnn_run(cnn_strtoi(&cfgPtr->channel, (const char*)xStr), ret, RET);
 
 RET:
+	xmlFree(xStr);
 	return ret;
 }
 
@@ -705,10 +762,6 @@ int cnn_parse_mat(struct CNN_MAT* mat, xmlNodePtr node)
 	}
 
 RET:
-	if(xStr != NULL)
-	{
-		xmlFree(xStr);
-	}
-
+	xmlFree(xStr);
 	return ret;
 }
