@@ -12,27 +12,33 @@
 
 int __cnnRandInit = 0;
 
-float cnn_rand(void)
+float cnn_float_rand()
 {
-	int randRange;
-
 	if(__cnnRandInit <= 0)
 	{
-		srand((unsigned int)time(NULL));
+		//srand((unsigned int)time(NULL));
 		__cnnRandInit = 1;
 	}
 
-	randRange = (NUM_MAX - NUM_MIN) * NUM_PRECISION + 1;
-
-	return (float)(rand() % randRange) / (float)(NUM_PRECISION) + (float)NUM_MIN;
+	return (float)(rand() % 4096) / 4096.0f;
 }
 
-float cnn_zero(void)
+float cnn_rand(int inSize)
+{
+	float stddev;
+
+	// Xavier initialization
+	stddev = 2.0 / (float)inSize;
+
+	return (cnn_float_rand() - 0.499821f) / 0.287194f * stddev;
+}
+
+float cnn_zero(int inSize)
 {
 	return 0;
 }
 
-void cnn_init_network(cnn_t cnn, float (*initMethod)(void))
+void cnn_init_network(cnn_t cnn, float (*initMethod)(int inSize))
 {
 	int i, j;
 	size_t size;
@@ -51,7 +57,8 @@ void cnn_init_network(cnn_t cnn, float (*initMethod)(void))
 				size = cnn->layerList[i].fc.weight.rows * cnn->layerList[i].fc.weight.cols;
 				for(j = 0; j < size; j++)
 				{
-					cnn->layerList[i].fc.weight.mat[j] = initMethod();
+					cnn->layerList[i].fc.weight.mat[j] =
+						initMethod(cnn->layerList[i - 1].outMat.data.cols);
 				}
 
 				// Zero bias
@@ -65,7 +72,7 @@ void cnn_init_network(cnn_t cnn, float (*initMethod)(void))
 				size = cnn->layerList[i].conv.kernel.rows * cnn->layerList[i].conv.kernel.cols;
 				for(j = 0; j < size; j++)
 				{
-					cnn->layerList[i].conv.kernel.mat[j] = initMethod();
+					cnn->layerList[i].conv.kernel.mat[j] = initMethod(size);
 				}
 
 				// Zero bias

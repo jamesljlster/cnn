@@ -3,16 +3,18 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <math.h>
 
 #include <cnn.h>
 #include <cnn_private.h>
 #include <cnn_calc.h>
 
-#define KERNEL_SIZE 3
+#define KERNEL_SIZE 5
 
 #define BATCH 7
-#define ITER 10000
-#define L_RATE 0.001
+#define ITER 20000
+#define L_RATE 0.1
+#define DECAY 0.996
 
 #define MODEL_PATH "test.xml"
 
@@ -49,6 +51,7 @@ int main(int argc, char* argv[])
 	int ret;
 	int hit;
 	float mse;
+	float lRate = L_RATE;
 
 	cnn_config_t cfg = NULL;
 	cnn_t cnn = NULL;
@@ -104,16 +107,17 @@ int main(int argc, char* argv[])
 	test(cnn_config_create(&cfg));
 	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight, 1));
 	test(cnn_config_set_batch_size(cfg, BATCH));
-	test(cnn_config_set_layers(cfg, 10));
+	test(cnn_config_set_layers(cfg, 9));
 
 	i = 1;
-	test(cnn_config_set_convolution (cfg, i++, 2, 3));
-	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
+	test(cnn_config_set_convolution (cfg, i++, 2, KERNEL_SIZE));
+	//test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
-	test(cnn_config_set_convolution (cfg, i++, 2, 3));
-	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
+	test(cnn_config_set_convolution (cfg, i++, 2, KERNEL_SIZE));
+	//test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
-	test(cnn_config_set_full_connect(cfg, i++, 16));
+	test(cnn_config_set_full_connect(cfg, i++, 128));
+	test(cnn_config_set_full_connect(cfg, i++, 64));
 	test(cnn_config_set_full_connect(cfg, i++, labelCols));
 	test(cnn_config_set_activation  (cfg, i++, CNN_SOFTMAX));
 
@@ -129,7 +133,7 @@ int main(int argc, char* argv[])
 
 		for(i = 0; i < data.instances; i += BATCH)
 		{
-			test(cnn_training_custom(cnn, L_RATE,
+			test(cnn_training_custom(cnn, lRate,
 						&data.input[i * dataCols],
 						&data.output[i * labelCols],
 						output, err));
@@ -152,6 +156,8 @@ int main(int argc, char* argv[])
 		mse /= (float)(labelCols * data.instances);
 		printf("Iter %d, mse: %f, accuracy: %.2f %%\n", iter, mse,
 				(float)hit * 100 / (float)(data.instances));
+
+		lRate = L_RATE * sqrt(mse);
 	}
 
 	// Export
