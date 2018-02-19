@@ -9,13 +9,10 @@
 #define CNN_DEFAULT_INPUT_WIDTH 32
 #define CNN_DEFAULT_INPUT_HEIGHT 32
 #define CNN_DEFAULT_INPUT_CHANNEL 3
-#define CNN_DEFAULT_OUTPUTS 2
 #define CNN_DEFAULT_BATCH 1
-#define CNN_DEFAULT_LAYERS 5
-#define CNN_DEFAULT_CONV_DIM 2
-#define CNN_DEFAULT_CONV_SIZE 3
+#define CNN_DEFAULT_LAYERS 1
 #define CNN_DEFAULT_FC_SIZE 16
-#define CNN_DEFAULT_AFUNC CNN_SOFTMAX
+#define CNN_DEFAULT_LRATE 0.001
 
 int cnn_config_clone(cnn_config_t* cfgPtr, const cnn_config_t src)
 {
@@ -101,16 +98,6 @@ int cnn_config_init(cnn_config_t cfg)
 
 	// Set total layers
 	cnn_run(cnn_config_set_layers(cfg, CNN_DEFAULT_LAYERS),
-			ret, RET);
-
-	// Set config of layers
-	cnn_run(cnn_config_set_convolution(cfg, 1, CNN_DEFAULT_CONV_DIM, CNN_DEFAULT_CONV_SIZE),
-			ret, RET);
-	cnn_run(cnn_config_set_full_connect(cfg, 2, CNN_DEFAULT_FC_SIZE),
-			ret, RET);
-	cnn_run(cnn_config_set_full_connect(cfg, 3, CNN_DEFAULT_OUTPUTS),
-			ret, RET);
-	cnn_run(cnn_config_set_activation(cfg, 4, CNN_DEFAULT_AFUNC),
 			ret, RET);
 
 RET:
@@ -212,7 +199,7 @@ int cnn_config_set_layers(cnn_config_t cfg, int layers)
 	}
 	else
 	{
-		i = preLayers - 1;
+		i = preLayers;
 	}
 
 	for( ; i < layers; i++)

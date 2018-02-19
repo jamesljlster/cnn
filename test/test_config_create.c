@@ -6,6 +6,14 @@
 
 #define CFG_PATH "test.xml"
 
+#define test(func) \
+	ret = func; \
+	if(ret < 0) \
+	{ \
+		printf("%s failed with error: %d\n", #func, ret); \
+		return -1; \
+	}
+
 void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 {
 	printf("Layer %d config:\n", layerIndex);
@@ -29,6 +37,12 @@ void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 			printf("The layer is convolution\n");
 			printf("Dimension: %d\n", cfg->layerCfg[layerIndex].conv.dim);
 			printf("Size: %d\n", cfg->layerCfg[layerIndex].conv.size);
+			break;
+
+		case CNN_LAYER_POOL:
+			printf("The layer is pooling\n");
+			printf("Dimension: %d\n", cfg->layerCfg[layerIndex].pool.dim);
+			printf("Size: %d\n", cfg->layerCfg[layerIndex].pool.size);
 			break;
 
 		default:
@@ -58,19 +72,19 @@ int main()
 	}
 
 	// Test set config
-	cnn_config_set_input_size(cfg, 640, 480, 1);
-	cnn_config_set_layers(cfg, 10);
+	test(cnn_config_set_input_size(cfg, 640, 480, 1));
+	test(cnn_config_set_layers(cfg, 10));
 
 	i = 1;
-	cnn_config_set_convolution	(cfg, i++, 1, 3);
-	cnn_config_set_pooling		(cfg, i++, 2, CNN_POOL_MAX, 2);
-	cnn_config_set_activation	(cfg, i++, CNN_RELU);
-	cnn_config_set_convolution	(cfg, i++, 1, 3);
-	cnn_config_set_pooling		(cfg, i++, 2, CNN_POOL_MAX, 2);
-	cnn_config_set_activation	(cfg, i++, CNN_RELU);
-	cnn_config_set_full_connect	(cfg, i++, 128);
-	cnn_config_set_full_connect	(cfg, i++, 2);
-	cnn_config_set_activation	(cfg, i++, CNN_SOFTMAX);
+	test(cnn_config_set_convolution	(cfg, i++, 1, 3));
+	test(cnn_config_set_pooling		(cfg, i++, 2, CNN_POOL_MAX, 2));
+	test(cnn_config_set_activation	(cfg, i++, CNN_RELU));
+	test(cnn_config_set_convolution	(cfg, i++, 1, 3));
+	test(cnn_config_set_pooling		(cfg, i++, 2, CNN_POOL_MAX, 2));
+	test(cnn_config_set_activation	(cfg, i++, CNN_RELU));
+	test(cnn_config_set_full_connect(cfg, i++, 128));
+	test(cnn_config_set_full_connect(cfg, i++, 2));
+	test(cnn_config_set_activation	(cfg, i++, CNN_SOFTMAX));
 
 	// Check default setting
 	printf("=== Modify CNN Config ===\n");

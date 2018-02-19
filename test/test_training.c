@@ -12,7 +12,7 @@
 #define KERNEL_SIZE 5
 
 #define BATCH 7
-#define ITER 20000
+#define ITER 10000
 #define L_RATE 0.1
 #define DECAY 0.996
 
