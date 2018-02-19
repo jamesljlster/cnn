@@ -61,6 +61,9 @@ int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convD
 int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_pool_t type,
 		int size);
 
+void cnn_config_set_learning_rate(cnn_config_t cfg, float lRate);
+float cnn_config_get_learning_rate(cnn_config_t cfg);
+
 int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath);
 int cnn_config_export(cnn_config_t cfg, const char* fPath);
 
