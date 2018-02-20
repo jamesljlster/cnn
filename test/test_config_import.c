@@ -23,6 +23,8 @@ int main(int argc, char* argv[])
 	cnn_pool_t poolType;
 	cnn_dim_t dim;
 	cnn_afunc_t id;
+	int width, height, channel;
+	int batch;
 
 	if(argc < 2)
 	{
@@ -33,6 +35,12 @@ int main(int argc, char* argv[])
 	test(cnn_config_import(&cfg, argv[1]));
 
 	// Show cnn arch
+	cnn_config_get_input_size(cfg, &width, &height, &channel);
+	cnn_config_get_batch_size(cfg, &batch);
+	printf("Width: %d, Height: %d, Channel: %d\n", width, height, channel);
+	printf("Batch: %d\n", batch);
+	printf("\n");
+
 	cnn_config_get_layers(cfg, &layers);
 	for(i = 0; i < layers; i++)
 	{
