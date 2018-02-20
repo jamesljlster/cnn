@@ -53,16 +53,32 @@ int cnn_config_clone(cnn_config_t* dstPtr, const cnn_config_t src);
 void cnn_config_delete(cnn_config_t cfg);
 
 int cnn_config_set_input_size(cnn_config_t cfg, int width, int height, int channel);
+void cnn_config_get_input_size(cnn_config_t cfg, int* wPtr, int* hPtr, int* cPtr);
+
 int cnn_config_set_batch_size(cnn_config_t cfg, int batchSize);
+void cnn_config_get_batch_size(cnn_config_t cfg, int* batchPtr);
+
 int cnn_config_set_layers(cnn_config_t cfg, int layers);
+void cnn_config_get_layers(cnn_config_t cfg, int* layersPtr);
+int cnn_config_get_layer_type(cnn_config_t cfg, int layerIndex, cnn_layer_t* typePtr);
+
 int cnn_config_set_full_connect(cnn_config_t cfg, int layerIndex, int size);
+int cnn_config_get_full_connect(cnn_config_t cfg, int layerIndex, int* sizePtr);
+
 int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFuncID);
+int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t* idPtr);
+
 int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim, int size);
+int cnn_config_get_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
+		int* sizePtr);
+
 int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_pool_t type,
 		int size);
+int cnn_config_get_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
+		cnn_pool_t* typePtr, int* sizePtr);
 
 void cnn_config_set_learning_rate(cnn_config_t cfg, float lRate);
-float cnn_config_get_learning_rate(cnn_config_t cfg);
+void cnn_config_get_learning_rate(cnn_config_t cfg, float* lRatePtr);
 
 int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath);
 int cnn_config_export(cnn_config_t cfg, const char* fPath);
