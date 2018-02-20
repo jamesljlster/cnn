@@ -13,7 +13,7 @@
 
 #define BATCH 7
 #define ITER 10000
-#define L_RATE 0.1
+#define L_RATE 0.05
 #define DECAY 0.996
 
 #define MODEL_PATH "test.xml"
