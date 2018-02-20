@@ -83,6 +83,8 @@ void cnn_config_get_learning_rate(cnn_config_t cfg, float* lRatePtr);
 int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath);
 int cnn_config_export(cnn_config_t cfg, const char* fPath);
 
+cnn_config_t cnn_get_config(cnn_t cnn);
+
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
 void cnn_delete(cnn_t cnn);
 

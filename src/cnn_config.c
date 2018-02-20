@@ -14,6 +14,11 @@
 #define CNN_DEFAULT_FC_SIZE 16
 #define CNN_DEFAULT_LRATE 0.001
 
+cnn_config_t cnn_get_config(cnn_t cnn)
+{
+	return &cnn->cfg;
+}
+
 int cnn_config_clone(cnn_config_t* cfgPtr, const cnn_config_t src)
 {
 	int ret = CNN_NO_ERROR;
