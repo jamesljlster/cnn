@@ -9,13 +9,10 @@
 #define CNN_DEFAULT_INPUT_WIDTH 32
 #define CNN_DEFAULT_INPUT_HEIGHT 32
 #define CNN_DEFAULT_INPUT_CHANNEL 3
-#define CNN_DEFAULT_OUTPUTS 2
 #define CNN_DEFAULT_BATCH 1
-#define CNN_DEFAULT_LAYERS 5
-#define CNN_DEFAULT_CONV_DIM 2
-#define CNN_DEFAULT_CONV_SIZE 3
+#define CNN_DEFAULT_LAYERS 1
 #define CNN_DEFAULT_FC_SIZE 16
-#define CNN_DEFAULT_AFUNC CNN_SOFTMAX
+#define CNN_DEFAULT_LRATE 0.001
 
 int cnn_config_clone(cnn_config_t* cfgPtr, const cnn_config_t src)
 {
@@ -103,16 +100,6 @@ int cnn_config_init(cnn_config_t cfg)
 	cnn_run(cnn_config_set_layers(cfg, CNN_DEFAULT_LAYERS),
 			ret, RET);
 
-	// Set config of layers
-	cnn_run(cnn_config_set_convolution(cfg, 1, CNN_DEFAULT_CONV_DIM, CNN_DEFAULT_CONV_SIZE),
-			ret, RET);
-	cnn_run(cnn_config_set_full_connect(cfg, 2, CNN_DEFAULT_FC_SIZE),
-			ret, RET);
-	cnn_run(cnn_config_set_full_connect(cfg, 3, CNN_DEFAULT_OUTPUTS),
-			ret, RET);
-	cnn_run(cnn_config_set_activation(cfg, 4, CNN_DEFAULT_AFUNC),
-			ret, RET);
-
 RET:
 	return ret;
 }
@@ -129,6 +116,19 @@ void cnn_config_delete(cnn_config_t cfg)
 	{
 		cnn_config_struct_delete(cfg);
 		cnn_free(cfg);
+	}
+}
+
+void cnn_config_set_learning_rate(cnn_config_t cfg, float lRate)
+{
+	cfg->lRate = lRate;
+}
+
+void cnn_config_get_learning_rate(cnn_config_t cfg, float* lRatePtr)
+{
+	if(lRatePtr != NULL)
+	{
+		*lRatePtr = cfg->lRate;
 	}
 }
 
@@ -152,6 +152,24 @@ RET:
 	return ret;
 }
 
+void cnn_config_get_input_size(cnn_config_t cfg, int* wPtr, int* hPtr, int* cPtr)
+{
+	if(wPtr != NULL)
+	{
+		*wPtr = cfg->width;
+	}
+
+	if(hPtr != NULL)
+	{
+		*hPtr = cfg->height;
+	}
+
+	if(cPtr != NULL)
+	{
+		*cPtr = cfg->channel;
+	}
+}
+
 int cnn_config_set_batch_size(cnn_config_t cfg, int batchSize)
 {
 	int ret = CNN_NO_ERROR;
@@ -168,6 +186,14 @@ int cnn_config_set_batch_size(cnn_config_t cfg, int batchSize)
 
 RET:
 	return ret;
+}
+
+void cnn_config_get_batch_size(cnn_config_t cfg, int* batchPtr)
+{
+	if(batchPtr != NULL)
+	{
+		*batchPtr = cfg->batch;
+	}
 }
 
 int cnn_config_set_layers(cnn_config_t cfg, int layers)
@@ -212,13 +238,41 @@ int cnn_config_set_layers(cnn_config_t cfg, int layers)
 	}
 	else
 	{
-		i = preLayers - 1;
+		i = preLayers;
 	}
 
 	for( ; i < layers; i++)
 	{
 		ret = cnn_config_set_full_connect(cfg, i, CNN_DEFAULT_FC_SIZE);
 		assert(ret == CNN_NO_ERROR);
+	}
+
+RET:
+	return ret;
+}
+
+void cnn_config_get_layers(cnn_config_t cfg, int* layersPtr)
+{
+	if(layersPtr != NULL)
+	{
+		*layersPtr = cfg->layers;
+	}
+}
+
+int cnn_config_get_layer_type(cnn_config_t cfg, int layerIndex, cnn_layer_t* typePtr)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Checking
+	if(layerIndex < 0 || layerIndex >= cfg->layers)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	if(typePtr != NULL)
+	{
+		*typePtr = cfg->layerCfg[layerIndex].type;
 	}
 
 RET:
@@ -244,6 +298,33 @@ RET:
 	return ret;
 }
 
+int cnn_config_get_full_connect(cnn_config_t cfg, int layerIndex, int* sizePtr)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Checking
+	if(layerIndex < 0 || layerIndex >= cfg->layers)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	if(cfg->layerCfg[layerIndex].type != CNN_LAYER_FC)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Assign value
+	if(sizePtr != NULL)
+	{
+		*sizePtr = cfg->layerCfg[layerIndex].fc.size;
+	}
+
+RET:
+	return ret;
+}
+
 int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFuncID)
 {
 	int ret = CNN_NO_ERROR;
@@ -258,6 +339,33 @@ int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFun
 	// Set config
 	cfg->layerCfg[layerIndex].type = CNN_LAYER_AFUNC;
 	cfg->layerCfg[layerIndex].aFunc.id = aFuncID;
+
+RET:
+	return ret;
+}
+
+int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t* idPtr)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Checking
+	if(layerIndex < 0 || layerIndex >= cfg->layers)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	if(cfg->layerCfg[layerIndex].type != CNN_LAYER_AFUNC)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Assing value
+	if(idPtr != NULL)
+	{
+		*idPtr = cfg->layerCfg[layerIndex].aFunc.id;
+	}
 
 RET:
 	return ret;
@@ -280,6 +388,39 @@ int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convD
 	cfg->layerCfg[layerIndex].type = CNN_LAYER_CONV;
 	cfg->layerCfg[layerIndex].conv.dim = convDim;
 	cfg->layerCfg[layerIndex].conv.size = size;
+
+RET:
+	return ret;
+}
+
+int cnn_config_get_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
+		int* sizePtr)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Checking
+	if(layerIndex < 0 || layerIndex >= cfg->layers)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	if(cfg->layerCfg[layerIndex].type != CNN_LAYER_CONV)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Assign value
+	if(dimPtr != NULL)
+	{
+		*dimPtr = cfg->layerCfg[layerIndex].conv.dim;
+	}
+
+	if(sizePtr != NULL)
+	{
+		*sizePtr = cfg->layerCfg[layerIndex].conv.size;
+	}
 
 RET:
 	return ret;
@@ -308,3 +449,40 @@ RET:
 	return ret;
 }
 
+int cnn_config_get_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
+		cnn_pool_t* typePtr, int* sizePtr)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Checking
+	if(layerIndex < 0 || layerIndex >= cfg->layers)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	if(cfg->layerCfg[layerIndex].type != CNN_LAYER_POOL)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Assign value
+	if(dimPtr != NULL)
+	{
+		*dimPtr = cfg->layerCfg[layerIndex].pool.dim;
+	}
+
+	if(typePtr != NULL)
+	{
+		*typePtr = cfg->layerCfg[layerIndex].pool.poolType;
+	}
+
+	if(sizePtr != NULL)
+	{
+		*sizePtr = cfg->layerCfg[layerIndex].pool.size;
+	}
+
+RET:
+	return ret;
+}
