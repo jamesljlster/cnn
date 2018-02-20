@@ -281,6 +281,28 @@ RET:
 	return ret;
 }
 
+int cnn_write_layer_drop_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
+		xmlTextWriterPtr writer)
+{
+	int ret = CNN_NO_ERROR;
+	char buf[CNN_XML_BUFLEN] = {0};
+
+	// Write layer type
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_TYPE],
+				(xmlChar*)cnn_str_list[CNN_STR_DROP]),
+			ret, RET);
+
+	// Write size
+	cnn_ftostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].drop.rate);
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer,
+				(xmlChar*)cnn_str_list[CNN_STR_RATE],
+				(xmlChar*)buf),
+			ret, RET);
+
+RET:
+	return ret;
+}
+
 int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 		xmlTextWriterPtr writer)
 {
@@ -332,6 +354,10 @@ int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 
 			case CNN_LAYER_POOL:
 				cnn_run(cnn_write_layer_pool_xml(cfgRef, i, writer), ret, RET);
+				break;
+
+			case CNN_LAYER_DROP:
+				cnn_run(cnn_write_layer_drop_xml(cfgRef, i, writer), ret, RET);
 				break;
 
 			default:

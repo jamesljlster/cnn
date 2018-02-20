@@ -24,6 +24,7 @@ const char* cnn_str_list[] = {
 	"activ",
 	"conv",
 	"pool",
+	"drop",
 	"id",
 	"pool_type",
 	"max",
@@ -32,7 +33,8 @@ const char* cnn_str_list[] = {
 	"bias",
 	"weight",
 	"1d",
-	"2d"
+	"2d",
+	"rate"
 };
 
 int cnn_strdef_get_id(const char* str)

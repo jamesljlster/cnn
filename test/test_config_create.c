@@ -45,6 +45,11 @@ void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 			printf("Size: %d\n", cfg->layerCfg[layerIndex].pool.size);
 			break;
 
+		case CNN_LAYER_DROP:
+			printf("The layer is dropout\n");
+			printf("Rate: %g\n", cfg->layerCfg[layerIndex].drop.rate);
+			break;
+
 		default:
 			printf("Not a cnn layer config?!\n");
 	}
@@ -73,7 +78,7 @@ int main()
 
 	// Test set config
 	test(cnn_config_set_input_size(cfg, 640, 480, 1));
-	test(cnn_config_set_layers(cfg, 10));
+	test(cnn_config_set_layers(cfg, 11));
 
 	i = 1;
 	test(cnn_config_set_convolution	(cfg, i++, 1, 3));
@@ -83,6 +88,7 @@ int main()
 	test(cnn_config_set_pooling		(cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation	(cfg, i++, CNN_RELU));
 	test(cnn_config_set_full_connect(cfg, i++, 128));
+	test(cnn_config_set_dropout		(cfg, i++, 0.5));
 	test(cnn_config_set_full_connect(cfg, i++, 2));
 	test(cnn_config_set_activation	(cfg, i++, CNN_SOFTMAX));
 

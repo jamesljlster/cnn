@@ -25,6 +25,7 @@ int main(int argc, char* argv[])
 	cnn_afunc_t id;
 	int width, height, channel;
 	int batch;
+	float rate;
 
 	if(argc < 2)
 	{
@@ -77,6 +78,12 @@ int main(int argc, char* argv[])
 				printf("Dimension: %d\n", dim);
 				printf("Pooling Type: %d\n", poolType);
 				printf("Size: %d\n", size);
+				break;
+
+			case CNN_LAYER_DROP:
+				test(cnn_config_get_dropout(cfg, i, &rate));
+				printf("Type: Dropout\n");
+				printf("Rate: %g\n", rate);
 				break;
 		}
 
