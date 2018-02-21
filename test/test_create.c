@@ -116,7 +116,6 @@ void check_cnn_arch(cnn_t cnn)
 						cnn->layerList[i].outMat.height);
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 				test_mat(cnn->layerList[i].outMat.data);
-				test_mat(cnn->layerList[i].drop.mask);
 				break;
 
 			default:

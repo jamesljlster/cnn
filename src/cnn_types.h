@@ -144,7 +144,7 @@ struct CNN_LAYER_DROP
 	struct CNN_SHAPE outMat;
 
 	// Dropout mask
-	struct CNN_MAT mask;
+	int* mask;
 };
 
 union CNN_LAYER

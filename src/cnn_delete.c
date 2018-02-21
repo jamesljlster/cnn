@@ -48,7 +48,7 @@ void cnn_layer_drop_delete(struct CNN_LAYER_DROP* layerPtr)
 {
 	// Free memory
 	cnn_mat_delete(&layerPtr->outMat.data);
-	cnn_mat_delete(&layerPtr->mask);
+	cnn_free(layerPtr->mask);
 
 	// Zero memory
 	memset(layerPtr, 0, sizeof(struct CNN_LAYER_DROP));
