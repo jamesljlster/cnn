@@ -60,6 +60,8 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 		int inWidth, int inHeight, int inChannel,  int size, int batch);
 int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
 		int inWidth, int inHeight, int inChannel, int size, int batch);
+int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr,
+		int inWidth, int inHeight, int inChannel, int batch);
 
 int cnn_network_alloc(struct CNN* cnn);
 
@@ -71,6 +73,7 @@ void cnn_layer_afunc_delete(struct CNN_LAYER_AFUNC* layerPtr);
 void cnn_layer_fc_delete(struct CNN_LAYER_FC* layerPtr);
 void cnn_layer_conv_delete(struct CNN_LAYER_CONV* layerPtr);
 void cnn_layer_pool_delete(struct CNN_LAYER_POOL* layerPtr);
+void cnn_layer_drop_delete(struct CNN_LAYER_DROP* layerPtr);
 
 void cnn_network_delete(struct CNN* cnn);
 void cnn_struct_delete(struct CNN* cnn);

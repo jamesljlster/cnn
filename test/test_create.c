@@ -109,6 +109,16 @@ void check_cnn_arch(cnn_t cnn)
 				test_mat(cnn->layerList[i].outMat.data);
 				break;
 
+			case CNN_LAYER_DROP:
+				printf("The layer is dropout\n");
+				printf("Rate: %g\n", cnn->cfg.layerCfg[i].drop.rate);
+				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
+						cnn->layerList[i].outMat.height);
+				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
+				test_mat(cnn->layerList[i].outMat.data);
+				test_mat(cnn->layerList[i].drop.mask);
+				break;
+
 			default:
 				printf("Not a cnn layer config?!\n");
 		}
@@ -133,7 +143,7 @@ int main()
 	// Set config
 	test(cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT, 1));
 	test(cnn_config_set_batch_size(cfg, BATCH));
-	test(cnn_config_set_layers(cfg, 10));
+	test(cnn_config_set_layers(cfg, 11));
 
 	i = 1;
 	test(cnn_config_set_convolution (cfg, i++, 2, 3));
@@ -143,6 +153,7 @@ int main()
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
 	test(cnn_config_set_full_connect(cfg, i++, 16));
+	test(cnn_config_set_dropout		(cfg, i++, 0.5));
 	test(cnn_config_set_full_connect(cfg, i++, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_SOFTMAX));
 
