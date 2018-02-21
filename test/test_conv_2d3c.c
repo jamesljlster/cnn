@@ -71,7 +71,7 @@ int main()
 	union CNN_LAYER layer[3];
 
 	float src[IMG_WIDTH * IMG_HEIGHT * CHANNEL];
-	float kernel[KERNEL_SIZE * KERNEL_SIZE];
+	float kernel[CHANNEL * KERNEL_SIZE * KERNEL_SIZE];
 	float bias[(IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)];
 	float desire[(IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)];
 
@@ -91,7 +91,7 @@ int main()
 		src[i] = rand() % 5;
 	}
 
-	for(i = 0; i < KERNEL_SIZE * KERNEL_SIZE; i++)
+	for(i = 0; i < CHANNEL * KERNEL_SIZE * KERNEL_SIZE; i++)
 	{
 		kernel[i] = rand() % 5;
 	}
@@ -108,7 +108,7 @@ int main()
 	printf("\n");
 
 	printf("kernel:\n");
-	print_img(kernel, KERNEL_SIZE, KERNEL_SIZE, 1);
+	print_img(kernel, CHANNEL * KERNEL_SIZE, KERNEL_SIZE, 1);
 	printf("\n");
 
 	printf("bias:\n");

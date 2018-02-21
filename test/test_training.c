@@ -105,9 +105,9 @@ int main(int argc, char* argv[])
 
 	// Set config
 	test(cnn_config_create(&cfg));
-	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight, 1));
+	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight, data.imgChannel));
 	test(cnn_config_set_batch_size(cfg, BATCH));
-	test(cnn_config_set_layers(cfg, 13));
+	test(cnn_config_set_layers(cfg, 11));
 
 	i = 1;
 	test(cnn_config_set_convolution (cfg, i++, 2, KERNEL_SIZE));
@@ -117,9 +117,9 @@ int main(int argc, char* argv[])
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
 	test(cnn_config_set_full_connect(cfg, i++, 128));
-	test(cnn_config_set_dropout		(cfg, i++, 0.5));
+	//test(cnn_config_set_dropout		(cfg, i++, 0.5));
 	test(cnn_config_set_full_connect(cfg, i++, 64));
-	test(cnn_config_set_dropout		(cfg, i++, 0.5));
+	//test(cnn_config_set_dropout		(cfg, i++, 0.5));
 	test(cnn_config_set_full_connect(cfg, i++, labelCols));
 	test(cnn_config_set_activation  (cfg, i++, CNN_SOFTMAX));
 

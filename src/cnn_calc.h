@@ -41,11 +41,12 @@ inline void cnn_conv_2d(float* dst, int dstRows, int dstCols,
 			float __conv = 0;
 			for(int __ch = 0; __ch < channel; __ch++)
 			{
+				int __kShift = __ch * (kernelSize * kernelSize);
 				for(int __convRow = 0; __convRow < kernelSize; __convRow++)
 				{
 					for(int __convCol = 0; __convCol < kernelSize; __convCol++)
 					{
-						__conv += kernel[__convRow * kernelSize + __convCol] *
+						__conv += kernel[__kShift + __convRow * kernelSize + __convCol] *
 							src[(__row + __convRow) * srcCols + (__col + __convCol + __ch)];
 					}
 				}
@@ -64,12 +65,13 @@ inline void cnn_conv_2d_grad(float* grad, int gradRows, int gradCols,
 		{
 			for(int __ch = 0; __ch < channel; __ch++)
 			{
+				int __kShift = __ch * (kSize * kSize);
 				for(int __convRow = 0; __convRow < kSize; __convRow++)
 				{
 					for(int __convCol = 0; __convCol < kSize; __convCol++)
 					{
 						grad[(__row + __convRow) * gradCols + (__col + __convCol + __ch)] +=
-							kernel[__convRow * kSize + __convCol] *
+							kernel[__kShift + __convRow * kSize + __convCol] *
 							iGrad[__row * iGradCols + __col];
 					}
 				}
@@ -87,11 +89,13 @@ inline void cnn_conv_2d_kernel_grad(float* grad, int gradRows, int gradCols,
 		{
 			for(int __ch = 0; __ch < channel; __ch++)
 			{
+				int __kShift = __ch * (kSize * kSize);
 				for(int __convRow = 0; __convRow < kSize; __convRow++)
 				{
 					for(int __convCol = 0; __convCol < kSize; __convCol++)
 					{
-						kGrad[__convRow * kSize + __convCol] += grad[__row * gradCols + __col] *
+						kGrad[__kShift + __convRow * kSize + __convCol] +=
+							grad[__row * gradCols + __col] *
 							src[(__row + __convRow) * srcCols + (__col + __convCol + __ch)];
 					}
 				}

@@ -298,6 +298,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	int ret = CNN_NO_ERROR;
 	int outRows, outCols; // Output matrix size
 	int outWidth, outHeight; // Valid convolution output size
+	int kRows, kCols; // Kernel matrix size
 	int bRows, bCols; // Bias matrix size
 
 	// Find output image size
@@ -315,12 +316,15 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	outRows = batch;
 	outCols = outWidth * outHeight;
 
+	kRows = inChannel * size;
+	kCols = size;
+
 	bRows = 1;
 	bCols = outCols;
 
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
-	cnn_run(cnn_mat_alloc(&layerPtr->kernel, size, size, 1), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->kernel, kRows, kCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 
 	// Assing value
