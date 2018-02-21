@@ -36,6 +36,8 @@ int cnn_write_layer_conv_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRe
 		int layerIndex, xmlTextWriterPtr writer);
 int cnn_write_layer_pool_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
 		xmlTextWriterPtr writer);
+int cnn_write_layer_drop_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
+		xmlTextWriterPtr writer);
 
 int cnn_write_dim_attr_xml(int dim, xmlTextWriterPtr writer);
 

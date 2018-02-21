@@ -60,11 +60,16 @@ int cnn_network_alloc(struct CNN* cnn)
 							tmpWidth, tmpHeight, tmpChannel,
 							cfg->layerCfg[i].pool.size, cfg->batch),
 						ret, ERR);
+				break;
 
+			case CNN_LAYER_DROP:
+				cnn_run(cnn_layer_drop_alloc(&cnn->layerList[i].drop,
+							tmpWidth, tmpHeight, tmpChannel, cfg->batch),
+						ret, ERR);
 				break;
 
 			default:
-				assert(cfg->layerCfg[i].type >= 0 && cfg->layerCfg[i].type <= CNN_LAYER_POOL);
+				assert(!"Invalid layer type");
 		}
 
 		// Find layer output image size
@@ -139,6 +144,34 @@ int cnn_layer_input_alloc(union CNN_LAYER* layerPtr,
 
 ERR:
 	cnn_layer_input_delete(layerPtr);
+
+RET:
+	return ret;
+}
+
+int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr,
+		int inWidth, int inHeight, int inChannel, int batch)
+{
+	int ret = CNN_NO_ERROR;
+	int outRows, outCols;
+
+	// Find allocate size
+	outRows = batch;
+	outCols = inWidth * inHeight * inChannel;
+
+	// Allocate memory
+	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
+	cnn_alloc(layerPtr->mask, outCols, sizeof(float), ret, ERR);
+
+	// Assign value
+	layerPtr->outMat.width = inWidth;
+	layerPtr->outMat.height = inHeight;
+	layerPtr->outMat.channel = inChannel;
+
+	goto RET;
+
+ERR:
+	cnn_layer_drop_delete(layerPtr);
 
 RET:
 	return ret;

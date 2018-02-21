@@ -56,6 +56,14 @@ struct CNN_CONFIG_LAYER_POOL
 	int size;
 };
 
+struct CNN_CONFIG_LAYER_DROP
+{
+	// Layer type
+	int type;
+
+	float rate;
+};
+
 union CNN_CONFIG_LAYER
 {
 	// Layer type
@@ -65,6 +73,7 @@ union CNN_CONFIG_LAYER
 	struct CNN_CONFIG_LAYER_FC fc;
 	struct CNN_CONFIG_LAYER_CONV conv;
 	struct CNN_CONFIG_LAYER_POOL pool;
+	struct CNN_CONFIG_LAYER_DROP drop;
 };
 
 struct CNN_CONFIG
@@ -129,6 +138,15 @@ struct CNN_LAYER_POOL
 	int* indexMat;
 };
 
+struct CNN_LAYER_DROP
+{
+	// Layer output matrix
+	struct CNN_SHAPE outMat;
+
+	// Dropout mask
+	int* mask;
+};
+
 union CNN_LAYER
 {
 	// Layer output matrix
@@ -138,6 +156,7 @@ union CNN_LAYER
 	struct CNN_LAYER_FC fc;
 	struct CNN_LAYER_CONV conv;
 	struct CNN_LAYER_POOL pool;
+	struct CNN_LAYER_DROP drop;
 };
 
 struct CNN

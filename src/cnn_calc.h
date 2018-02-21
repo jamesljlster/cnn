@@ -1,12 +1,35 @@
 #ifndef __CNN_CALC_H__
 #define __CNN_CALC_H__
 
+#include <stdlib.h>
 #include <string.h>
 #include <cblas.h>
 
 #include "cnn.h"
 #include "cnn_types.h"
 #include "cnn_builtin_math.h"
+
+inline void cnn_drop(float* dst, float* src, int* mask, int size)
+{
+	for(int __i = 0; __i < size; __i++)
+	{
+		if(mask[__i] > 0)
+		{
+			dst[__i] = src[__i];
+		}
+	}
+}
+
+inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask, int size)
+{
+	for(int __i = 0; __i < size; __i++)
+	{
+		if(mask[__i] > 0)
+		{
+			gradDst[__i] = gradSrc[__i];
+		}
+	}
+}
 
 inline void cnn_conv_2d(float* dst, int dstRows, int dstCols,
 		float* kernel, int kernelSize, int channel, float* src, int srcRows, int srcCols)
@@ -140,6 +163,43 @@ inline void cnn_forward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 	}
 }
 
+inline void cnn_forward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+		int layerIndex)
+{
+	int size = layerRef[layerIndex].outMat.data.cols;
+	int* mask = layerRef[layerIndex].drop.mask;
+	float rate = cfgRef->layerCfg[layerIndex].drop.rate;
+
+	// Zero output memory
+	memset(layerRef[layerIndex].outMat.data.mat, 0, sizeof(float) *
+			layerRef[layerIndex].outMat.data.rows *
+			layerRef[layerIndex].outMat.data.cols);
+
+	// Generate dropout mask
+	for(int j = 0; j < size; j++)
+	{
+		if((float)rand() / (float)RAND_MAX >= rate)
+		{
+			mask[j] = 1;
+		}
+		else
+		{
+			mask[j] = 0;
+		}
+	}
+
+	for(int j = 0; j < cfgRef->batch; j++)
+	{
+		int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+		int dstShift = j * layerRef[layerIndex].outMat.data.cols;
+
+		float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
+		float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
+
+		cnn_drop(dstPtr, srcPtr, mask, size);
+	}
+}
+
 inline void cnn_forward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
@@ -251,6 +311,31 @@ inline void cnn_bp_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int 
 	cblas_saxpy(layerRef[layerIndex].fc.bias.cols, lRate,
 			layerRef[layerIndex].fc.bias.grad, 1,
 			layerRef[layerIndex].fc.bias.mat, 1);
+}
+
+inline void cnn_bp_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
+		float lRate)
+{
+	if(layerIndex > 1)
+	{
+		int size = layerRef[layerIndex].outMat.data.cols;
+		int* mask = layerRef[layerIndex].drop.mask;
+
+		// Zero gradient memory
+		memset(layerRef[layerIndex - 1].outMat.data.grad, 0, sizeof(float) *
+				layerRef[layerIndex].outMat.data.rows *
+				layerRef[layerIndex].outMat.data.cols);
+
+		// Find layer gradient
+		for(int j = 0; j < cfgRef->batch; j++)
+		{
+			int shift = j * layerRef[layerIndex].outMat.data.cols;
+
+			cnn_drop_grad(&layerRef[layerIndex - 1].outMat.data.grad[shift],
+					&layerRef[layerIndex].outMat.data.grad[shift],
+					mask, size);
+		}
+	}
 }
 
 inline void cnn_bp_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,

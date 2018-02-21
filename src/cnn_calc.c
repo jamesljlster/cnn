@@ -47,9 +47,13 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 				cnn_bp_pool(layerRef, cfgRef, i, lRate);
 				break;
 
+			// Dropout
+			case CNN_LAYER_DROP:
+				cnn_bp_drop(layerRef, cfgRef, i, lRate);
+				break;
+
 			default:
-				assert((cfgRef->layerCfg[i].type) > 0 &&
-						(cfgRef->layerCfg[i].type <= CNN_LAYER_POOL));
+				assert(!"Invalid layer type");
 		}
 	}
 }
@@ -94,9 +98,13 @@ void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
 				cnn_forward_pool(layerRef, cfgRef, i);
 				break;
 
+			// Dropout
+			case CNN_LAYER_DROP:
+				cnn_forward_drop(layerRef, cfgRef, i);
+				break;
+
 			default:
-				assert((cfgRef->layerCfg[i].type) > 0 &&
-						(cfgRef->layerCfg[i].type <= CNN_LAYER_POOL));
+				assert(!"Invalid layer type");
 		}
 	}
 

@@ -19,7 +19,8 @@ typedef enum CNN_LAYER_TYPE
 	CNN_LAYER_FC = 1,
 	CNN_LAYER_AFUNC = 2,
 	CNN_LAYER_CONV = 3,
-	CNN_LAYER_POOL = 4
+	CNN_LAYER_POOL = 4,
+	CNN_LAYER_DROP = 5
 } cnn_layer_t;
 
 typedef enum CNN_POOL_TYPE
@@ -76,6 +77,9 @@ int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_
 		int size);
 int cnn_config_get_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
 		cnn_pool_t* typePtr, int* sizePtr);
+
+int cnn_config_set_dropout(cnn_config_t cfg, int layerIndex, float rate);
+int cnn_config_get_dropout(cnn_config_t cfg, int layerIndex, float* ratePtr);
 
 void cnn_config_set_learning_rate(cnn_config_t cfg, float lRate);
 void cnn_config_get_learning_rate(cnn_config_t cfg, float* lRatePtr);

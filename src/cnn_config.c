@@ -491,3 +491,50 @@ int cnn_config_get_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
 RET:
 	return ret;
 }
+
+int cnn_config_set_dropout(cnn_config_t cfg, int layerIndex, float rate)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Checking
+	if(layerIndex <= 0 || layerIndex >= cfg->layers ||
+			rate < 0.0 || rate > 1.0)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Set config
+	cfg->layerCfg[layerIndex].type = CNN_LAYER_DROP;
+	cfg->layerCfg[layerIndex].drop.rate = rate;
+
+RET:
+	return ret;
+}
+
+int cnn_config_get_dropout(cnn_config_t cfg, int layerIndex, float* ratePtr)
+{
+	int ret = CNN_NO_ERROR;
+
+	// Checking
+	if(layerIndex < 0 || layerIndex >= cfg->layers)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	if(cfg->layerCfg[layerIndex].type != CNN_LAYER_DROP)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Assign value
+	if(ratePtr != NULL)
+	{
+		*ratePtr = cfg->layerCfg[layerIndex].drop.rate;
+	}
+
+RET:
+	return ret;
+}
