@@ -63,21 +63,26 @@ int cnn_config_set_layers(cnn_config_t cfg, int layers);
 void cnn_config_get_layers(cnn_config_t cfg, int* layersPtr);
 int cnn_config_get_layer_type(cnn_config_t cfg, int layerIndex, cnn_layer_t* typePtr);
 
+int cnn_config_append_full_connect(cnn_config_t cfg, int size);
 int cnn_config_set_full_connect(cnn_config_t cfg, int layerIndex, int size);
 int cnn_config_get_full_connect(cnn_config_t cfg, int layerIndex, int* sizePtr);
 
+int cnn_config_append_activation(cnn_config_t cfg, cnn_afunc_t aFuncID);
 int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFuncID);
 int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t* idPtr);
 
+int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim, int size);
 int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim, int size);
 int cnn_config_get_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
 		int* sizePtr);
 
+int cnn_config_append_pooling(cnn_config_t cfg, cnn_dim_t dim, cnn_pool_t type, int size);
 int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_pool_t type,
 		int size);
 int cnn_config_get_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
 		cnn_pool_t* typePtr, int* sizePtr);
 
+int cnn_config_append_dropout(cnn_config_t cfg, float rate);
 int cnn_config_set_dropout(cnn_config_t cfg, int layerIndex, float rate);
 int cnn_config_get_dropout(cnn_config_t cfg, int layerIndex, float* ratePtr);
 

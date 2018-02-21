@@ -284,6 +284,28 @@ RET:
 	return ret;
 }
 
+int cnn_config_append_full_connect(cnn_config_t cfg, int size)
+{
+	int ret = CNN_NO_ERROR;
+	int layers;
+
+	// Checking
+	if(size <= 0)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Append fully connected layer
+	cnn_config_get_layers(cfg, &layers);
+	layers++;
+	cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
+	cnn_run(cnn_config_set_full_connect(cfg, layers - 1, size), ret, RET);
+
+RET:
+	return ret;
+}
+
 int cnn_config_set_full_connect(cnn_config_t cfg, int layerIndex, int size)
 {
 	int ret = CNN_NO_ERROR;
@@ -330,12 +352,35 @@ RET:
 	return ret;
 }
 
+int cnn_config_append_activation(cnn_config_t cfg, cnn_afunc_t aFuncID)
+{
+	int ret = CNN_NO_ERROR;
+	int layers;
+
+	// Checking
+	if(aFuncID < 0 || aFuncID >= CNN_AFUNC_AMOUNT)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Append activation layer
+	cnn_config_get_layers(cfg, &layers);
+	layers++;
+	cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
+	cnn_run(cnn_config_set_activation(cfg, layers - 1, aFuncID), ret, RET);
+
+RET:
+	return ret;
+}
+
 int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFuncID)
 {
 	int ret = CNN_NO_ERROR;
 
 	// Checking
-	if(layerIndex <= 0 || layerIndex >= cfg->layers || aFuncID < 0 || aFuncID >= CNN_AFUNC_AMOUNT)
+	if(layerIndex <= 0 || layerIndex >= cfg->layers || aFuncID < 0 ||
+			aFuncID >= CNN_AFUNC_AMOUNT)
 	{
 		ret = CNN_INVALID_ARG;
 		goto RET;
@@ -371,6 +416,28 @@ int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t* idP
 	{
 		*idPtr = cfg->layerCfg[layerIndex].aFunc.id;
 	}
+
+RET:
+	return ret;
+}
+
+int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim, int size)
+{
+	int ret = CNN_NO_ERROR;
+	int layers;
+
+	// Checking
+	if(convDim <= 0 || convDim > 2 || size <= 0)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Append convolution layer
+	cnn_config_get_layers(cfg, &layers);
+	layers++;
+	cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
+	cnn_run(cnn_config_set_convolution(cfg, layers - 1, convDim, size), ret, RET);
 
 RET:
 	return ret;
@@ -431,6 +498,28 @@ RET:
 	return ret;
 }
 
+int cnn_config_append_pooling(cnn_config_t cfg, cnn_dim_t dim, cnn_pool_t type, int size)
+{
+	int ret = CNN_NO_ERROR;
+	int layers;
+
+	// Checking
+	if(dim <= 0 || dim > 2 || type < CNN_POOL_MAX || type > CNN_POOL_AVG || size <= 0)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Append pooling layer
+	cnn_config_get_layers(cfg, &layers);
+	layers++;
+	cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
+	cnn_run(cnn_config_set_pooling(cfg, layers - 1, dim, type, size), ret, RET);
+
+RET:
+	return ret;
+}
+
 int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_pool_t type,
 		int size)
 {
@@ -438,6 +527,7 @@ int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_
 
 	// Checking
 	if(layerIndex <= 0 || layerIndex >= cfg->layers ||
+			type < CNN_POOL_MAX || type > CNN_POOL_AVG ||
 			dim <= 0 || dim > 2 || size <= 0)
 	{
 		ret = CNN_INVALID_ARG;
@@ -487,6 +577,28 @@ int cnn_config_get_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
 	{
 		*sizePtr = cfg->layerCfg[layerIndex].pool.size;
 	}
+
+RET:
+	return ret;
+}
+
+int cnn_config_append_dropout(cnn_config_t cfg, float rate)
+{
+	int ret = CNN_NO_ERROR;
+	int layers;
+
+	// Checking
+	if(rate < 0.0 || rate > 1.0)
+	{
+		ret = CNN_INVALID_ARG;
+		goto RET;
+	}
+
+	// Append dropout layer
+	cnn_config_get_layers(cfg, &layers);
+	layers++;
+	cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
+	cnn_run(cnn_config_set_dropout(cfg, layers - 1, rate), ret, RET);
 
 RET:
 	return ret;
