@@ -6,7 +6,7 @@
 #include "cnn_private.h"
 #include "cnn_calc.h"
 
-void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
+void cnn_backward(cnn_t cnn, float lRate, float* errGrad)
 {
 	int i;
 
@@ -29,27 +29,27 @@ void cnn_bp(cnn_t cnn, float lRate, float* errGrad)
 		{
 			// Fully connected
 			case CNN_LAYER_FC:
-				cnn_bp_fc(layerRef, cfgRef, i, lRate);
+				cnn_backward_fc(layerRef, cfgRef, i, lRate);
 				break;
 
 			// Activation function
 			case CNN_LAYER_AFUNC:
-				cnn_bp_afunc(layerRef, cfgRef, i, lRate);
+				cnn_backward_afunc(layerRef, cfgRef, i, lRate);
 				break;
 
 			// Convolution
 			case CNN_LAYER_CONV:
-				cnn_bp_conv(layerRef, cfgRef, i, lRate);
+				cnn_backward_conv(layerRef, cfgRef, i, lRate);
 				break;
 
 			// Pooling
 			case CNN_LAYER_POOL:
-				cnn_bp_pool(layerRef, cfgRef, i, lRate);
+				cnn_backward_pool(layerRef, cfgRef, i, lRate);
 				break;
 
 			// Dropout
 			case CNN_LAYER_DROP:
-				cnn_bp_drop(layerRef, cfgRef, i, lRate);
+				cnn_backward_drop(layerRef, cfgRef, i, lRate);
 				break;
 
 			default:

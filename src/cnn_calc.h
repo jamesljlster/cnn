@@ -261,7 +261,7 @@ inline void cnn_forward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 	}
 }
 
-inline void cnn_bp_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
+inline void cnn_backward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
 		float lRate)
 {
 	int srcShift;
@@ -314,8 +314,8 @@ inline void cnn_bp_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int 
 			layerRef[layerIndex].fc.bias.mat, 1);
 }
 
-inline void cnn_bp_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
-		float lRate)
+inline void cnn_backward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+		int layerIndex, float lRate)
 {
 	if(layerIndex > 1)
 	{
@@ -330,8 +330,8 @@ inline void cnn_bp_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, in
 	}
 }
 
-inline void cnn_bp_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
-		float lRate)
+inline void cnn_backward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+		int layerIndex, float lRate)
 {
 	int srcShift, dstShift;
 	float* srcPtr;
@@ -384,8 +384,8 @@ inline void cnn_bp_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, i
 	}
 }
 
-inline void cnn_bp_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
-		float lRate)
+inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+		int layerIndex, float lRate)
 {
 	int j;
 	int srcShift, dstShift;
@@ -459,8 +459,8 @@ inline void cnn_bp_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, in
 			layerRef[layerIndex].conv.bias.mat, 1);
 }
 
-inline void cnn_bp_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
-		float lRate)
+inline void cnn_backward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+		int layerIndex, float lRate)
 {
 	int srcShift, dstShift;
 	float* srcPtr;
