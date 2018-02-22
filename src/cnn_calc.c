@@ -100,7 +100,17 @@ void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
 
 			// Dropout
 			case CNN_LAYER_DROP:
-				cnn_forward_drop(layerRef, cfgRef, i);
+				if(cnn->dropEnable)
+				{
+					cnn_forward_drop(layerRef, cfgRef, i);
+				}
+				else
+				{
+					memcpy(layerRef[i].outMat.data.mat, layerRef[i - 1].outMat.data.mat,
+							sizeof(float) * layerRef[i].outMat.data.rows *
+							layerRef[i].outMat.data.cols);
+				}
+
 				break;
 
 			default:

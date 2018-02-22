@@ -97,10 +97,13 @@ cnn_config_t cnn_get_config(cnn_t cnn);
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
 void cnn_delete(cnn_t cnn);
 
+void cnn_set_dropout_enabled(cnn_t cnn, int enable);
+
 void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat);
 void cnn_bp(cnn_t cnn, float lRate, float* errGrad);
 int cnn_training(cnn_t cnn, float* inputMat, float* desireMat, float* outputMat, float* errMat);
-int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMat, float* outputMat, float* errMat);
+int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMat,
+		float* outputMat, float* errMat);
 
 void cnn_rand_network(cnn_t cnn);
 void cnn_zero_network(cnn_t cnn);

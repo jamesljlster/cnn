@@ -62,6 +62,7 @@ struct CNN_CONFIG_LAYER_DROP
 	int type;
 
 	float rate;
+	float scale;
 };
 
 union CNN_CONFIG_LAYER
@@ -163,6 +164,8 @@ struct CNN
 {
 	struct CNN_CONFIG cfg;
 	union CNN_LAYER* layerList;
+
+	int dropEnable;
 };
 
 #endif

@@ -11,10 +11,10 @@
 
 #define KERNEL_SIZE 5
 
-#define BATCH 5
+#define BATCH 1
 #define ITER 10000
-#define L_RATE 0.1
-#define DECAY 0.996
+#define L_RATE 0.01
+#define DECAY 0.9996
 
 #define MODEL_PATH "test.xml"
 
@@ -130,8 +130,7 @@ int main(int argc, char* argv[])
 	// Training
 	for(iter = 0; iter < ITER; iter++)
 	{
-		mse = 0;
-		hit = 0;
+		cnn_set_dropout_enabled(cnn, 1);
 
 		for(i = 0; i < data.instances; i += BATCH)
 		{
@@ -139,10 +138,21 @@ int main(int argc, char* argv[])
 						&data.input[i * dataCols],
 						&data.output[i * labelCols],
 						output, err));
+		}
+
+		cnn_set_dropout_enabled(cnn, 0);
+
+		mse = 0;
+		hit = 0;
+
+		for(i = 0; i < data.instances; i += BATCH)
+		{
+			cnn_forward(cnn, &data.input[i * dataCols], output);
 
 			for(j = 0; j < labelCols * BATCH; j++)
 			{
-				mse += err[j] * err[j];
+				float tmp = data.output[i * dataCols + j] - output[j];
+				mse += tmp * tmp;
 			}
 
 			for(j = 0; j < BATCH; j++)
@@ -159,7 +169,8 @@ int main(int argc, char* argv[])
 		printf("Iter %d, mse: %f, accuracy: %.2f %%\n", iter, mse,
 				(float)hit * 100 / (float)(data.instances));
 
-		lRate = L_RATE * sqrt(mse);
+		//lRate = L_RATE * sqrt(mse);
+		lRate *= DECAY;
 	}
 
 	// Export

@@ -14,6 +14,11 @@
 #define CNN_DEFAULT_FC_SIZE 16
 #define CNN_DEFAULT_LRATE 0.001
 
+void cnn_set_dropout_enabled(cnn_t cnn, int enable)
+{
+	cnn->dropEnable = enable;
+}
+
 cnn_config_t cnn_get_config(cnn_t cnn)
 {
 	return &cnn->cfg;
@@ -619,6 +624,7 @@ int cnn_config_set_dropout(cnn_config_t cfg, int layerIndex, float rate)
 	// Set config
 	cfg->layerCfg[layerIndex].type = CNN_LAYER_DROP;
 	cfg->layerCfg[layerIndex].drop.rate = rate;
+	cfg->layerCfg[layerIndex].drop.scale = 1.0 / (1.0 - rate);
 
 RET:
 	return ret;
