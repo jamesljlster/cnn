@@ -60,7 +60,7 @@ int main()
 	// CNN Backpropagation
 	for(i = 0; i < ITER; i++)
 	{
-		cnn_backward(cnn, 0.01, err);
+		cnn_backward(cnn, err);
 	}
 
 	// Calculate time cost

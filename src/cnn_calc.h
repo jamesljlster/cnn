@@ -30,7 +30,7 @@ inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask, int size, f
 	{
 		if(mask[__i] > 0)
 		{
-			gradDst[__i] = gradSrc[__i] * scale;
+			gradDst[__i] += gradSrc[__i] * scale;
 		}
 		else
 		{
@@ -261,25 +261,22 @@ inline void cnn_forward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 	}
 }
 
-inline void cnn_backward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex,
-		float lRate)
+inline void cnn_backward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+		int layerIndex)
 {
 	int srcShift;
 
-	// Find weight delta matrix
+	// Sum weight gradient matrix
 	cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
 			layerRef[layerIndex].fc.weight.rows,
 			layerRef[layerIndex].fc.weight.cols,
 			cfgRef->batch,
 			1.0,
 			layerRef[layerIndex - 1].outMat.data.mat, layerRef[layerIndex - 1].outMat.data.cols,
-			layerRef[layerIndex].outMat.data.grad, layerRef[layerIndex].outMat.data.cols, 0.0,
+			layerRef[layerIndex].outMat.data.grad, layerRef[layerIndex].outMat.data.cols, 1.0,
 			layerRef[layerIndex].fc.weight.grad, layerRef[layerIndex].fc.weight.cols);
 
-	// Find bias delta matrix
-	memset(layerRef[layerIndex].fc.bias.grad, 0, sizeof(float) *
-			layerRef[layerIndex].fc.bias.cols);
-
+	// Sum bias gradient matrix
 	for(int j = 0; j < cfgRef->batch; j++)
 	{
 		srcShift = j * layerRef[layerIndex].outMat.data.cols;
@@ -301,21 +298,10 @@ inline void cnn_backward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef
 				layerRef[layerIndex - 1].outMat.data.grad,
 				layerRef[layerIndex - 1].outMat.data.cols);
 	}
-
-	// Update weight
-	cblas_saxpy(layerRef[layerIndex].fc.weight.rows * layerRef[layerIndex].fc.weight.cols,
-			lRate,
-			layerRef[layerIndex].fc.weight.grad, 1,
-			layerRef[layerIndex].fc.weight.mat, 1);
-
-	// Update bias
-	cblas_saxpy(layerRef[layerIndex].fc.bias.cols, lRate,
-			layerRef[layerIndex].fc.bias.grad, 1,
-			layerRef[layerIndex].fc.bias.mat, 1);
 }
 
 inline void cnn_backward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
-		int layerIndex, float lRate)
+		int layerIndex)
 {
 	if(layerIndex > 1)
 	{
@@ -331,7 +317,7 @@ inline void cnn_backward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 }
 
 inline void cnn_backward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
-		int layerIndex, float lRate)
+		int layerIndex)
 {
 	int srcShift, dstShift;
 	float* srcPtr;
@@ -385,16 +371,12 @@ inline void cnn_backward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfg
 }
 
 inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
-		int layerIndex, float lRate)
+		int layerIndex)
 {
 	int j;
 	int srcShift, dstShift;
 
-	// Find kernel delta matrix
-	memset(layerRef[layerIndex].conv.kernel.grad, 0, sizeof(float) *
-			layerRef[layerIndex].conv.kernel.rows *
-			layerRef[layerIndex].conv.kernel.cols);
-
+	// Sum kernel gradient matrix
 	for(j = 0; j < cfgRef->batch; j++)
 	{
 		srcShift = j * layerRef[layerIndex].outMat.data.cols;
@@ -411,10 +393,7 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 				layerRef[layerIndex - 1].outMat.width);
 	}
 
-	// Find bias delta matrix
-	memset(layerRef[layerIndex].conv.bias.grad, 0, sizeof(float) *
-			layerRef[layerIndex].conv.bias.cols);
-
+	// Find bias gradient matrix
 	for(j = 0; j < cfgRef->batch; j++)
 	{
 		srcShift = j * layerRef[layerIndex].outMat.data.cols;
@@ -446,21 +425,10 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 					layerRef[layerIndex].outMat.width);
 		}
 	}
-
-	// Update kernel
-	cblas_saxpy(layerRef[layerIndex].conv.kernel.cols *
-			layerRef[layerIndex].conv.kernel.rows, lRate,
-			layerRef[layerIndex].conv.kernel.grad, 1,
-			layerRef[layerIndex].conv.kernel.mat, 1);
-
-	// Update bias
-	cblas_saxpy(layerRef[layerIndex].conv.bias.cols, lRate,
-			layerRef[layerIndex].conv.bias.grad, 1,
-			layerRef[layerIndex].conv.bias.mat, 1);
 }
 
 inline void cnn_backward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
-		int layerIndex, float lRate)
+		int layerIndex)
 {
 	int srcShift, dstShift;
 	float* srcPtr;

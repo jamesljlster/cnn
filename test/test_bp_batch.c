@@ -173,7 +173,7 @@ int main()
 	}
 
 	// CNN Backpropagation
-	cnn_backward(cnn, 0.01, err);
+	cnn_backward(cnn, err);
 
 	// Print detail
 	printf("***** Network Gradient Detail *****\n");

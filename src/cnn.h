@@ -100,7 +100,8 @@ void cnn_delete(cnn_t cnn);
 void cnn_set_dropout_enabled(cnn_t cnn, int enable);
 
 void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat);
-void cnn_backward(cnn_t cnn, float lRate, float* errGrad);
+void cnn_backward(cnn_t cnn, float* errGrad);
+void cnn_update(cnn_t cnn, float lRate);
 int cnn_training(cnn_t cnn, float* inputMat, float* desireMat, float* outputMat, float* errMat);
 int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMat,
 		float* outputMat, float* errMat);
