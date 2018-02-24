@@ -89,7 +89,7 @@ void cnn_clone_network_detail(struct CNN* dst, const struct CNN* src)
 							srcLayerList[i].conv.kernel.cols);
 
 				// Clone bias
-				memcpy(dstLayerList[i].conv.bias.mat, dstLayerList[i].conv.bias.mat,
+				memcpy(dstLayerList[i].conv.bias.mat, srcLayerList[i].conv.bias.mat,
 						sizeof(float) * srcLayerList[i].conv.bias.rows *
 							srcLayerList[i].conv.bias.cols);
 				break;
