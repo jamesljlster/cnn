@@ -95,12 +95,15 @@ int cnn_config_export(cnn_config_t cfg, const char* fPath);
 cnn_config_t cnn_get_config(cnn_t cnn);
 
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
+int cnn_clone(cnn_t* dstPtr, const cnn_t src);
 void cnn_delete(cnn_t cnn);
 
 void cnn_set_dropout_enabled(cnn_t cnn, int enable);
+int cnn_resize_batch(cnn_t* cnnPtr, int batchSize);
 
 void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat);
-void cnn_bp(cnn_t cnn, float lRate, float* errGrad);
+void cnn_backward(cnn_t cnn, float* errGrad);
+void cnn_update(cnn_t cnn, float lRate);
 int cnn_training(cnn_t cnn, float* inputMat, float* desireMat, float* outputMat, float* errMat);
 int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMat,
 		float* outputMat, float* errMat);

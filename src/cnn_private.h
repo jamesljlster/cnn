@@ -78,6 +78,9 @@ void cnn_layer_drop_delete(struct CNN_LAYER_DROP* layerPtr);
 void cnn_network_delete(struct CNN* cnn);
 void cnn_struct_delete(struct CNN* cnn);
 
+// Private clone function
+void cnn_clone_network_detail(struct CNN* dst, const struct CNN* src);
+
 #ifdef __cplusplus
 }
 #endif

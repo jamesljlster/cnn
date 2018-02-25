@@ -59,7 +59,10 @@ int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMa
 	}
 
 	// Backpropagation
-	cnn_bp(cnn, lRate, errStore);
+	cnn_backward(cnn, errStore);
+
+	// Update network
+	cnn_update(cnn, lRate);
 
 RET:
 	cnn_free(outMem);

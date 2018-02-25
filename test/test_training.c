@@ -134,10 +134,15 @@ int main(int argc, char* argv[])
 
 		for(i = 0; i < data.instances; i += BATCH)
 		{
-			test(cnn_training_custom(cnn, lRate,
-						&data.input[i * dataCols],
-						&data.output[i * labelCols],
-						output, err));
+			cnn_forward(cnn, &data.input[i * dataCols], output);
+
+			for(j = 0; j < labelCols * BATCH; j++)
+			{
+				err[j] = data.output[i * labelCols + j] - output[j];
+			}
+
+			cnn_backward(cnn, err);
+			cnn_update(cnn, lRate);
 		}
 
 		cnn_set_dropout_enabled(cnn, 0);
