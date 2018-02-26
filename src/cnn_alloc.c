@@ -51,7 +51,8 @@ int cnn_network_alloc(struct CNN* cnn)
 			case CNN_LAYER_CONV:
 				cnn_run(cnn_layer_conv_alloc(&cnn->layerList[i].conv,
 							tmpWidth, tmpHeight, tmpChannel,
-							cfg->layerCfg[i].conv.size, cfg->batch),
+							cfg->layerCfg[i].conv.size, cfg->layerCfg[i].conv.filter,
+							cfg->batch),
 						ret, ERR);
 				break;
 
@@ -293,7 +294,7 @@ RET:
 }
 
 int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
-		int inWidth, int inHeight, int inChannel, int size, int batch)
+		int inWidth, int inHeight, int inChannel, int filter, int size, int batch)
 {
 	int ret = CNN_NO_ERROR;
 	int outRows, outCols; // Output matrix size
@@ -314,9 +315,9 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 
 	// Find allocate size
 	outRows = batch;
-	outCols = outWidth * outHeight;
+	outCols = outWidth * outHeight * filter;
 
-	kRows = inChannel * size;
+	kRows = filter * inChannel * size;
 	kCols = size;
 
 	bRows = 1;
@@ -331,7 +332,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	layerPtr->outMat.width = outWidth;
 	layerPtr->outMat.height = outHeight;
 	layerPtr->inChannel = inChannel;
-	layerPtr->outMat.channel = 1;
+	layerPtr->outMat.channel = filter;
 
 	goto RET;
 

@@ -121,7 +121,7 @@ int main()
 
 	// Allocate cnn layer
 	test(cnn_layer_afunc_alloc(&layer[1].aFunc, IMG_WIDTH, IMG_HEIGHT, CHANNEL, 1, CNN_RELU));
-	test(cnn_layer_conv_alloc(&layer[2].conv, IMG_WIDTH, IMG_HEIGHT, CHANNEL, KERNEL_SIZE, 1));
+	test(cnn_layer_conv_alloc(&layer[2].conv, IMG_WIDTH, IMG_HEIGHT, CHANNEL, 1, KERNEL_SIZE, 1));
 
 	// Copy memory
 	memcpy(layer[1].outMat.data.mat, src, sizeof(float) *
