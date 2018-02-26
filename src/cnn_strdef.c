@@ -34,7 +34,8 @@ const char* cnn_str_list[] = {
 	"weight",
 	"1d",
 	"2d",
-	"rate"
+	"rate",
+	"filter"
 };
 
 int cnn_strdef_get_id(const char* str)
