@@ -40,47 +40,64 @@ inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask, int size, f
 }
 
 inline void cnn_conv_2d(float* dst, int dstRows, int dstCols,
-		float* kernel, int kernelSize, int channel, float* src, int srcRows, int srcCols)
+		float* kernel, int kernelSize, int chIn, int chOut,
+		float* src, int srcRows, int srcCols)
 {
+	int __kMemSize = kernelSize * kernelSize;
+	int __kGroupSize = chIn * __kMemSize;
+
 	for(int __row = 0; __row < dstRows; __row++)
 	{
 		for(int __col = 0; __col < dstCols; __col++)
 		{
-			float __conv = 0;
-			for(int __ch = 0; __ch < channel; __ch++)
+			for(int __chOut = 0; __chOut < chOut; __chOut++)
 			{
-				int __kShift = __ch * (kernelSize * kernelSize);
-				for(int __convRow = 0; __convRow < kernelSize; __convRow++)
+				int __kGroupShift = __chOut * __kGroupSize;
+				float __conv = 0;
+				for(int __chIn = 0; __chIn < chIn; __chIn++)
 				{
-					for(int __convCol = 0; __convCol < kernelSize; __convCol++)
+					int __kShift = __chIn * __kMemSize + __kGroupShift;
+					for(int __convRow = 0; __convRow < kernelSize; __convRow++)
 					{
-						__conv += kernel[__kShift + __convRow * kernelSize + __convCol] *
-							src[(__row + __convRow) * srcCols + (__col + __convCol + __ch)];
+						for(int __convCol = 0; __convCol < kernelSize; __convCol++)
+						{
+							__conv += kernel[__kShift + __convRow * kernelSize + __convCol] *
+								src[(__row + __convRow) * srcCols + (__col + __convCol + __chIn)];
+						}
 					}
 				}
+
+				dst[__row * dstCols + __col + __chOut] = __conv;
 			}
-			dst[__row * dstCols + __col] = __conv;
 		}
 	}
 }
 
 inline void cnn_conv_2d_grad(float* grad, int gradRows, int gradCols,
-		float* kernel, int kSize, int channel, float* iGrad, int iGradRows, int iGradCols)
+		float* kernel, int kSize, int chIn, int chOut,
+		float* iGrad, int iGradRows, int iGradCols)
 {
+	int __kMemSize = kSize * kSize;
+	int __kGroupSize = chIn * __kMemSize;
+
 	for(int __row = 0; __row < iGradRows; __row++)
 	{
 		for(int __col = 0; __col < iGradCols; __col++)
 		{
-			for(int __ch = 0; __ch < channel; __ch++)
+			for(int __chOut = 0; __chOut < chOut; __chOut++)
 			{
-				int __kShift = __ch * (kSize * kSize);
-				for(int __convRow = 0; __convRow < kSize; __convRow++)
+				int __kGroupShift = __chOut * __kGroupSize;
+				for(int __chIn = 0; __chIn < chIn; __chIn++)
 				{
-					for(int __convCol = 0; __convCol < kSize; __convCol++)
+					int __kShift = __chIn * __kMemSize + __kGroupShift;
+					for(int __convRow = 0; __convRow < kSize; __convRow++)
 					{
-						grad[(__row + __convRow) * gradCols + (__col + __convCol + __ch)] +=
-							kernel[__kShift + __convRow * kSize + __convCol] *
-							iGrad[__row * iGradCols + __col];
+						for(int __convCol = 0; __convCol < kSize; __convCol++)
+						{
+							grad[(__row + __convRow) * gradCols + (__col + __convCol + __chIn)] +=
+								kernel[__kShift + __convRow * kSize + __convCol] *
+								iGrad[__row * iGradCols + __col + __chOut];
+						}
 					}
 				}
 			}
@@ -89,22 +106,30 @@ inline void cnn_conv_2d_grad(float* grad, int gradRows, int gradCols,
 }
 
 inline void cnn_conv_2d_kernel_grad(float* grad, int gradRows, int gradCols,
-		float* kGrad, int kSize, int channel, float* src, int srcRows, int srcCols)
+		float* kGrad, int kSize, int chIn, int chOut,
+		float* src, int srcRows, int srcCols)
 {
+	int __kMemSize = kSize * kSize;
+	int __kGroupSize = chIn * __kMemSize;
+
 	for(int __row = 0; __row < gradRows; __row++)
 	{
 		for(int __col = 0; __col < gradCols; __col++)
 		{
-			for(int __ch = 0; __ch < channel; __ch++)
+			for(int __chOut = 0; __chOut < chOut; __chOut++)
 			{
-				int __kShift = __ch * (kSize * kSize);
-				for(int __convRow = 0; __convRow < kSize; __convRow++)
+				int __kGroupShift = __chOut * __kGroupSize;
+				for(int __chIn = 0; __chIn < chIn; __chIn++)
 				{
-					for(int __convCol = 0; __convCol < kSize; __convCol++)
+					int __kShift = __chIn * __kMemSize + __kGroupShift;
+					for(int __convRow = 0; __convRow < kSize; __convRow++)
 					{
-						kGrad[__kShift + __convRow * kSize + __convCol] +=
-							grad[__row * gradCols + __col] *
-							src[(__row + __convRow) * srcCols + (__col + __convCol + __ch)];
+						for(int __convCol = 0; __convCol < kSize; __convCol++)
+						{
+							kGrad[__kShift + __convRow * kSize + __convCol] +=
+								grad[__row * gradCols + __col + __chOut] *
+								src[(__row + __convRow) * srcCols + (__col + __convCol + __chIn)];
+						}
 					}
 				}
 			}
@@ -233,6 +258,7 @@ inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 				layerRef[layerIndex].outMat.height, layerRef[layerIndex].outMat.width,
 				layerRef[layerIndex].conv.kernel.mat, cfgRef->layerCfg[layerIndex].conv.size,
 				layerRef[layerIndex].conv.inChannel,
+				cfgRef->layerCfg[layerIndex].conv.filter,
 				srcPtr, layerRef[layerIndex - 1].outMat.height,
 				layerRef[layerIndex - 1].outMat.width);
 
@@ -388,6 +414,7 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 				layerRef[layerIndex].conv.kernel.grad,
 				layerRef[layerIndex].conv.kernel.cols,
 				layerRef[layerIndex].conv.inChannel,
+				cfgRef->layerCfg[layerIndex].conv.filter,
 				(&layerRef[layerIndex - 1].outMat.data.mat[dstShift]),
 				layerRef[layerIndex - 1].outMat.height,
 				layerRef[layerIndex - 1].outMat.width);
@@ -420,6 +447,7 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 					layerRef[layerIndex].conv.kernel.mat,
 					layerRef[layerIndex].conv.kernel.cols,
 					layerRef[layerIndex].conv.inChannel,
+					cfgRef->layerCfg[layerIndex].conv.filter,
 					(&layerRef[layerIndex].outMat.data.grad[srcShift]),
 					layerRef[layerIndex].outMat.height,
 					layerRef[layerIndex].outMat.width);
