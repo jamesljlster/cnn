@@ -51,7 +51,7 @@ int cnn_network_alloc(struct CNN* cnn)
 			case CNN_LAYER_CONV:
 				cnn_run(cnn_layer_conv_alloc(&cnn->layerList[i].conv,
 							tmpWidth, tmpHeight, tmpChannel,
-							cfg->layerCfg[i].conv.size, cfg->layerCfg[i].conv.filter,
+							cfg->layerCfg[i].conv.filter, cfg->layerCfg[i].conv.size,
 							cfg->batch),
 						ret, ERR);
 				break;
