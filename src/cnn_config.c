@@ -426,13 +426,13 @@ RET:
 	return ret;
 }
 
-int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim, int size)
+int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim, int filter, int size)
 {
 	int ret = CNN_NO_ERROR;
 	int layers;
 
 	// Checking
-	if(convDim <= 0 || convDim > 2 || size <= 0)
+	if(convDim <= 0 || convDim > 2 || size <= 0 || filter <= 0)
 	{
 		ret = CNN_INVALID_ARG;
 		goto RET;
@@ -442,20 +442,21 @@ int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim, int size)
 	cnn_config_get_layers(cfg, &layers);
 	layers++;
 	cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
-	cnn_run(cnn_config_set_convolution(cfg, layers - 1, convDim, size), ret, RET);
+	cnn_run(cnn_config_set_convolution(cfg, layers - 1, convDim, filter, size), ret, RET);
 
 RET:
 	return ret;
 }
 
-int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim, int size)
+int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim,
+		int filter, int size)
 {
 	int ret = CNN_NO_ERROR;
 
 	// Checking
 	if(layerIndex <= 0 || layerIndex >= cfg->layers ||
 			convDim <= 0 || convDim > 2 ||
-			size <= 0)
+			size <= 0 || filter <= 0)
 	{
 		ret = CNN_INVALID_ARG;
 		goto RET;
@@ -465,13 +466,14 @@ int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convD
 	cfg->layerCfg[layerIndex].type = CNN_LAYER_CONV;
 	cfg->layerCfg[layerIndex].conv.dim = convDim;
 	cfg->layerCfg[layerIndex].conv.size = size;
+	cfg->layerCfg[layerIndex].conv.filter = filter;
 
 RET:
 	return ret;
 }
 
 int cnn_config_get_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
-		int* sizePtr)
+		int* filterPtr, int* sizePtr)
 {
 	int ret = CNN_NO_ERROR;
 
@@ -492,6 +494,11 @@ int cnn_config_get_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimP
 	if(dimPtr != NULL)
 	{
 		*dimPtr = cfg->layerCfg[layerIndex].conv.dim;
+	}
+
+	if(filterPtr != NULL)
+	{
+		*filterPtr = cfg->layerCfg[layerIndex].conv.filter;
 	}
 
 	if(sizePtr != NULL)

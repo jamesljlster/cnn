@@ -71,10 +71,11 @@ int cnn_config_append_activation(cnn_config_t cfg, cnn_afunc_t aFuncID);
 int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFuncID);
 int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t* idPtr);
 
-int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim, int size);
-int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim, int size);
+int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim, int filter, int size);
+int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim,
+		int filter, int size);
 int cnn_config_get_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t* dimPtr,
-		int* sizePtr);
+		int* filterPtr, int* sizePtr);
 
 int cnn_config_append_pooling(cnn_config_t cfg, cnn_dim_t dim, cnn_pool_t type, int size);
 int cnn_config_set_pooling(cnn_config_t cfg, int layerIndex, cnn_dim_t dim, cnn_pool_t type,

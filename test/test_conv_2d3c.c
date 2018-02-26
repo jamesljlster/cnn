@@ -82,7 +82,7 @@ int main()
 	test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CHANNEL));
 	test(cnn_config_set_layers(cfg, 3));
 	test(cnn_config_set_activation(cfg, 1, CNN_RELU));
-	test(cnn_config_set_convolution(cfg, 2, 2, 3));
+	test(cnn_config_set_convolution(cfg, 2, 2, 1, 3));
 
 	// Rand
 	srand(time(NULL));
