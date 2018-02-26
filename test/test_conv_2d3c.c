@@ -8,7 +8,8 @@
 #include <cnn_calc.h>
 
 #define KERNEL_SIZE 3
-#define CHANNEL 3
+#define CH_IN 3
+#define CH_OUT 3
 #define IMG_WIDTH 4
 #define IMG_HEIGHT 4
 
@@ -20,48 +21,35 @@
 		return -1; \
 	}
 
-void print_img(float* src, int rows, int cols, int channel)
+void print_img(float* src, int width, int height, int channel)
 {
-	int i, j, k;
+	int imSize = width * height;
 
-	printf("[\n");
-	for(i = 0; i < rows; i++)
+	for(int ch = 0; ch < channel; ch++)
 	{
-		printf("[ ");
-		for(j = 0; j < cols; j++)
+		int chShift = ch * imSize;
+
+		printf("[\n");
+		for(int h = 0; h < height; h++)
 		{
-			printf("(");
-			for(k = 0; k < channel; k++)
+			int shift = h * width + chShift;
+
+			printf("[");
+			for(int w = 0; w < width; w++)
 			{
-				printf("%g", src[i * cols + j + k]);
-				if(k < channel - 1)
+				printf("%g", src[shift + w]);
+				if(w < width - 1)
 				{
 					printf(", ");
 				}
 				else
 				{
-					printf(")");
-				}
-			}
-
-			if(j < cols - 1)
-			{
-				printf(", ");
-			}
-			else
-			{
-				if(i < rows - 1)
-				{
-					printf(" ],\n");
-				}
-				else
-				{
-					printf(" ]\n");
+					printf("]\n");
 				}
 			}
 		}
+		printf("]\n");
 	}
-	printf("]\n");
 }
 
 int main()
@@ -70,58 +58,105 @@ int main()
 	int ret;
 	union CNN_LAYER layer[3];
 
-	float src[IMG_WIDTH * IMG_HEIGHT * CHANNEL];
-	float kernel[CHANNEL * KERNEL_SIZE * KERNEL_SIZE];
-	float bias[(IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)];
-	float desire[(IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)];
+	//float src[IMG_WIDTH * IMG_HEIGHT * CH_IN] = {0};
+	float src[IMG_WIDTH * IMG_HEIGHT * CH_IN] = {
+		1, 0, 3, 0,
+		0, 3, 0, 4,
+		4, 0, 3, 0,
+		3, 1, 0, 4,
+
+		2, 3, 2, 2,
+		0, 3, 3, 0,
+		0, 2, 2, 4,
+		2, 1, 4, 0,
+
+		4, 0, 0, 4,
+		3, 2, 0, 2,
+		3, 1, 4, 3,
+		4, 1, 4, 1
+	};
+
+	//float kernel[CH_OUT * CH_IN * KERNEL_SIZE * KERNEL_SIZE] = {0};
+	float kernel[CH_OUT * CH_IN * KERNEL_SIZE * KERNEL_SIZE] = {
+		0, 3, 4, 0, 1, 2, 2, 4, 1,
+		1, 3, 0, 0, 2, 0, 4, 4, 2,
+		0, 4, 4, 1, 3, 4, 2, 4, 4,
+
+		1, 1, 0, 0, 3, 3, 1, 0, 0,
+		0, 4, 1, 3, 2, 4, 3, 2, 3,
+		0, 3, 3, 2, 4, 2, 3, 2, 1,
+
+		3, 1, 0, 4, 4, 3, 0, 1, 1,
+		3, 2, 3, 0, 4, 2, 1, 2, 0,
+		2, 0, 2, 1, 0, 3, 1, 4, 4
+	};
+
+	//float bias[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {0};
+	float bias[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {
+		3, 1, 3, 4,
+		3, 4, 1, 4,
+		0, 4, 1, 1
+	};
+
+	float desire[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {0};
+	/*
+	float desire[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {
+		3, 1, 4, 2,
+		2, 0, 3, 4,
+		4, 4, 4, 4
+	};
+	*/
 
 	cnn_config_t cfg = NULL;
 
 	// Create cnn
 	test(cnn_config_create(&cfg));
-	test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CHANNEL));
+	test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
 	test(cnn_config_set_layers(cfg, 3));
 	test(cnn_config_set_activation(cfg, 1, CNN_RELU));
-	test(cnn_config_set_convolution(cfg, 2, 2, 1, 3));
+	test(cnn_config_set_convolution(cfg, 2, CNN_DIM_2D, CH_OUT, KERNEL_SIZE));
 
 	// Rand
+	/*
 	srand(time(NULL));
-	for(i = 0; i < IMG_WIDTH * IMG_HEIGHT * CHANNEL; i++)
+	for(i = 0; i < IMG_WIDTH * IMG_HEIGHT * CH_IN; i++)
 	{
 		src[i] = rand() % 5;
 	}
 
-	for(i = 0; i < CHANNEL * KERNEL_SIZE * KERNEL_SIZE; i++)
+	for(i = 0; i < CH_OUT * CH_IN * KERNEL_SIZE * KERNEL_SIZE; i++)
 	{
 		kernel[i] = rand() % 5;
 	}
 
-	for(i = 0; i < (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1); i++)
+	for(i = 0; i < CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1); i++)
 	{
 		bias[i] = rand() % 5;
 		desire[i] = rand() % 5;
 	}
+	*/
 
 	// Print information
 	printf("src:\n");
-	print_img(src, IMG_HEIGHT, IMG_WIDTH, CHANNEL);
+	print_img(src, IMG_WIDTH, IMG_HEIGHT, CH_IN);
 	printf("\n");
 
 	printf("kernel:\n");
-	print_img(kernel, CHANNEL * KERNEL_SIZE, KERNEL_SIZE, 1);
+	print_img(kernel, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);
 	printf("\n");
 
 	printf("bias:\n");
-	print_img(bias, 1, (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1), 1);
+	print_img(bias, (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1), 1, CH_OUT);
 	printf("\n");
 
 	printf("desire:\n");
-	print_img(desire, 1, (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1), 1);
+	print_img(desire, (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1), 1, CH_OUT);
 	printf("\n");
 
 	// Allocate cnn layer
-	test(cnn_layer_afunc_alloc(&layer[1].aFunc, IMG_WIDTH, IMG_HEIGHT, CHANNEL, 1, CNN_RELU));
-	test(cnn_layer_conv_alloc(&layer[2].conv, IMG_WIDTH, IMG_HEIGHT, CHANNEL, 1, KERNEL_SIZE, 1));
+	test(cnn_layer_afunc_alloc(&layer[1].aFunc, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1, CNN_RELU));
+	test(cnn_layer_conv_alloc(&layer[2].conv, IMG_WIDTH, IMG_HEIGHT, CH_IN, CH_OUT,
+				KERNEL_SIZE, 1));
 
 	// Copy memory
 	memcpy(layer[1].outMat.data.mat, src, sizeof(float) *
@@ -135,9 +170,17 @@ int main()
 	printf("***** Forward *****\n");
 	cnn_forward_conv(layer, cfg, 2);
 
-	// Print detail
 	printf("Convolution output:\n");
-	print_img(layer[2].outMat.data.mat, layer[2].outMat.height, layer[2].outMat.width,
+	print_img(layer[2].outMat.data.mat, layer[2].outMat.width, layer[2].outMat.height,
+			layer[2].outMat.channel);
+	printf("\n");
+
+	// Forward again
+	printf("***** Forward #2 *****\n");
+	cnn_forward_conv(layer, cfg, 2);
+
+	printf("Convolution output:\n");
+	print_img(layer[2].outMat.data.mat, layer[2].outMat.width, layer[2].outMat.height,
 			layer[2].outMat.channel);
 
 	return 0;

@@ -39,35 +39,45 @@ inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask, int size, f
 	}
 }
 
-inline void cnn_conv_2d(float* dst, int dstRows, int dstCols,
-		float* kernel, int kernelSize, int chIn, int chOut,
-		float* src, int srcRows, int srcCols)
+inline void cnn_conv_2d(float* dst, int dstHeight, int dstWidth,
+		float* kernel, int kSize, int chIn, int chOut,
+		float* src, int srcHeight, int srcWidth)
 {
-	int __kMemSize = kernelSize * kernelSize;
-	int __kGroupSize = chIn * __kMemSize;
+	int __kMemSize = kSize * kSize;
+	int __filterSize = chIn * __kMemSize;
+	int __dstImSize = dstHeight * dstWidth;
+	int __srcImSize = srcHeight * srcWidth;
 
-	for(int __row = 0; __row < dstRows; __row++)
+	for(int __chOut = 0; __chOut < chOut; __chOut++)
 	{
-		for(int __col = 0; __col < dstCols; __col++)
+		int __filterShift = __chOut * __filterSize;
+		int __dstChShift = __chOut * __dstImSize;
+
+		for(int __chIn = 0; __chIn < chIn; __chIn++)
 		{
-			for(int __chOut = 0; __chOut < chOut; __chOut++)
+			int __kShiftBase = __chIn * __kMemSize + __filterShift;
+			int __srcChShift = __chIn * __srcImSize;
+
+			for(int __h = 0; __h < dstHeight; __h++)
 			{
-				int __kGroupShift = __chOut * __kGroupSize;
-				float __conv = 0;
-				for(int __chIn = 0; __chIn < chIn; __chIn++)
+				int __dstShift = __h * dstWidth + __dstChShift;
+				for(int __w = 0; __w < dstWidth; __w++)
 				{
-					int __kShift = __chIn * __kMemSize + __kGroupShift;
-					for(int __convRow = 0; __convRow < kernelSize; __convRow++)
+					float __conv = 0;
+					for(int __convH = 0; __convH < kSize; __convH++)
 					{
-						for(int __convCol = 0; __convCol < kernelSize; __convCol++)
+						int __kShift = __convH * kSize + __kShiftBase;
+						int __srcShift = (__h + __convH) * srcWidth + __srcChShift;
+
+						for(int __convW = 0; __convW < kSize; __convW++)
 						{
-							__conv += kernel[__kShift + __convRow * kernelSize + __convCol] *
-								src[(__row + __convRow) * srcCols + (__col + __convCol + __chIn)];
+							__conv += kernel[__kShift + __convW] *
+								src[__srcShift + (__w + __convW)];
 						}
 					}
-				}
 
-				dst[__row * dstCols + __col + __chOut] = __conv;
+					dst[__dstShift + __w] += __conv;
+				}
 			}
 		}
 	}
@@ -208,6 +218,9 @@ inline void cnn_forward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 	int* mask = layerRef[layerIndex].drop.mask;
 	float rate = cfgRef->layerCfg[layerIndex].drop.rate;
 
+	// Clear outputs
+	memset(layerRef[layerIndex].outMat.data.mat, 0, sizeof(float) * size);
+
 	// Generate dropout mask
 	for(int j = 0; j < size; j++)
 	{
@@ -245,6 +258,11 @@ inline void cnn_forward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
+	// Clear outputs
+	memset(layerRef[layerIndex].outMat.data.mat, 0, sizeof(float) *
+			layerRef[layerIndex].outMat.data.rows *
+			layerRef[layerIndex].outMat.data.cols);
+
 	for(int j = 0; j < cfgRef->batch; j++)
 	{
 		int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
@@ -272,6 +290,11 @@ inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 inline void cnn_forward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
+	// Clear outputs
+	memset(layerRef[layerIndex].outMat.data.mat, 0, sizeof(float) *
+			layerRef[layerIndex].outMat.data.rows *
+			layerRef[layerIndex].outMat.data.cols);
+
 	for(int j = 0; j < cfgRef->batch; j++)
 	{
 		int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
