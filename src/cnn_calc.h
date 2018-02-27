@@ -218,9 +218,6 @@ inline void cnn_forward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 	int* mask = layerRef[layerIndex].drop.mask;
 	float rate = cfgRef->layerCfg[layerIndex].drop.rate;
 
-	// Clear outputs
-	memset(layerRef[layerIndex].outMat.data.mat, 0, sizeof(float) * size);
-
 	// Generate dropout mask
 	for(int j = 0; j < size; j++)
 	{
