@@ -19,6 +19,10 @@
 
 #define MODEL_PATH "test.xml"
 
+#define STOP_ACCURACY 97
+#define FORCE 5
+
+
 struct DATASET
 {
 	int imgWidth;
@@ -50,8 +54,8 @@ int main(int argc, char* argv[])
 	int i, j;
 	int tmpIndex;
 	int ret;
-	int hit;
-	float mse;
+	int hit, force;
+	float mse, accu;
 	float lRate = L_RATE;
 
 	cnn_config_t cfg = NULL;
@@ -129,6 +133,7 @@ int main(int argc, char* argv[])
 	cnn_rand_network(cnn);
 
 	// Training
+	force = 0;
 	for(iter = 0; iter < ITER; iter++)
 	{
 		cnn_set_dropout_enabled(cnn, 1);
@@ -172,8 +177,21 @@ int main(int argc, char* argv[])
 		}
 
 		mse /= (float)(labelCols * data.instances);
-		printf("Iter %d, mse: %f, accuracy: %.2f %%\n", iter, mse,
-				(float)hit * 100 / (float)(data.instances));
+		accu = (float)hit * 100.0 / (float)data.instances;
+		printf("Iter %d, mse: %f, accuracy: %.2f %%\n", iter, mse, accu);
+
+		if(accu > STOP_ACCURACY)
+		{
+			force++;
+			if(force > FORCE)
+			{
+				break;
+			}
+		}
+		else
+		{
+			force = 0;
+		}
 
 		//lRate = L_RATE * sqrt(mse);
 		lRate *= DECAY;
