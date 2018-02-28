@@ -36,6 +36,7 @@ void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 		case CNN_LAYER_CONV:
 			printf("The layer is convolution\n");
 			printf("Dimension: %d\n", cfg->layerCfg[layerIndex].conv.dim);
+			printf("Filter: %d\n", cfg->layerCfg[layerIndex].conv.filter);
 			printf("Size: %d\n", cfg->layerCfg[layerIndex].conv.size);
 			break;
 
@@ -81,10 +82,10 @@ int main()
 	test(cnn_config_set_layers(cfg, 11));
 
 	i = 1;
-	test(cnn_config_set_convolution	(cfg, i++, 1, 3));
+	test(cnn_config_set_convolution	(cfg, i++, 1, 32, 3));
 	test(cnn_config_set_pooling		(cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation	(cfg, i++, CNN_RELU));
-	test(cnn_config_set_convolution	(cfg, i++, 1, 3));
+	test(cnn_config_set_convolution	(cfg, i++, 1, 64, 3));
 	test(cnn_config_set_pooling		(cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation	(cfg, i++, CNN_RELU));
 	test(cnn_config_set_full_connect(cfg, i++, 128));

@@ -47,6 +47,7 @@ void check_cnn_arch(cnn_t cnn)
 				printf("The layer is input\n");
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
+				printf("Output channel: %d\n", cnn->layerList[i].outMat.channel);
 
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 				test_mat(cnn->layerList[i].outMat.data);
@@ -57,6 +58,7 @@ void check_cnn_arch(cnn_t cnn)
 				printf("Size: %d\n", cnn->cfg.layerCfg[i].fc.size);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
+				printf("Output channel: %d\n", cnn->layerList[i].outMat.channel);
 
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 				print_mat_info("Weight mat", cnn->layerList[i].fc.weight);
@@ -72,6 +74,7 @@ void check_cnn_arch(cnn_t cnn)
 				printf("ID: %d\n", cnn->cfg.layerCfg[i].aFunc.id);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
+				printf("Output channel: %d\n", cnn->layerList[i].outMat.channel);
 
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 				print_mat_info("Grad mat", cnn->layerList[i].aFunc.gradMat);
@@ -83,9 +86,11 @@ void check_cnn_arch(cnn_t cnn)
 			case CNN_LAYER_CONV:
 				printf("The layer is convolution\n");
 				printf("Dimension: %d\n", cnn->cfg.layerCfg[i].conv.dim);
+				printf("Filter: %d\n", cnn->cfg.layerCfg[i].conv.filter);
 				printf("Size: %d\n", cnn->cfg.layerCfg[i].conv.size);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
+				printf("Output channel: %d\n", cnn->layerList[i].outMat.channel);
 
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 				print_mat_info("Kernel mat", cnn->layerList[i].conv.kernel);
@@ -103,6 +108,7 @@ void check_cnn_arch(cnn_t cnn)
 				printf("Size: %d\n", cnn->cfg.layerCfg[i].pool.size);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
+				printf("Output channel: %d\n", cnn->layerList[i].outMat.channel);
 
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 
@@ -114,6 +120,7 @@ void check_cnn_arch(cnn_t cnn)
 				printf("Rate: %g\n", cnn->cfg.layerCfg[i].drop.rate);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
+				printf("Output channel: %d\n", cnn->layerList[i].outMat.channel);
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 				test_mat(cnn->layerList[i].outMat.data);
 				break;
@@ -145,10 +152,10 @@ int main()
 	test(cnn_config_set_layers(cfg, 11));
 
 	i = 1;
-	test(cnn_config_set_convolution (cfg, i++, 2, 3));
+	test(cnn_config_set_convolution (cfg, i++, 2, 1, 3));
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
-	test(cnn_config_set_convolution (cfg, i++, 2, 3));
+	test(cnn_config_set_convolution (cfg, i++, 2, 1, 3));
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
 	test(cnn_config_set_full_connect(cfg, i++, 16));

@@ -44,6 +44,7 @@ struct CNN_CONFIG_LAYER_CONV
 
 	int dim;
 	int size;
+	int filter;
 };
 
 struct CNN_CONFIG_LAYER_POOL

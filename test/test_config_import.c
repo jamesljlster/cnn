@@ -19,6 +19,7 @@ int main(int argc, char* argv[])
 
 	int layers;
 	int size;
+	int filter;
 	cnn_layer_t layerType;
 	cnn_pool_t poolType;
 	cnn_dim_t dim;
@@ -66,9 +67,10 @@ int main(int argc, char* argv[])
 				break;
 
 			case CNN_LAYER_CONV:
-				test(cnn_config_get_convolution(cfg, i, &dim, &size));
+				test(cnn_config_get_convolution(cfg, i, &dim, &filter, &size));
 				printf("Type: Convolution\n");
 				printf("Dimension: %d\n", dim);
+				printf("filter: %d\n", filter);
 				printf("Size: %d\n", size);
 				break;
 

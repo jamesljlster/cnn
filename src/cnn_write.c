@@ -145,6 +145,12 @@ int cnn_write_layer_conv_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRe
 	cnn_run(cnn_write_dim_attr_xml(cfgRef->layerCfg[layerIndex].conv.dim, writer),
 			ret, RET);
 
+	// Write filter
+	cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].conv.filter);
+	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_FILTER],
+				(xmlChar*)buf),
+			ret, RET);
+
 	// Write size
 	cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].conv.size);
 	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_SIZE],

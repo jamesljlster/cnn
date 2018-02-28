@@ -13,7 +13,7 @@
 
 #define BATCH 1
 #define ITER 10000
-#define L_RATE 0.01
+#define L_RATE 0.001
 #define DECAY 0.9996
 
 #define MODEL_PATH "test.xml"
@@ -110,10 +110,10 @@ int main(int argc, char* argv[])
 	test(cnn_config_set_layers(cfg, 13));
 
 	i = 1;
-	test(cnn_config_set_convolution (cfg, i++, 2, KERNEL_SIZE));
+	test(cnn_config_set_convolution (cfg, i++, 2, 6, KERNEL_SIZE));
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
-	test(cnn_config_set_convolution (cfg, i++, 2, KERNEL_SIZE));
+	test(cnn_config_set_convolution (cfg, i++, 2, 16, KERNEL_SIZE));
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
 	test(cnn_config_set_full_connect(cfg, i++, 128));
