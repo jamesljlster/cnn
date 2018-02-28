@@ -210,9 +210,10 @@ inline void cnn_pool_2d_max(float* dst, int* indexMat, int dstHeight, int dstWid
 }
 
 inline void cnn_pool_2d_max_grad(float* grad, int* indexMat,
-		float* iGrad, int iGradRows, int iGradCols)
+		float* iGrad, int iGradRows, int iGradCols, int iCh)
 {
-	for(int __i = 0; __i < iGradRows * iGradCols; __i++)
+	int size = iGradRows * iGradCols * iCh;
+	for(int __i = 0; __i < size; __i++)
 	{
 		grad[indexMat[__i]] = iGrad[__i];
 	}
@@ -528,10 +529,11 @@ inline void cnn_backward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 			srcPtr = &layerRef[layerIndex].outMat.data.grad[srcShift];
 
 			// Find layer gradient
-			cnn_pool_2d_max_grad((&layerRef[layerIndex - 1].outMat.data.grad[dstShift]),
-					(&layerRef[layerIndex].pool.indexMat[srcShift]),
+			cnn_pool_2d_max_grad(&layerRef[layerIndex - 1].outMat.data.grad[dstShift],
+					&layerRef[layerIndex].pool.indexMat[srcShift],
 					srcPtr, layerRef[layerIndex].outMat.height,
-					layerRef[layerIndex].outMat.width);
+					layerRef[layerIndex].outMat.width,
+					layerRef[layerIndex].outMat.channel);
 		}
 	}
 }
