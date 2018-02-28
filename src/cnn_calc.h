@@ -124,30 +124,39 @@ inline void cnn_conv_2d_grad(float* dstGrad, int dstHeight, int dstWidth,
 	}
 }
 
-inline void cnn_conv_2d_kernel_grad(float* grad, int gradRows, int gradCols,
-		float* kGrad, int kSize, int chIn, int chOut,
-		float* src, int srcRows, int srcCols)
+inline void cnn_conv_2d_kernel_grad(float* lGrad, int lHeight, int lWidth,
+		float* kGrad, int kSize, int lCh, int srcCh,
+		float* src, int srcHeight, int srcWidth)
 {
 	int __kMemSize = kSize * kSize;
-	int __kGroupSize = chIn * __kMemSize;
+	int __filterSize = srcCh * __kMemSize;
+	int __lImSize = lHeight * lWidth;
+	int __srcImSize = srcHeight * srcWidth;
 
-	for(int __row = 0; __row < gradRows; __row++)
+	for(int __lCh = 0; __lCh < lCh; __lCh++)
 	{
-		for(int __col = 0; __col < gradCols; __col++)
+		int __filterShift = __lCh * __filterSize;
+		int __lChShift = __lCh * __lImSize;
+
+		for(int __srcCh = 0; __srcCh < srcCh; __srcCh++)
 		{
-			for(int __chOut = 0; __chOut < chOut; __chOut++)
+			int __srcChShift = __srcCh * __srcImSize;
+			int __kShiftBase = __srcCh * __kMemSize + __filterShift;
+
+			for(int __h = 0; __h < lHeight; __h++)
 			{
-				int __kGroupShift = __chOut * __kGroupSize;
-				for(int __chIn = 0; __chIn < chIn; __chIn++)
+				int __lShift = __h * lWidth + __lChShift;
+				for(int __w = 0; __w < lWidth; __w++)
 				{
-					int __kShift = __chIn * __kMemSize + __kGroupShift;
-					for(int __convRow = 0; __convRow < kSize; __convRow++)
+					for(int __convH = 0; __convH < kSize; __convH++)
 					{
-						for(int __convCol = 0; __convCol < kSize; __convCol++)
+						int __kShift = __convH * kSize + __kShiftBase;
+						int __srcShift = (__h + __convH) * srcWidth + __srcChShift;
+
+						for(int __convW = 0; __convW < kSize; __convW++)
 						{
-							kGrad[__kShift + __convRow * kSize + __convCol] +=
-								grad[__row * gradCols + __col + __chOut] *
-								src[(__row + __convRow) * srcCols + (__col + __convCol + __chIn)];
+							kGrad[__kShift + __convW] +=
+								lGrad[__lShift + __w] * src[__srcShift + (__w + __convW)];
 						}
 					}
 				}
@@ -437,14 +446,14 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 		srcShift = j * layerRef[layerIndex].outMat.data.cols;
 		dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
 
-		cnn_conv_2d_kernel_grad((&layerRef[layerIndex].outMat.data.grad[srcShift]),
+		cnn_conv_2d_kernel_grad(&layerRef[layerIndex].outMat.data.grad[srcShift],
 				layerRef[layerIndex].outMat.height,
 				layerRef[layerIndex].outMat.width,
 				layerRef[layerIndex].conv.kernel.grad,
 				layerRef[layerIndex].conv.kernel.cols,
-				layerRef[layerIndex].conv.inChannel,
-				cfgRef->layerCfg[layerIndex].conv.filter,
-				(&layerRef[layerIndex - 1].outMat.data.mat[dstShift]),
+				layerRef[layerIndex].outMat.channel,
+				layerRef[layerIndex - 1].outMat.channel,
+				&layerRef[layerIndex - 1].outMat.data.mat[dstShift],
 				layerRef[layerIndex - 1].outMat.height,
 				layerRef[layerIndex - 1].outMat.width);
 	}
