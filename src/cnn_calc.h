@@ -83,39 +83,39 @@ inline void cnn_conv_2d(float* dst, int dstHeight, int dstWidth,
 	}
 }
 
-inline void cnn_conv_2d_grad(float* dstGrad, int dstHeight, int dstWidth,
-		float* kernel, int kSize, int dstCh, int srcCh,
-		float* srcGrad, int srcHeight, int srcWidth)
+inline void cnn_conv_2d_grad(float* srcGrad, int srcHeight, int srcWidth,
+		float* kernel, int kSize, int srcCh, int lCh,
+		float* lGrad, int lHeight, int lWidth)
 {
 	int __kMemSize = kSize * kSize;
 	int __filterSize = srcCh * __kMemSize;
-	int __dstImSize = dstHeight * dstWidth;
+	int __lImSize = lHeight * lWidth;
 	int __srcImSize = srcHeight * srcWidth;
 
-	for(int __srcCh = 0; __srcCh < srcCh; __srcCh++)
+	for(int __lCh = 0; __lCh < lCh; __lCh++)
 	{
-		int __filterShift = __srcCh * __filterSize;
-		int __srcChShift = __srcCh * __srcImSize;
+		int __filterShift = __lCh * __filterSize;
+		int __lChShift = __lCh * __lImSize;
 
-		for(int __dstCh = 0; __dstCh < dstCh; __dstCh++)
+		for(int __srcCh = 0; __srcCh < srcCh; __srcCh++)
 		{
-			int __kShiftBase = __dstCh * __kMemSize + __filterShift;
-			int __dstChShift = __dstCh * __dstImSize;
+			int __srcChShift = __srcCh * __srcImSize;
+			int __kShiftBase = __srcCh * __kMemSize + __filterShift;
 
-			for(int __h = 0; __h < srcHeight; __h++)
+			for(int __h = 0; __h < lHeight; __h++)
 			{
-				int __srcShift = __h * srcWidth + __srcChShift;
-				for(int __w = 0; __w < srcWidth; __w++)
+				int __lShift = __h * lHeight + __lChShift;
+				for(int __w = 0; __w < lWidth; __w++)
 				{
 					for(int __convH = 0; __convH < kSize; __convH++)
 					{
 						int __kShift = __convH * kSize + __kShiftBase;
-						int __dstShift = (__h + __convH) * dstWidth + __dstChShift;
+						int __srcShift = (__h + __convH) * srcWidth + __srcChShift;
 
 						for(int __convW = 0; __convW < kSize; __convW++)
 						{
-							dstGrad[__dstShift + (__w + __convW)] +=
-								kernel[__kShift + __convW] * srcGrad[__srcShift + __w];
+							srcGrad[__srcShift + (__w + __convW)] +=
+								lGrad[__lShift + __w] * kernel[__kShift + __convW];
 						}
 					}
 				}

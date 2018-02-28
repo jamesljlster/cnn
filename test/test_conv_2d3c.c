@@ -9,7 +9,7 @@
 
 #define KERNEL_SIZE 3
 #define CH_IN 3
-#define CH_OUT 3
+#define CH_OUT 2
 #define IMG_WIDTH 4
 #define IMG_HEIGHT 4
 
@@ -54,7 +54,7 @@ void print_img(float* src, int width, int height, int channel)
 
 int main()
 {
-	int i;
+	//int i;
 	int ret;
 	union CNN_LAYER layer[3];
 
@@ -82,10 +82,6 @@ int main()
 		1, 3, 0, 0, 2, 0, 4, 4, 2,
 		0, 4, 4, 1, 3, 4, 2, 4, 4,
 
-		1, 1, 0, 0, 3, 3, 1, 0, 0,
-		0, 4, 1, 3, 2, 4, 3, 2, 3,
-		0, 3, 3, 2, 4, 2, 3, 2, 1,
-
 		3, 1, 0, 4, 4, 3, 0, 1, 1,
 		3, 2, 3, 0, 4, 2, 1, 2, 0,
 		2, 0, 2, 1, 0, 3, 1, 4, 4
@@ -94,18 +90,14 @@ int main()
 	//float bias[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {0};
 	float bias[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {
 		3, 1, 3, 4,
-		3, 4, 1, 4,
 		0, 4, 1, 1
 	};
 
-	float desire[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {0};
-	/*
+	//float desire[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {0};
 	float desire[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {
 		3, 1, 4, 2,
-		2, 0, 3, 4,
 		4, 4, 4, 4
 	};
-	*/
 
 	cnn_config_t cfg = NULL;
 
@@ -175,13 +167,33 @@ int main()
 			layer[2].outMat.channel);
 	printf("\n");
 
-	// Forward again
 	printf("***** Forward #2 *****\n");
 	cnn_forward_conv(layer, cfg, 2);
 
 	printf("Convolution output:\n");
 	print_img(layer[2].outMat.data.mat, layer[2].outMat.width, layer[2].outMat.height,
 			layer[2].outMat.channel);
+	printf("\n");
+
+	// BP
+	printf("***** BP *****\n");
+	memcpy(layer[2].outMat.data.grad, desire, sizeof(float) *
+			layer[2].outMat.data.rows * layer[2].outMat.data.cols);
+	cnn_backward_conv(layer, cfg, 2);
+
+	printf("Convolution layer gradient:\n");
+	print_img(layer[2].outMat.data.grad, layer[2].outMat.width, layer[2].outMat.height,
+			layer[2].outMat.channel);
+	printf("\n");
+
+	printf("Previous layer gradient:\n");
+	print_img(layer[1].outMat.data.grad, layer[1].outMat.width, layer[1].outMat.height,
+			layer[1].outMat.channel);
+	printf("\n");
+
+	printf("Kernel gradient:\n");
+	print_img(layer[2].conv.kernel.grad, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);
+	printf("\n");
 
 	return 0;
 }
