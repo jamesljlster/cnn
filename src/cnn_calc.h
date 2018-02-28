@@ -165,34 +165,46 @@ inline void cnn_conv_2d_kernel_grad(float* lGrad, int lHeight, int lWidth,
 	}
 }
 
-inline void cnn_pool_2d_max(float* dst, int* indexMat, int dstRows, int dstCols, int poolSize,
-		float* src, int srcRows, int srcCols)
+inline void cnn_pool_2d_max(float* dst, int* indexMat, int dstHeight, int dstWidth,
+		float* src, int srcWidth, int srcHeight, int poolSize, int channel)
 {
-	for(int __row = 0; __row < dstRows; __row++)
+	int __dstImSize = dstHeight * dstWidth;
+	int __srcImSize = srcHeight * srcWidth;
+
+	for(int __ch = 0; __ch < channel; __ch++)
 	{
-		for(int __col = 0; __col < dstCols; __col++)
+		int __dstChShift = __ch * __dstImSize;
+		int __srcChShift = __ch * __srcImSize;
+
+		for(int __h = 0; __h < dstHeight; __h++)
 		{
-			float __tmp, __max;
-			int __maxIndex, __index;
-			int __rowShift = __row * poolSize;
-			int __colShift = __col * poolSize;
-			__max = src[__rowShift * srcCols + __colShift];
-			__maxIndex = __rowShift * srcCols + __colShift;
-			for(int __poolRow = 0; __poolRow < poolSize; __poolRow++)
+			for(int __w = 0; __w < dstWidth; __w++)
 			{
-				for(int __poolCol = 0; __poolCol < poolSize; __poolCol++)
+				float __tmp, __max;
+				int __maxIndex, __index;
+
+				__index = (__h * poolSize) * srcWidth + (__w * poolSize) + __srcChShift;
+				__max = src[__index];
+				__maxIndex = __index;
+				for(int __poolH = 0; __poolH < poolSize; __poolH++)
 				{
-					__index = (__rowShift + __poolRow) * srcCols + (__colShift + __poolCol);
-					__tmp = src[__index];
-					if(__tmp > __max)
+					for(int __poolW = 0; __poolW < poolSize; __poolW++)
 					{
-						__max = __tmp;
-						__maxIndex = __index;
+						__index = ((__h * poolSize) + __poolH) * srcWidth +
+							((__w * poolSize) + __poolW) + __srcChShift;
+						__tmp = src[__index];
+						if(__tmp > __max)
+						{
+							__max = __tmp;
+							__maxIndex = __index;
+						}
 					}
 				}
+
+				__index = __h * dstWidth + __w + __dstChShift;
+				dst[__index] = __max;
+				indexMat[__index] = __maxIndex;
 			}
-			dst[__row * dstCols + __col] = __max;
-			indexMat[__row * dstCols + __col] = __maxIndex;
 		}
 	}
 }
@@ -318,10 +330,12 @@ inline void cnn_forward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 		float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
 		float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
 
-		cnn_pool_2d_max(dstPtr, (&layerRef[layerIndex].pool.indexMat[dstShift]),
+		cnn_pool_2d_max(dstPtr, &layerRef[layerIndex].pool.indexMat[dstShift],
 				layerRef[layerIndex].outMat.height, layerRef[layerIndex].outMat.width,
-				cfgRef->layerCfg[layerIndex].pool.size, srcPtr,
-				layerRef[layerIndex - 1].outMat.height, layerRef[layerIndex - 1].outMat.width);
+				srcPtr,
+				layerRef[layerIndex - 1].outMat.height, layerRef[layerIndex - 1].outMat.width,
+				cfgRef->layerCfg[layerIndex].pool.size,
+				layerRef[layerIndex].outMat.channel);
 	}
 }
 
