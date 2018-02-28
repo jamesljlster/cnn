@@ -32,10 +32,6 @@ inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask, int size, f
 		{
 			gradDst[__i] += gradSrc[__i] * scale;
 		}
-		else
-		{
-			gradDst[__i] = 0;
-		}
 	}
 }
 
