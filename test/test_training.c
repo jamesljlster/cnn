@@ -15,6 +15,7 @@
 #define ITER 10000
 #define L_RATE 0.001
 #define DECAY 0.9996
+#define GRAD_LIMIT 30
 
 #define MODEL_PATH "test.xml"
 
@@ -110,10 +111,10 @@ int main(int argc, char* argv[])
 	test(cnn_config_set_layers(cfg, 13));
 
 	i = 1;
-	test(cnn_config_set_convolution (cfg, i++, 2, 6, KERNEL_SIZE));
+	test(cnn_config_set_convolution (cfg, i++, 2, 3, KERNEL_SIZE));
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
-	test(cnn_config_set_convolution (cfg, i++, 2, 16, KERNEL_SIZE));
+	test(cnn_config_set_convolution (cfg, i++, 2, 3, KERNEL_SIZE));
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
 	test(cnn_config_set_full_connect(cfg, i++, 128));
@@ -142,7 +143,7 @@ int main(int argc, char* argv[])
 			}
 
 			cnn_backward(cnn, err);
-			cnn_update(cnn, lRate);
+			cnn_update(cnn, lRate, GRAD_LIMIT);
 		}
 
 		cnn_set_dropout_enabled(cnn, 0);
@@ -202,6 +203,16 @@ int parse_class(float* out, int len)
 	return index;
 }
 
+void byte_reverse(void* ptr, size_t size)
+{
+	unsigned char tmp[size];
+	for(size_t i = 0; i < size; i++)
+	{
+		tmp[i] = ((unsigned char*)ptr)[size - i - 1];
+	}
+	memcpy(ptr, tmp, size);
+}
+
 int make_dataset(struct DATASET* ptr, int batch, const char* binPath)
 {
 	int i;
@@ -250,6 +261,9 @@ int make_dataset(struct DATASET* ptr, int batch, const char* binPath)
 	__fread(&ptr->imgHeight, 4);
 	__fread(&ptr->imgChannel, 1);
 	__fread(&ptr->classNum, 1);
+
+	byte_reverse(&ptr->imgWidth, 4);
+	byte_reverse(&ptr->imgHeight, 4);
 
 	// Set columns
 	dataCols = ptr->imgWidth * ptr->imgHeight * ptr->imgChannel;

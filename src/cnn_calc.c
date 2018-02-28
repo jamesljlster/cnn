@@ -2,11 +2,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #include "cnn_private.h"
 #include "cnn_calc.h"
 
-void cnn_update(cnn_t cnn, float lRate)
+inline void cnn_restrict(float* mat, int size, float limit)
+{
+	for(int __i = 0; __i < size; __i++)
+	{
+		mat[__i] = fminf(mat[__i], limit);
+	}
+}
+
+void cnn_update(cnn_t cnn, float lRate, float gradLimit)
 {
 	int i;
 	struct CNN_CONFIG* cfgRef;
@@ -27,6 +36,13 @@ void cnn_update(cnn_t cnn, float lRate)
 		{
 			// Fully connected
 			case CNN_LAYER_FC:
+				// Limit gradient
+				cnn_restrict(layerRef[i].fc.weight.grad,
+						layerRef[i].fc.weight.rows * layerRef[i].fc.weight.cols,
+						gradLimit);
+				cnn_restrict(layerRef[i].fc.bias.grad, layerRef[i].fc.bias.cols,
+						gradLimit);
+
 				// Update weight
 				cblas_saxpy(layerRef[i].fc.weight.rows * layerRef[i].fc.weight.cols,
 						lRate,
@@ -48,6 +64,13 @@ void cnn_update(cnn_t cnn, float lRate)
 
 			// Convolution
 			case CNN_LAYER_CONV:
+				// Limit gradient
+				cnn_restrict(layerRef[i].conv.kernel.grad,
+						layerRef[i].conv.kernel.rows * layerRef[i].conv.kernel.cols,
+						gradLimit);
+				cnn_restrict(layerRef[i].conv.bias.grad, layerRef[i].conv.bias.cols,
+						gradLimit);
+
 				// Update kernel
 				cblas_saxpy(layerRef[i].conv.kernel.cols * layerRef[i].conv.kernel.rows,
 						lRate, layerRef[i].conv.kernel.grad, 1,

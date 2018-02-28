@@ -188,7 +188,7 @@ int main()
 	}
 
 	// Print updated network
-	cnn_update(cnn, 0.01);
+	cnn_update(cnn, 0.01, 30);
 
 	printf("***** Updated Network Detail *****\n");
 	for(i = cnn->cfg.layers - 1; i >= 0; i--)
