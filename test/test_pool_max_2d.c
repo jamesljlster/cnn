@@ -94,6 +94,15 @@ int main()
 			cnn->layerList[2].outMat.channel);
 	printf("\n");
 
+	printf("***** Forward #2 *****\n");
+	cnn_forward_pool(cnn->layerList, cfg, 2);
+
+	printf("Pooling output:\n");
+	print_img(cnn->layerList[2].outMat.data.mat,
+			cnn->layerList[2].outMat.width, cnn->layerList[2].outMat.height,
+			cnn->layerList[2].outMat.channel);
+	printf("\n");
+
 	// BP
 	printf("***** BP *****:\n");
 	memcpy(cnn->layerList[2].outMat.data.grad, desire, sizeof(float) *

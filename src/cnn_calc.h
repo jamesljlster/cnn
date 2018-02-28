@@ -215,7 +215,7 @@ inline void cnn_pool_2d_max_grad(float* grad, int* indexMat,
 	int size = iGradRows * iGradCols * iCh;
 	for(int __i = 0; __i < size; __i++)
 	{
-		grad[indexMat[__i]] = iGrad[__i];
+		grad[indexMat[__i]] += iGrad[__i];
 	}
 }
 
