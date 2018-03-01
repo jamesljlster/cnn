@@ -289,7 +289,6 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].conv.filter, (const char*)xStr),
 					ret, RET);
 			xmlFree(xStr);
-			xStr = NULL;
 
 			// Parse size
 			xStr = xmlNodeGetContent(size->children);

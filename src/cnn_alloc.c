@@ -162,7 +162,7 @@ int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr,
 
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
-	cnn_alloc(layerPtr->mask, outRows * outCols, sizeof(int), ret, ERR);
+	cnn_alloc(layerPtr->mask, outRows * outCols, int, ret, ERR);
 
 	// Assign value
 	layerPtr->outMat.width = inWidth;
