@@ -4,12 +4,15 @@
 #include "cnn.h"
 #include "cnn_private.h"
 
-int cnn_training(cnn_t cnn, float* inputMat, float* desireMat, float* outputMat, float* errMat)
+int cnn_training(cnn_t cnn, float* inputMat, float* desireMat, float* outputMat, float* errMat,
+		float gradLimit)
 {
-	return cnn_training_custom(cnn, cnn->cfg.lRate, inputMat, desireMat, outputMat, errMat);
+	return cnn_training_custom(cnn, cnn->cfg.lRate,
+			inputMat, desireMat, outputMat, errMat, gradLimit);
 }
 
-int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMat, float* outputMat, float* errMat)
+int cnn_training_custom(cnn_t cnn, float lRate,
+		float* inputMat, float* desireMat, float* outputMat, float* errMat, float gradLimit)
 {
 	int i;
 	int outSize;
@@ -17,6 +20,9 @@ int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMa
 
 	float* outStore = NULL;
 	float* errStore = NULL;
+
+	float* outMem = NULL;
+	float* errMem = NULL;
 
 	struct CNN_CONFIG* cfgRef;
 
@@ -26,8 +32,25 @@ int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMa
 		cnn->layerList[cfgRef->layers - 1].outMat.data.cols;
 
 	// Memory allocation
-	cnn_alloc(outStore, outSize, float, ret, RET);
-	cnn_alloc(errStore, outSize, float, ret, RET);
+	if(outputMat != NULL)
+	{
+		outStore = outputMat;
+	}
+	else
+	{
+		cnn_alloc(outMem, outSize, float, ret, RET);
+		outStore = outMem;
+	}
+
+	if(errMat != NULL)
+	{
+		errStore = errMat;
+	}
+	else
+	{
+		cnn_alloc(errMem, outSize, float, ret, RET);
+		errStore = errMem;
+	}
 
 	// Forward
 	cnn_forward(cnn, inputMat, outStore);
@@ -39,21 +62,14 @@ int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat, float* desireMa
 	}
 
 	// Backpropagation
-	cnn_bp(cnn, lRate, errStore);
+	cnn_backward(cnn, errStore);
 
-	if(outputMat != NULL)
-	{
-		memcpy(outputMat, outStore, outSize * sizeof(float));
-	}
-
-	if(errMat != NULL)
-	{
-		memcpy(errMat, errStore, outSize * sizeof(float));
-	}
+	// Update network
+	cnn_update(cnn, lRate, gradLimit);
 
 RET:
-	cnn_free(outStore);
-	cnn_free(errStore);
+	cnn_free(outMem);
+	cnn_free(errMem);
 
 	return ret;
 }

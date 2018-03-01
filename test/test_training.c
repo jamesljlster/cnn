@@ -3,18 +3,25 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <math.h>
 
 #include <cnn.h>
 #include <cnn_private.h>
 #include <cnn_calc.h>
 
-#define KERNEL_SIZE 3
+#define KERNEL_SIZE 5
 
-#define BATCH 7
+#define BATCH 1
 #define ITER 10000
 #define L_RATE 0.001
+#define DECAY 0.9996
+#define GRAD_LIMIT 30
 
 #define MODEL_PATH "test.xml"
+
+#define STOP_ACCURACY 97
+#define FORCE 5
+
 
 struct DATASET
 {
@@ -47,8 +54,9 @@ int main(int argc, char* argv[])
 	int i, j;
 	int tmpIndex;
 	int ret;
-	int hit;
-	float mse;
+	int hit, force;
+	float mse, accu;
+	float lRate = L_RATE;
 
 	cnn_config_t cfg = NULL;
 	cnn_t cnn = NULL;
@@ -102,18 +110,21 @@ int main(int argc, char* argv[])
 
 	// Set config
 	test(cnn_config_create(&cfg));
-	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight, 1));
+	test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight, data.imgChannel));
 	test(cnn_config_set_batch_size(cfg, BATCH));
-	test(cnn_config_set_layers(cfg, 10));
+	test(cnn_config_set_layers(cfg, 13));
 
 	i = 1;
-	test(cnn_config_set_convolution (cfg, i++, 2, 3));
+	test(cnn_config_set_convolution (cfg, i++, 2, 3, KERNEL_SIZE));
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
-	test(cnn_config_set_convolution (cfg, i++, 2, 3));
+	test(cnn_config_set_convolution (cfg, i++, 2, 3, KERNEL_SIZE));
 	test(cnn_config_set_pooling     (cfg, i++, 2, CNN_POOL_MAX, 2));
 	test(cnn_config_set_activation  (cfg, i++, CNN_RELU));
-	test(cnn_config_set_full_connect(cfg, i++, 16));
+	test(cnn_config_set_full_connect(cfg, i++, 128));
+	test(cnn_config_set_dropout		(cfg, i++, 0.5));
+	test(cnn_config_set_full_connect(cfg, i++, 64));
+	test(cnn_config_set_dropout		(cfg, i++, 0.5));
 	test(cnn_config_set_full_connect(cfg, i++, labelCols));
 	test(cnn_config_set_activation  (cfg, i++, CNN_SOFTMAX));
 
@@ -122,21 +133,37 @@ int main(int argc, char* argv[])
 	cnn_rand_network(cnn);
 
 	// Training
+	force = 0;
 	for(iter = 0; iter < ITER; iter++)
 	{
+		cnn_set_dropout_enabled(cnn, 1);
+
+		for(i = 0; i < data.instances; i += BATCH)
+		{
+			cnn_forward(cnn, &data.input[i * dataCols], output);
+
+			for(j = 0; j < labelCols * BATCH; j++)
+			{
+				err[j] = data.output[i * labelCols + j] - output[j];
+			}
+
+			cnn_backward(cnn, err);
+			cnn_update(cnn, lRate, GRAD_LIMIT);
+		}
+
+		cnn_set_dropout_enabled(cnn, 0);
+
 		mse = 0;
 		hit = 0;
 
 		for(i = 0; i < data.instances; i += BATCH)
 		{
-			test(cnn_training_custom(cnn, L_RATE,
-						&data.input[i * dataCols],
-						&data.output[i * labelCols],
-						output, err));
+			cnn_forward(cnn, &data.input[i * dataCols], output);
 
 			for(j = 0; j < labelCols * BATCH; j++)
 			{
-				mse += err[j] * err[j];
+				float tmp = data.output[i * labelCols + j] - output[j];
+				mse += tmp * tmp;
 			}
 
 			for(j = 0; j < BATCH; j++)
@@ -150,8 +177,24 @@ int main(int argc, char* argv[])
 		}
 
 		mse /= (float)(labelCols * data.instances);
-		printf("Iter %d, mse: %f, accuracy: %.2f %%\n", iter, mse,
-				(float)hit * 100 / (float)(data.instances));
+		accu = (float)hit * 100.0 / (float)data.instances;
+		printf("Iter %d, mse: %f, accuracy: %.2f %%\n", iter, mse, accu);
+
+		if(accu > STOP_ACCURACY)
+		{
+			force++;
+			if(force > FORCE)
+			{
+				break;
+			}
+		}
+		else
+		{
+			force = 0;
+		}
+
+		//lRate = L_RATE * sqrt(mse);
+		lRate *= DECAY;
 	}
 
 	// Export
@@ -176,6 +219,16 @@ int parse_class(float* out, int len)
 	}
 
 	return index;
+}
+
+void byte_reverse(void* ptr, size_t size)
+{
+	unsigned char tmp[size];
+	for(size_t i = 0; i < size; i++)
+	{
+		tmp[i] = ((unsigned char*)ptr)[size - i - 1];
+	}
+	memcpy(ptr, tmp, size);
 }
 
 int make_dataset(struct DATASET* ptr, int batch, const char* binPath)
@@ -226,6 +279,9 @@ int make_dataset(struct DATASET* ptr, int batch, const char* binPath)
 	__fread(&ptr->imgHeight, 4);
 	__fread(&ptr->imgChannel, 1);
 	__fread(&ptr->classNum, 1);
+
+	byte_reverse(&ptr->imgWidth, 4);
+	byte_reverse(&ptr->imgHeight, 4);
 
 	// Set columns
 	dataCols = ptr->imgWidth * ptr->imgHeight * ptr->imgChannel;

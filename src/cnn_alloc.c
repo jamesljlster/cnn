@@ -51,7 +51,8 @@ int cnn_network_alloc(struct CNN* cnn)
 			case CNN_LAYER_CONV:
 				cnn_run(cnn_layer_conv_alloc(&cnn->layerList[i].conv,
 							tmpWidth, tmpHeight, tmpChannel,
-							cfg->layerCfg[i].conv.size, cfg->batch),
+							cfg->layerCfg[i].conv.filter, cfg->layerCfg[i].conv.size,
+							cfg->batch),
 						ret, ERR);
 				break;
 
@@ -60,11 +61,16 @@ int cnn_network_alloc(struct CNN* cnn)
 							tmpWidth, tmpHeight, tmpChannel,
 							cfg->layerCfg[i].pool.size, cfg->batch),
 						ret, ERR);
+				break;
 
+			case CNN_LAYER_DROP:
+				cnn_run(cnn_layer_drop_alloc(&cnn->layerList[i].drop,
+							tmpWidth, tmpHeight, tmpChannel, cfg->batch),
+						ret, ERR);
 				break;
 
 			default:
-				assert(cfg->layerCfg[i].type >= 0 && cfg->layerCfg[i].type <= CNN_LAYER_POOL);
+				assert(!"Invalid layer type");
 		}
 
 		// Find layer output image size
@@ -139,6 +145,34 @@ int cnn_layer_input_alloc(union CNN_LAYER* layerPtr,
 
 ERR:
 	cnn_layer_input_delete(layerPtr);
+
+RET:
+	return ret;
+}
+
+int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr,
+		int inWidth, int inHeight, int inChannel, int batch)
+{
+	int ret = CNN_NO_ERROR;
+	int outRows, outCols;
+
+	// Find allocate size
+	outRows = batch;
+	outCols = inWidth * inHeight * inChannel;
+
+	// Allocate memory
+	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
+	cnn_alloc(layerPtr->mask, outRows * outCols, sizeof(int), ret, ERR);
+
+	// Assign value
+	layerPtr->outMat.width = inWidth;
+	layerPtr->outMat.height = inHeight;
+	layerPtr->outMat.channel = inChannel;
+
+	goto RET;
+
+ERR:
+	cnn_layer_drop_delete(layerPtr);
 
 RET:
 	return ret;
@@ -260,11 +294,12 @@ RET:
 }
 
 int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
-		int inWidth, int inHeight, int inChannel, int size, int batch)
+		int inWidth, int inHeight, int inChannel, int filter, int size, int batch)
 {
 	int ret = CNN_NO_ERROR;
 	int outRows, outCols; // Output matrix size
 	int outWidth, outHeight; // Valid convolution output size
+	int kRows, kCols; // Kernel matrix size
 	int bRows, bCols; // Bias matrix size
 
 	// Find output image size
@@ -280,21 +315,24 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 
 	// Find allocate size
 	outRows = batch;
-	outCols = outWidth * outHeight;
+	outCols = outWidth * outHeight * filter;
+
+	kRows = filter * inChannel * size;
+	kCols = size;
 
 	bRows = 1;
 	bCols = outCols;
 
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
-	cnn_run(cnn_mat_alloc(&layerPtr->kernel, size, size, 1), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->kernel, kRows, kCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 
 	// Assing value
 	layerPtr->outMat.width = outWidth;
 	layerPtr->outMat.height = outHeight;
 	layerPtr->inChannel = inChannel;
-	layerPtr->outMat.channel = 1;
+	layerPtr->outMat.channel = filter;
 
 	goto RET;
 

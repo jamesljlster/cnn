@@ -123,7 +123,7 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
 	xmlAttrPtr attrCur;
 	xmlAttrPtr index = NULL, type = NULL;
-	xmlAttrPtr dim = NULL, size = NULL, poolType = NULL, id = NULL;
+	xmlAttrPtr dim = NULL, size = NULL, poolType = NULL, id = NULL, rate = NULL, filter = NULL;
 
 	xmlChar* xStr = NULL;
 
@@ -157,6 +157,14 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
 			case CNN_STR_SIZE:
 				size = attrCur;
+				break;
+
+			case CNN_STR_RATE:
+				rate = attrCur;
+				break;
+
+			case CNN_STR_FILTER:
+				filter = attrCur;
 				break;
 		}
 
@@ -199,6 +207,10 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
 		case CNN_STR_POOL:
 			tmpType = CNN_LAYER_POOL;
+			break;
+
+		case CNN_STR_DROP:
+			tmpType = CNN_LAYER_DROP;
 			break;
 
 		default:
@@ -246,7 +258,7 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			break;
 
 		case CNN_LAYER_CONV:
-			if(dim == NULL || size == NULL)
+			if(dim == NULL || size == NULL || filter == NULL)
 			{
 				ret = CNN_INFO_NOT_FOUND;
 				goto RET;
@@ -271,6 +283,13 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 				default:
 					assert(!"Invalid dimension type");
 			}
+
+			// Parse filter
+			xStr = xmlNodeGetContent(filter->children);
+			cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].conv.filter, (const char*)xStr),
+					ret, RET);
+			xmlFree(xStr);
+			xStr = NULL;
 
 			// Parse size
 			xStr = xmlNodeGetContent(size->children);
@@ -329,6 +348,22 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			// Parse size
 			xStr = xmlNodeGetContent(size->children);
 			cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].pool.size, (const char*)xStr),
+					ret, RET);
+			xmlFree(xStr);
+			xStr = NULL;
+
+			break;
+
+		case CNN_LAYER_DROP:
+			if(rate == NULL)
+			{
+				ret = CNN_INFO_NOT_FOUND;
+				goto RET;
+			}
+
+			// Parse rate
+			xStr = xmlNodeGetContent(rate->children);
+			cnn_run(cnn_strtof(&cfgPtr->layerCfg[tmpIndex].drop.rate, (const char*)xStr),
 					ret, RET);
 			xmlFree(xStr);
 			xStr = NULL;
