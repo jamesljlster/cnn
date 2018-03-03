@@ -5,6 +5,46 @@
 #include "cnn.h"
 #include "cnn_private.h"
 
+void cnn_get_input_size(cnn_t cnn, int* wPtr, int* hPtr, int* cPtr)
+{
+	// Assign value
+	if(wPtr != NULL)
+	{
+		*wPtr = cnn->cfg.width;
+	}
+
+	if(hPtr != NULL)
+	{
+		*hPtr = cnn->cfg.height;
+	}
+
+	if(cPtr != NULL)
+	{
+		*cPtr = cnn->cfg.channel;
+	}
+}
+
+void cnn_get_output_size(cnn_t cnn, int* wPtr, int* hPtr, int* cPtr)
+{
+	int index = cnn->cfg.layers - 1;
+
+	// Assign value
+	if(wPtr != NULL)
+	{
+		*wPtr = cnn->layerList[index].outMat.width;
+	}
+
+	if(hPtr != NULL)
+	{
+		*hPtr = cnn->layerList[index].outMat.height;
+	}
+
+	if(cPtr != NULL)
+	{
+		*cPtr = cnn->layerList[index].outMat.channel;
+	}
+}
+
 int cnn_resize_batch(cnn_t* cnnPtr, int batchSize)
 {
 	int ret = CNN_NO_ERROR;

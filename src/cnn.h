@@ -1,3 +1,8 @@
+/**
+ * @author	Zheng-Ling Lai <jamesljlster@gmail.com>
+ * @file	cnn.h
+**/
+
 #ifndef __CNN_H__
 #define __CNN_H__
 
@@ -55,6 +60,7 @@ void cnn_config_delete(cnn_config_t cfg);
 
 int cnn_config_set_input_size(cnn_config_t cfg, int width, int height, int channel);
 void cnn_config_get_input_size(cnn_config_t cfg, int* wPtr, int* hPtr, int* cPtr);
+void cnn_config_get_output_size(cnn_config_t cfg, int* wPtr, int* hPtr, int* cPtr);
 
 int cnn_config_set_batch_size(cnn_config_t cfg, int batchSize);
 void cnn_config_get_batch_size(cnn_config_t cfg, int* batchPtr);
@@ -94,6 +100,9 @@ int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath);
 int cnn_config_export(cnn_config_t cfg, const char* fPath);
 
 cnn_config_t cnn_get_config(cnn_t cnn);
+
+void cnn_get_input_size(cnn_t cnn, int* wPtr, int* hPtr, int* cPtr);
+void cnn_get_output_size(cnn_t cnn, int* wPtr, int* hPtr, int* cPtr);
 
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg);
 int cnn_clone(cnn_t* dstPtr, const cnn_t src);

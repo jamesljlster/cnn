@@ -180,6 +180,88 @@ void cnn_config_get_input_size(cnn_config_t cfg, int* wPtr, int* hPtr, int* cPtr
 	}
 }
 
+void cnn_config_get_output_size(cnn_config_t cfg, int* wPtr, int* hPtr, int* cPtr)
+{
+	int i;
+	int inWidth, inHeight, inChannel;
+	int outWidth, outHeight, outChannel;
+
+	// Set initial size
+	inWidth = cfg->width;
+	inHeight = cfg->height;
+	inChannel = cfg->channel;
+
+	outWidth = inWidth;
+	outHeight = inHeight;
+	outChannel = inChannel;
+
+	// Find output size
+	for(i = 1; i < cfg->layers; i++)
+	{
+		switch(cfg->layerCfg[i].type)
+		{
+			case CNN_LAYER_INPUT:
+				outWidth = inWidth;
+				outHeight = inHeight;
+				outChannel = inChannel;
+				break;
+
+			case CNN_LAYER_FC:
+				outWidth = cfg->layerCfg[i].fc.size;
+				outHeight = 1;
+				outChannel = 1;
+				break;
+
+			case CNN_LAYER_AFUNC:
+				outWidth = inWidth;
+				outHeight = inHeight;
+				outChannel = inChannel;
+				break;
+
+			case CNN_LAYER_CONV:
+				outWidth = inWidth - cfg->layerCfg[i].conv.size + 1;
+				outHeight = inHeight - cfg->layerCfg[i].conv.size + 1;
+				outChannel = cfg->layerCfg[i].conv.filter;
+				break;
+
+			case CNN_LAYER_POOL:
+				outWidth = inWidth / cfg->layerCfg[i].pool.size;
+				outHeight = inHeight / cfg->layerCfg[i].pool.size;
+				outChannel = inChannel;
+				break;
+
+			case CNN_LAYER_DROP:
+				outWidth = inWidth;
+				outHeight = inHeight;
+				outChannel = inChannel;
+				break;
+
+			default:
+				assert(!"Invalid layer type");
+		}
+
+		inWidth = outWidth;
+		inHeight = outHeight;
+		inChannel = outChannel;
+	}
+
+	// Assign value
+	if(wPtr != NULL)
+	{
+		*wPtr = outWidth;
+	}
+
+	if(hPtr != NULL)
+	{
+		*hPtr = outHeight;
+	}
+
+	if(cPtr != NULL)
+	{
+		*cPtr = outChannel;
+	}
+}
+
 int cnn_config_set_batch_size(cnn_config_t cfg, int batchSize)
 {
 	int ret = CNN_NO_ERROR;
