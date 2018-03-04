@@ -4,6 +4,8 @@
 #include <cnn_private.h>
 #include <cnn_types.h>
 
+#include "test.h"
+
 void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 {
 	printf("Layer %d config:\n", layerIndex);
@@ -80,6 +82,10 @@ int main()
 	{
 		check_cnn_layer_config(cpy, i);
 	}
+
+	// Compare
+	test(cnn_config_compare(cfg, cpy));
+	printf("cnn_config_compare() passed\n");
 
 	// Cleanup
 	cnn_config_delete(cfg);

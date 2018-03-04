@@ -367,6 +367,10 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			xmlFree(xStr);
 			xStr = NULL;
 
+			// Set dropout scale
+			cfgPtr->layerCfg[tmpIndex].drop.scale = 1.0 /
+				(1.0 - cfgPtr->layerCfg[tmpIndex].drop.rate);
+
 			break;
 
 		default:

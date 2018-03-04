@@ -8,6 +8,7 @@ set(PROJECT_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/cnn.h)
 # Compile setting
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O")
 
 # Set default build type
 if(NOT CMAKE_BUILD_TYPE)

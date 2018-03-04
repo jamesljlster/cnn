@@ -14,6 +14,96 @@
 #define CNN_DEFAULT_FC_SIZE 16
 #define CNN_DEFAULT_LRATE 0.001
 
+int cnn_config_compare(const cnn_config_t src1, const cnn_config_t src2)
+{
+	int i;
+	int tmpRet;
+	int ret = CNN_NO_ERROR;
+
+#ifdef DEBUG
+#define __cmp(elem) \
+	if(src1->elem != src2->elem) \
+	{ \
+		fprintf(stderr, "%s(), %d: %s not match\n", __FUNCTION__, __LINE__, #elem); \
+		ret = CNN_CONFLICT; \
+		goto RET; \
+	}
+#else
+#define __cmp(elem) \
+	if(src1->elem != src2->elem) \
+	{ \
+		ret = CNN_CONFLICT; \
+		goto RET; \
+	}
+#endif
+
+	// Compare
+	__cmp(width);
+	__cmp(height);
+	__cmp(channel);
+	__cmp(batch);
+	__cmp(layers);
+
+	for(i = 0; i < src1->layers; i++)
+	{
+		// Compare type
+		__cmp(layerCfg[i].type);
+
+#ifdef DEBUG
+#define __cmp_mem(elem, type) \
+	tmpRet = memcmp(&src1->layerCfg[i].elem, &src2->layerCfg[i].elem, sizeof(type)); \
+	if(tmpRet != 0) \
+	{ \
+		fprintf(stderr, "%s(), %d: 'cfg->layerCfg[%d].%s' not match with type '%s'\n", \
+				__FUNCTION__, __LINE__, i, #elem, #type); \
+		ret = CNN_CONFLICT; \
+		goto RET; \
+	}
+#else
+#define __cmp_mem(elem, type) \
+	tmpRet = memcmp(&src1->layerCfg[i].elem, &src2->layerCfg[i].elem, sizeof(type)); \
+	if(tmpRet != 0) \
+	{ \
+		ret = CNN_CONFLICT; \
+		goto RET; \
+	}
+#endif
+
+		// Compare detail
+		switch(src1->layerCfg[i].type)
+		{
+			case CNN_LAYER_INPUT:
+				break;
+
+			case CNN_LAYER_FC:
+				__cmp_mem(fc, struct CNN_CONFIG_LAYER_FC);
+				break;
+
+			case CNN_LAYER_AFUNC:
+				__cmp_mem(aFunc, struct CNN_CONFIG_LAYER_AFUNC);
+				break;
+
+			case CNN_LAYER_CONV:
+				__cmp_mem(conv, struct CNN_CONFIG_LAYER_CONV);
+				break;
+
+			case CNN_LAYER_POOL:
+				__cmp_mem(pool, struct CNN_CONFIG_LAYER_POOL);
+				break;
+
+			case CNN_LAYER_DROP:
+				__cmp_mem(drop, struct CNN_CONFIG_LAYER_DROP);
+				break;
+
+			default:
+				assert(!"Invalid layer type");
+		}
+	}
+
+RET:
+	return ret;
+}
+
 void cnn_set_dropout_enabled(cnn_t cnn, int enable)
 {
 	cnn->dropEnable = enable;
