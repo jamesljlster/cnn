@@ -71,8 +71,8 @@ union CNN_CONFIG_LAYER
 	// Layer type
 	int type;
 
-	struct CNN_CONFIG_LAYER_ACTIV activ;
 	struct CNN_CONFIG_LAYER_FC fc;
+	struct CNN_CONFIG_LAYER_ACTIV activ;
 	struct CNN_CONFIG_LAYER_CONV conv;
 	struct CNN_CONFIG_LAYER_POOL pool;
 	struct CNN_CONFIG_LAYER_DROP drop;
@@ -154,8 +154,8 @@ union CNN_LAYER
 	// Layer output matrix
 	struct CNN_SHAPE outMat;
 
-	struct CNN_LAYER_ACTIV activ;
 	struct CNN_LAYER_FC fc;
+	struct CNN_LAYER_ACTIV activ;
 	struct CNN_LAYER_CONV conv;
 	struct CNN_LAYER_POOL pool;
 	struct CNN_LAYER_DROP drop;
