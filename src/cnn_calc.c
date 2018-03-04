@@ -119,8 +119,8 @@ void cnn_backward(cnn_t cnn, float* errGrad)
 				break;
 
 			// Activation function
-			case CNN_LAYER_AFUNC:
-				cnn_backward_afunc(layerRef, cfgRef, i);
+			case CNN_LAYER_ACTIV:
+				cnn_backward_activ(layerRef, cfgRef, i);
 				break;
 
 			// Convolution
@@ -170,8 +170,8 @@ void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
 				break;
 
 			// Activation function
-			case CNN_LAYER_AFUNC:
-				cnn_forward_afunc(layerRef, cfgRef, i);
+			case CNN_LAYER_ACTIV:
+				cnn_forward_activ(layerRef, cfgRef, i);
 				break;
 
 			// Convolution

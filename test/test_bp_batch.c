@@ -224,7 +224,7 @@ int main()
 				printf("\n");
 				break;
 
-			case CNN_LAYER_AFUNC:
+			case CNN_LAYER_ACTIV:
 				printf("- Activation Function -\n");
 				break;
 		}

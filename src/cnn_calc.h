@@ -263,7 +263,7 @@ inline void cnn_forward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 			mask, size, cfgRef->layerCfg[layerIndex].drop.scale);
 }
 
-inline void cnn_forward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+inline void cnn_forward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	for(int j = 0; j < cfgRef->batch; j++)
@@ -274,7 +274,7 @@ inline void cnn_forward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 		float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
 		float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
 
-		cnn_afunc_list[cfgRef->layerCfg[layerIndex].aFunc.id](dstPtr,
+		cnn_activ_list[cfgRef->layerCfg[layerIndex].activ.id](dstPtr,
 				srcPtr, layerRef[layerIndex].outMat.data.cols, NULL);
 	}
 }
@@ -391,7 +391,7 @@ inline void cnn_backward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 	}
 }
 
-inline void cnn_backward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+inline void cnn_backward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	int srcShift, dstShift;
@@ -403,7 +403,7 @@ inline void cnn_backward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfg
 		for(int j = 0; j < cfgRef->batch; j++)
 		{
 			srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
-			if(cfgRef->layerCfg[layerIndex].aFunc.id == CNN_SOFTMAX)
+			if(cfgRef->layerCfg[layerIndex].activ.id == CNN_SOFTMAX)
 			{
 				dstShift = srcShift * layerRef[layerIndex].outMat.data.cols;
 			}
@@ -413,15 +413,15 @@ inline void cnn_backward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfg
 			}
 
 			srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
-			dstPtr = &layerRef[layerIndex].aFunc.gradMat.mat[dstShift];
+			dstPtr = &layerRef[layerIndex].activ.gradMat.mat[dstShift];
 
 			// Find gradient matrix
-			cnn_afunc_grad_list[cfgRef->layerCfg[layerIndex].aFunc.id](dstPtr,
+			cnn_activ_grad_list[cfgRef->layerCfg[layerIndex].activ.id](dstPtr,
 					srcPtr, layerRef[layerIndex].outMat.data.cols,
-					&layerRef[layerIndex].aFunc.buf.mat[srcShift]);
+					&layerRef[layerIndex].activ.buf.mat[srcShift]);
 
 			// Find layer gradient
-			if(cfgRef->layerCfg[layerIndex].aFunc.id == CNN_SOFTMAX)
+			if(cfgRef->layerCfg[layerIndex].activ.id == CNN_SOFTMAX)
 			{
 				cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
 						1, layerRef[layerIndex - 1].outMat.data.cols,
@@ -429,7 +429,7 @@ inline void cnn_backward_afunc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfg
 						1.0,
 						&layerRef[layerIndex].outMat.data.grad[srcShift],
 						layerRef[layerIndex].outMat.data.cols,
-						dstPtr, layerRef[layerIndex].aFunc.gradMat.cols, 0.0,
+						dstPtr, layerRef[layerIndex].activ.gradMat.cols, 0.0,
 						&layerRef[layerIndex - 1].outMat.data.grad[srcShift],
 						layerRef[layerIndex - 1].outMat.data.cols);
 			}

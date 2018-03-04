@@ -69,18 +69,18 @@ void check_cnn_arch(cnn_t cnn)
 				test_mat(cnn->layerList[i].fc.bias);
 				break;
 
-			case CNN_LAYER_AFUNC:
+			case CNN_LAYER_ACTIV:
 				printf("The layer is activation function\n");
-				printf("ID: %d\n", cnn->cfg.layerCfg[i].aFunc.id);
+				printf("ID: %d\n", cnn->cfg.layerCfg[i].activ.id);
 				printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
 						cnn->layerList[i].outMat.height);
 				printf("Output channel: %d\n", cnn->layerList[i].outMat.channel);
 
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
-				print_mat_info("Grad mat", cnn->layerList[i].aFunc.gradMat);
+				print_mat_info("Grad mat", cnn->layerList[i].activ.gradMat);
 
 				test_mat(cnn->layerList[i].outMat.data);
-				test_mat(cnn->layerList[i].aFunc.gradMat);
+				test_mat(cnn->layerList[i].activ.gradMat);
 				break;
 
 			case CNN_LAYER_CONV:

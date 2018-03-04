@@ -4,25 +4,25 @@
 #include "cnn.h"
 #include "cnn_builtin_math.h"
 
-CNN_AFUNC_DEF((*cnn_afunc_list[])) = {
+CNN_ACTIV_DEF((*cnn_activ_list[])) = {
 	cnn_softmax,
 	cnn_relu,
 	cnn_swish
 };
 
-CNN_AFUNC_DEF((*cnn_afunc_grad_list[])) = {
+CNN_ACTIV_DEF((*cnn_activ_grad_list[])) = {
 	cnn_softmax_grad,
 	cnn_relu_grad,
 	cnn_swish_grad
 };
 
-const char* cnn_afunc_name[] = {
+const char* cnn_activ_name[] = {
 	"Softmax",
 	"ReLU",
 	"Swish"
 };
 
-CNN_AFUNC_DEF(cnn_softmax)
+CNN_ACTIV_DEF(cnn_softmax)
 {
 	int i;
 	float max, sum;
@@ -52,7 +52,7 @@ CNN_AFUNC_DEF(cnn_softmax)
 	}
 }
 
-CNN_AFUNC_DEF(cnn_softmax_grad)
+CNN_ACTIV_DEF(cnn_softmax_grad)
 {
 	int i, j;
 
@@ -67,7 +67,7 @@ CNN_AFUNC_DEF(cnn_softmax_grad)
 	}
 }
 
-CNN_AFUNC_DEF(cnn_relu)
+CNN_ACTIV_DEF(cnn_relu)
 {
 	int i;
 	for(i = 0; i < len; i++)
@@ -76,7 +76,7 @@ CNN_AFUNC_DEF(cnn_relu)
 	}
 }
 
-CNN_AFUNC_DEF(cnn_relu_grad)
+CNN_ACTIV_DEF(cnn_relu_grad)
 {
 	int i;
 
@@ -88,7 +88,7 @@ CNN_AFUNC_DEF(cnn_relu_grad)
 	}
 }
 
-CNN_AFUNC_DEF(cnn_swish)
+CNN_ACTIV_DEF(cnn_swish)
 {
 	int i;
 	for(i = 0; i < len; i++)
@@ -97,7 +97,7 @@ CNN_AFUNC_DEF(cnn_swish)
 	}
 }
 
-CNN_AFUNC_DEF(cnn_swish_grad)
+CNN_ACTIV_DEF(cnn_swish_grad)
 {
 	int i;
 
@@ -110,16 +110,16 @@ CNN_AFUNC_DEF(cnn_swish_grad)
 	}
 }
 
-int cnn_get_afunc_id(const char* name)
+int cnn_get_activ_id(const char* name)
 {
 	int i;
 	int ret = CNN_PARSE_FAILED;
 
 	if(name != NULL)
 	{
-		for(i = 0; i < CNN_AFUNC_AMOUNT; i++)
+		for(i = 0; i < CNN_ACTIV_AMOUNT; i++)
 		{
-			ret = strcmp(name, cnn_afunc_name[i]);
+			ret = strcmp(name, cnn_activ_name[i]);
 			if(ret == 0)
 			{
 				ret = i;

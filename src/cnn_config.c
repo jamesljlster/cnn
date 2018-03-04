@@ -79,8 +79,8 @@ int cnn_config_compare(const cnn_config_t src1, const cnn_config_t src2)
 				__cmp_mem(fc, struct CNN_CONFIG_LAYER_FC);
 				break;
 
-			case CNN_LAYER_AFUNC:
-				__cmp_mem(aFunc, struct CNN_CONFIG_LAYER_AFUNC);
+			case CNN_LAYER_ACTIV:
+				__cmp_mem(activ, struct CNN_CONFIG_LAYER_ACTIV);
 				break;
 
 			case CNN_LAYER_CONV:
@@ -302,7 +302,7 @@ void cnn_config_get_output_size(cnn_config_t cfg, int* wPtr, int* hPtr, int* cPt
 				outChannel = 1;
 				break;
 
-			case CNN_LAYER_AFUNC:
+			case CNN_LAYER_ACTIV:
 				outWidth = inWidth;
 				outHeight = inHeight;
 				outChannel = inChannel;
@@ -529,13 +529,13 @@ RET:
 	return ret;
 }
 
-int cnn_config_append_activation(cnn_config_t cfg, cnn_afunc_t aFuncID)
+int cnn_config_append_activation(cnn_config_t cfg, cnn_activ_t activID)
 {
 	int ret = CNN_NO_ERROR;
 	int layers;
 
 	// Checking
-	if(aFuncID < 0 || aFuncID >= CNN_AFUNC_AMOUNT)
+	if(activID < 0 || activID >= CNN_ACTIV_AMOUNT)
 	{
 		ret = CNN_INVALID_ARG;
 		goto RET;
@@ -545,33 +545,33 @@ int cnn_config_append_activation(cnn_config_t cfg, cnn_afunc_t aFuncID)
 	cnn_config_get_layers(cfg, &layers);
 	layers++;
 	cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
-	cnn_run(cnn_config_set_activation(cfg, layers - 1, aFuncID), ret, RET);
+	cnn_run(cnn_config_set_activation(cfg, layers - 1, activID), ret, RET);
 
 RET:
 	return ret;
 }
 
-int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFuncID)
+int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_activ_t activID)
 {
 	int ret = CNN_NO_ERROR;
 
 	// Checking
-	if(layerIndex <= 0 || layerIndex >= cfg->layers || aFuncID < 0 ||
-			aFuncID >= CNN_AFUNC_AMOUNT)
+	if(layerIndex <= 0 || layerIndex >= cfg->layers || activID < 0 ||
+			activID >= CNN_ACTIV_AMOUNT)
 	{
 		ret = CNN_INVALID_ARG;
 		goto RET;
 	}
 
 	// Set config
-	cfg->layerCfg[layerIndex].type = CNN_LAYER_AFUNC;
-	cfg->layerCfg[layerIndex].aFunc.id = aFuncID;
+	cfg->layerCfg[layerIndex].type = CNN_LAYER_ACTIV;
+	cfg->layerCfg[layerIndex].activ.id = activID;
 
 RET:
 	return ret;
 }
 
-int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t* idPtr)
+int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_activ_t* idPtr)
 {
 	int ret = CNN_NO_ERROR;
 
@@ -582,7 +582,7 @@ int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t* idP
 		goto RET;
 	}
 
-	if(cfg->layerCfg[layerIndex].type != CNN_LAYER_AFUNC)
+	if(cfg->layerCfg[layerIndex].type != CNN_LAYER_ACTIV)
 	{
 		ret = CNN_INVALID_ARG;
 		goto RET;
@@ -591,7 +591,7 @@ int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t* idP
 	// Assing value
 	if(idPtr != NULL)
 	{
-		*idPtr = cfg->layerCfg[layerIndex].aFunc.id;
+		*idPtr = cfg->layerCfg[layerIndex].activ.id;
 	}
 
 RET:

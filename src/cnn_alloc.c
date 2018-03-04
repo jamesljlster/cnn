@@ -41,10 +41,10 @@ int cnn_network_alloc(struct CNN* cnn)
 						ret, ERR);
 				break;
 
-			case CNN_LAYER_AFUNC:
-				cnn_run(cnn_layer_afunc_alloc(&cnn->layerList[i].aFunc,
+			case CNN_LAYER_ACTIV:
+				cnn_run(cnn_layer_activ_alloc(&cnn->layerList[i].activ,
 							tmpWidth, tmpHeight, tmpChannel,
-							cfg->batch, cfg->layerCfg[i].aFunc.id),
+							cfg->batch, cfg->layerCfg[i].activ.id),
 						ret, ERR);
 				break;
 
@@ -178,8 +178,8 @@ RET:
 	return ret;
 }
 
-int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr,
-		int inWidth, int inHeight, int inChannel, int batch, int aFuncID)
+int cnn_layer_activ_alloc(struct CNN_LAYER_ACTIV* layerPtr,
+		int inWidth, int inHeight, int inChannel, int batch, int activID)
 {
 	int ret = CNN_NO_ERROR;
 	int outRows, outCols;
@@ -192,7 +192,7 @@ int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr,
 	gradRows = batch;
 	gradCols = outCols;
 
-	if(aFuncID == CNN_SOFTMAX)
+	if(activID == CNN_SOFTMAX)
 	{
 		gradRows = batch * outCols;
 	}
@@ -210,7 +210,7 @@ int cnn_layer_afunc_alloc(struct CNN_LAYER_AFUNC* layerPtr,
 	goto RET;
 
 ERR:
-	cnn_layer_afunc_delete(layerPtr);
+	cnn_layer_activ_delete(layerPtr);
 
 RET:
 	return ret;
