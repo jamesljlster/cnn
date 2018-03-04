@@ -15,7 +15,8 @@ enum CNN_RETVAL
 	CNN_FILE_OP_FAILED = -5,
 	CNN_PARSE_FAILED = -6,
 	CNN_INVALID_FILE = -7,
-	CNN_INFO_NOT_FOUND = -8
+	CNN_INFO_NOT_FOUND = -8,
+	CNN_CONFLICT = -9
 };
 
 typedef enum CNN_LAYER_TYPE
@@ -98,6 +99,8 @@ void cnn_config_get_learning_rate(cnn_config_t cfg, float* lRatePtr);
 
 int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath);
 int cnn_config_export(cnn_config_t cfg, const char* fPath);
+
+int cnn_config_compare(const cnn_config_t src1, const cnn_config_t src2);
 
 cnn_config_t cnn_get_config(cnn_t cnn);
 
