@@ -20,9 +20,9 @@ void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 			printf("Size: %d\n", cfg->layerCfg[layerIndex].fc.size);
 			break;
 
-		case CNN_LAYER_AFUNC:
+		case CNN_LAYER_ACTIV:
 			printf("The layer is activation function\n");
-			printf("ID: %d\n", cfg->layerCfg[layerIndex].aFunc.id);
+			printf("ID: %d\n", cfg->layerCfg[layerIndex].activ.id);
 			break;
 
 		case CNN_LAYER_CONV:

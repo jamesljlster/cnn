@@ -54,7 +54,7 @@ void cnn_layer_drop_delete(struct CNN_LAYER_DROP* layerPtr)
 	memset(layerPtr, 0, sizeof(struct CNN_LAYER_DROP));
 }
 
-void cnn_layer_afunc_delete(struct CNN_LAYER_AFUNC* layerPtr)
+void cnn_layer_activ_delete(struct CNN_LAYER_ACTIV* layerPtr)
 {
 	// Free memory
 	cnn_mat_delete(&layerPtr->outMat.data);
@@ -62,7 +62,7 @@ void cnn_layer_afunc_delete(struct CNN_LAYER_AFUNC* layerPtr)
 	cnn_mat_delete(&layerPtr->buf);
 
 	// Zero memory
-	memset(layerPtr, 0, sizeof(struct CNN_LAYER_AFUNC));
+	memset(layerPtr, 0, sizeof(struct CNN_LAYER_ACTIV));
 }
 
 void cnn_layer_fc_delete(struct CNN_LAYER_FC* layerPtr)
@@ -116,8 +116,8 @@ void cnn_network_delete(struct CNN* cnn)
 					cnn_layer_fc_delete(&cnn->layerList[i].fc);
 					break;
 
-				case CNN_LAYER_AFUNC:
-					cnn_layer_afunc_delete(&cnn->layerList[i].aFunc);
+				case CNN_LAYER_ACTIV:
+					cnn_layer_activ_delete(&cnn->layerList[i].activ);
 					break;
 
 				case CNN_LAYER_CONV:

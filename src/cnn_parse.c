@@ -197,8 +197,8 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			tmpType = CNN_LAYER_FC;
 			break;
 
-		case CNN_STR_AFUNC:
-			tmpType = CNN_LAYER_AFUNC;
+		case CNN_STR_ACTIV:
+			tmpType = CNN_LAYER_ACTIV;
 			break;
 
 		case CNN_STR_CONV:
@@ -239,7 +239,7 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 			xStr = NULL;
 			break;
 
-		case CNN_LAYER_AFUNC:
+		case CNN_LAYER_ACTIV:
 			if(id == NULL)
 			{
 				ret = CNN_INFO_NOT_FOUND;
@@ -248,12 +248,12 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
 			// Parse id
 			xStr = xmlNodeGetContent(id->children);
-			strId = cnn_get_afunc_id((const char*)xStr);
+			strId = cnn_get_activ_id((const char*)xStr);
 			xmlFree(xStr);
 			xStr = NULL;
 
 			assert(strId >= 0 && "Invalid activation function ID");
-			cfgPtr->layerCfg[tmpIndex].aFunc.id = strId;
+			cfgPtr->layerCfg[tmpIndex].activ.id = strId;
 
 			break;
 

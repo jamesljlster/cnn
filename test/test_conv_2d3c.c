@@ -146,7 +146,7 @@ int main()
 	printf("\n");
 
 	// Allocate cnn layer
-	test(cnn_layer_afunc_alloc(&layer[1].aFunc, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1, CNN_RELU));
+	test(cnn_layer_activ_alloc(&layer[1].activ, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1, CNN_RELU));
 	test(cnn_layer_conv_alloc(&layer[2].conv, IMG_WIDTH, IMG_HEIGHT, CH_IN, CH_OUT,
 				KERNEL_SIZE, 1));
 

@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Test activation functions
-	for(id = 0; id < CNN_AFUNC_AMOUNT; id++)
+	for(id = 0; id < CNN_ACTIV_AMOUNT; id++)
 	{
 		// Parse argument
 		for(i = 0; i < len; i++)
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 
 		// Find grad
 		memset(grad, 0, len * len * sizeof(float));
-		cnn_afunc_list[id](dst, src, len, NULL);
+		cnn_activ_list[id](dst, src, len, NULL);
 		if(id == CNN_SOFTMAX)
 		{
 			for(i = 0; i < len; i++)
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 					}
 				}
 
-				cnn_afunc_list[id](buf, src, len, NULL);
+				cnn_activ_list[id](buf, src, len, NULL);
 
 				for(j = 0; j < len; j++)
 				{
@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
 					}
 				}
 
-				cnn_afunc_list[id](buf, src, len, NULL);
+				cnn_activ_list[id](buf, src, len, NULL);
 
 				grad[i] = (buf[i] - dst[i]) / dx;
 			}
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
 		}
 
 		memset(deri, 0, len * len * sizeof(float));
-		cnn_afunc_grad_list[id](deri, src, len, buf);
+		cnn_activ_grad_list[id](deri, src, len, buf);
 
 		// Find error
 		err = 0;
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
 			err += fabs(grad[i] - deri[i]);
 		}
 
-		printf("=== Test %s derivative ===\n", cnn_afunc_name[id]);
+		printf("=== Test %s derivative ===\n", cnn_activ_name[id]);
 		printf("deri:\n");
 		print_mat(deri, len, len);
 		printf("\n");

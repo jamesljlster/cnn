@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 	cnn_layer_t layerType;
 	cnn_pool_t poolType;
 	cnn_dim_t dim;
-	cnn_afunc_t id;
+	cnn_activ_t id;
 	int width, height, channel;
 	int batch;
 	float rate;
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 				printf("Size: %d\n", size);
 				break;
 
-			case CNN_LAYER_AFUNC:
+			case CNN_LAYER_ACTIV:
 				test(cnn_config_get_activation(cfg, i, &id));
 				printf("Type: Activation\n");
 				printf("ID: %d\n", id);

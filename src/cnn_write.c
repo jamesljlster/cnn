@@ -111,19 +111,19 @@ RET:
 	return ret;
 }
 
-int cnn_write_layer_afunc_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
+int cnn_write_layer_activ_xml(struct CNN_CONFIG* cfgRef, int layerIndex,
 		xmlTextWriterPtr writer)
 {
 	int ret = CNN_NO_ERROR;
 
 	// Write layer type
 	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_TYPE],
-				(xmlChar*)cnn_str_list[CNN_STR_AFUNC]),
+				(xmlChar*)cnn_str_list[CNN_STR_ACTIV]),
 			ret, RET);
 
 	// Write activation function id
 	cnn_xml_run(xmlTextWriterWriteAttribute(writer, (xmlChar*)cnn_str_list[CNN_STR_ID],
-				(xmlChar*)cnn_afunc_name[cfgRef->layerCfg[layerIndex].aFunc.id]),
+				(xmlChar*)cnn_activ_name[cfgRef->layerCfg[layerIndex].activ.id]),
 			ret, RET);
 
 RET:
@@ -350,8 +350,8 @@ int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 				cnn_run(cnn_write_layer_fc_xml(cfgRef, layerRef, i, writer), ret, RET);
 				break;
 
-			case CNN_LAYER_AFUNC:
-				cnn_run(cnn_write_layer_afunc_xml(cfgRef, i, writer), ret, RET);
+			case CNN_LAYER_ACTIV:
+				cnn_run(cnn_write_layer_activ_xml(cfgRef, i, writer), ret, RET);
 				break;
 
 			case CNN_LAYER_CONV:

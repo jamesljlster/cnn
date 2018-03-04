@@ -23,7 +23,7 @@ typedef enum CNN_LAYER_TYPE
 {
 	CNN_LAYER_INPUT = 0,
 	CNN_LAYER_FC = 1,
-	CNN_LAYER_AFUNC = 2,
+	CNN_LAYER_ACTIV = 2,
 	CNN_LAYER_CONV = 3,
 	CNN_LAYER_POOL = 4,
 	CNN_LAYER_DROP = 5
@@ -46,7 +46,7 @@ typedef enum CNN_ACTIVATION_FUNC
 	CNN_SOFTMAX = 0,
 	CNN_RELU = 1,
 	CNN_SWISH = 2
-} cnn_afunc_t;
+} cnn_activ_t;
 
 typedef struct CNN* cnn_t;
 typedef struct CNN_CONFIG* cnn_config_t;
@@ -74,9 +74,9 @@ int cnn_config_append_full_connect(cnn_config_t cfg, int size);
 int cnn_config_set_full_connect(cnn_config_t cfg, int layerIndex, int size);
 int cnn_config_get_full_connect(cnn_config_t cfg, int layerIndex, int* sizePtr);
 
-int cnn_config_append_activation(cnn_config_t cfg, cnn_afunc_t aFuncID);
-int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t aFuncID);
-int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_afunc_t* idPtr);
+int cnn_config_append_activation(cnn_config_t cfg, cnn_activ_t activID);
+int cnn_config_set_activation(cnn_config_t cfg, int layerIndex, cnn_activ_t activID);
+int cnn_config_get_activation(cnn_config_t cfg, int layerIndex, cnn_activ_t* idPtr);
 
 int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim, int filter, int size);
 int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex, cnn_dim_t convDim,
