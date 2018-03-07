@@ -35,7 +35,11 @@ int main()
 
 	float err[OUTPUTS] = {0};
 
+#ifdef _MSC_VER
+	clock_t timeHold, tmpTime;
+#else
 	struct timespec timeHold, tmpTime;
+#endif
 	float timeCost;
 
 	// Set config
@@ -55,7 +59,11 @@ int main()
 	test(cnn_create(&cnn, cfg));
 
 	// Hold current time
+#ifdef _MSC_VER
+	timeHold = clock();
+#else
 	clock_gettime(CLOCK_MONOTONIC, &timeHold);
+#endif
 
 	// CNN Backpropagation
 	for(i = 0; i < ITER; i++)
@@ -64,9 +72,14 @@ int main()
 	}
 
 	// Calculate time cost
+#ifdef _MSC_VER
+	tmpTime = clock();
+	timeCost = (float)(tmpTime - timeHold) * 1000.0 / (float)CLOCKS_PER_SEC;
+#else
 	clock_gettime(CLOCK_MONOTONIC, &tmpTime);
 	timeCost = (tmpTime.tv_sec - timeHold.tv_sec) * 1000 +
 		(float)(tmpTime.tv_nsec - timeHold.tv_nsec) / 1000000.0;
+#endif
 	printf("With %d iteration, time cost: %f ms\n", ITER, timeCost);
 
 	return 0;

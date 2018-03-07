@@ -7,9 +7,11 @@
 #include "cnn_private.h"
 #include "cnn_init.h"
 
+#define CNN_M_PI 3.14159265359
+
 float cnn_normal_distribution(struct CNN_BOX_MULLER* bmPtr, double mean, double stddev)
 {
-	double dPI = 2 * M_PI;
+	double dPI = 2 * CNN_M_PI;
 	double u0, u1;
 	double z0, z1;
 	double calcTmp;

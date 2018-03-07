@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <math.h>
+#include <assert.h>
 
 #include <cnn.h>
 #include <cnn_private.h>
@@ -223,12 +224,16 @@ int parse_class(float* out, int len)
 
 void byte_reverse(void* ptr, size_t size)
 {
-	unsigned char tmp[size];
+	unsigned char* tmp = malloc(size);
+	assert(tmp != NULL);
+
 	for(size_t i = 0; i < size; i++)
 	{
 		tmp[i] = ((unsigned char*)ptr)[size - i - 1];
 	}
+
 	memcpy(ptr, tmp, size);
+	free(tmp);
 }
 
 int make_dataset(struct DATASET* ptr, int batch, const char* binPath)
