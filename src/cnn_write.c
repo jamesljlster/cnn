@@ -214,7 +214,7 @@ RET:
 int cnn_write_dim_attr_xml(int dim, xmlTextWriterPtr writer)
 {
 	int ret = CNN_NO_ERROR;
-	const char* str;
+	const char* str = NULL;
 
 	// Write dimension attribute
 	switch(dim)

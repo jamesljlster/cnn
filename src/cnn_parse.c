@@ -7,6 +7,18 @@
 #include "cnn_strdef.h"
 #include "cnn_builtin_math.h"
 
+void cnn_ftostr(char* buf, int bufSize, float val)
+{
+	int __ret = snprintf(buf, bufSize, "%.32g", val);
+	assert(__ret > 0 && __ret <= bufSize && "Insufficient buffer size");
+}
+
+void cnn_itostr(char* buf, int bufSize, int val)
+{
+	int __ret = snprintf(buf, bufSize, "%d", val);
+	assert(__ret > 0 && __ret <= bufSize && "Insufficient buffer size");
+}
+
 int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath)
 {
 	int ret = CNN_NO_ERROR;
@@ -118,7 +130,7 @@ RET:
 int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 {
 	int ret = CNN_NO_ERROR;
-	int tmpType, tmpIndex;
+	int tmpType = -1, tmpIndex;
 	int strId;
 
 	xmlAttrPtr attrCur;
