@@ -40,4 +40,8 @@
 #define CNN_XML_VER_STR "1.0"
 #define CNN_XML_ENC_STR "utf-8"
 
+#if defined(MINGW) || defined(__MINGW32__) || defined(__MINGW64__)
+#define xmlFree(ptr) free(ptr)
+#endif
+
 #endif
