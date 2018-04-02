@@ -7,6 +7,8 @@ set(PROJECT_DEPS cnn ${OpenBLAS_LIB} ${LIBXML2_LIBRARIES})
 
 if(UNIX)
 	set(PROJECT_DEPS ${PROJECT_DEPS} m)
+elseif(MINGW)
+	set(PROJECT_DEPS ${PROJECT_DEPS} ws2_32)
 endif()
 
 # Compile setting
