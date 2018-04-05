@@ -319,6 +319,17 @@ inline void cnn_forward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
+	// Cache
+	int mapRows = layerRef[layerIndex].outMat.width *
+		layerRef[layerIndex].outMat.height;
+	int mapCols = layerRef[layerIndex - 1].outMat.channel *
+		cfgRef->layerCfg[layerIndex].conv.size * cfgRef->layerCfg[layerIndex].conv.size;
+	int mapSize = mapRows * mapCols;
+	int* indexMap = layerRef[layerIndex].conv.indexMap;
+
+	int chOut = layerRef[layerIndex].outMat.channel;
+	float* kernel = layerRef[layerIndex].conv.kernel.mat;
+
 	// Clear outputs
 	memset(layerRef[layerIndex].outMat.data.mat, 0, sizeof(float) *
 			layerRef[layerIndex].outMat.data.rows *
@@ -328,18 +339,23 @@ inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 	{
 		int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
 		int dstShift = j * layerRef[layerIndex].outMat.data.cols;
+		int mapShift = j * mapSize;
 
 		float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
 		float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
+		float* mapPtr = &layerRef[layerIndex].conv.unroll.mat[mapShift];
+
+		// Mapping
+		for(int k = 0; k < mapSize; k++)
+		{
+			mapPtr[k] = srcPtr[indexMap[k]];
+		}
 
 		// Convolution
-		cnn_conv_2d(dstPtr,
-				layerRef[layerIndex].outMat.height, layerRef[layerIndex].outMat.width,
-				layerRef[layerIndex].conv.kernel.mat, cfgRef->layerCfg[layerIndex].conv.size,
-				layerRef[layerIndex].conv.inChannel,
-				cfgRef->layerCfg[layerIndex].conv.filter,
-				srcPtr, layerRef[layerIndex - 1].outMat.height,
-				layerRef[layerIndex - 1].outMat.width);
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+				chOut, mapRows, mapCols, 1.0,
+				kernel, mapCols, mapPtr, mapCols,
+				0.0, dstPtr, mapRows);
 
 		// Add bias
 		cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
@@ -485,34 +501,36 @@ inline void cnn_backward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfg
 inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
-	int j;
-	int srcShift, dstShift;
+	// Cache
+	int mapRows = layerRef[layerIndex].outMat.width *
+		layerRef[layerIndex].outMat.height;
+	int mapCols = layerRef[layerIndex - 1].outMat.channel *
+		cfgRef->layerCfg[layerIndex].conv.size * cfgRef->layerCfg[layerIndex].conv.size;
+	int mapSize = mapRows * mapCols;
+	int* indexMap = layerRef[layerIndex].conv.indexMap;
 
-	// Sum kernel gradient matrix
-	for(j = 0; j < cfgRef->batch; j++)
+	int chOut = layerRef[layerIndex].outMat.channel;
+	float* kernel = layerRef[layerIndex].conv.kernel.mat;
+	float* kGrad = layerRef[layerIndex].conv.kernel.grad;
+
+	// Sum gradient
+	for(int j = 0; j < cfgRef->batch; j++)
 	{
-		srcShift = j * layerRef[layerIndex].outMat.data.cols;
-		dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+		int gradShift = j * layerRef[layerIndex].outMat.data.cols;
+		int mapShift = j * mapSize;
 
-		cnn_conv_2d_kernel_grad(&layerRef[layerIndex].outMat.data.grad[srcShift],
-				layerRef[layerIndex].outMat.height,
-				layerRef[layerIndex].outMat.width,
-				layerRef[layerIndex].conv.kernel.grad,
-				layerRef[layerIndex].conv.kernel.cols,
-				layerRef[layerIndex].outMat.channel,
-				layerRef[layerIndex - 1].outMat.channel,
-				&layerRef[layerIndex - 1].outMat.data.mat[dstShift],
-				layerRef[layerIndex - 1].outMat.height,
-				layerRef[layerIndex - 1].outMat.width);
-	}
+		float* gradPtr = &layerRef[layerIndex].outMat.data.grad[gradShift];
+		float* mapPtr = &layerRef[layerIndex].conv.unroll.mat[mapShift];
 
-	// Find bias gradient matrix
-	for(j = 0; j < cfgRef->batch; j++)
-	{
-		srcShift = j * layerRef[layerIndex].outMat.data.cols;
+		// Sum kernel gradient matrix
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+				chOut, mapCols, mapRows, 1.0,
+				gradPtr, mapRows, mapPtr, mapCols,
+				1.0, kGrad, mapCols);
+
+		// Sum bias gradient matrix
 		cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
-				&layerRef[layerIndex].outMat.data.grad[srcShift],
-				1, layerRef[layerIndex].conv.bias.grad, 1);
+				gradPtr, 1, layerRef[layerIndex].conv.bias.grad, 1);
 	}
 
 	// Find layer gradient
@@ -522,21 +540,25 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 				layerRef[layerIndex - 1].outMat.data.rows *
 				layerRef[layerIndex - 1].outMat.data.cols);
 
-		for(j = 0; j < cfgRef->batch; j++)
+		for(int j = 0; j < cfgRef->batch; j++)
 		{
-			srcShift = j * layerRef[layerIndex].outMat.data.cols;
-			dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+			int gradShift = j * layerRef[layerIndex].outMat.data.cols;
+			int preGradShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+			int mapShift = j * mapSize;
 
-			cnn_conv_2d_grad((&layerRef[layerIndex - 1].outMat.data.grad[dstShift]),
-					layerRef[layerIndex - 1].outMat.height,
-					layerRef[layerIndex - 1].outMat.width,
-					layerRef[layerIndex].conv.kernel.mat,
-					layerRef[layerIndex].conv.kernel.cols,
-					layerRef[layerIndex - 1].outMat.channel,
-					layerRef[layerIndex].outMat.channel,
-					&layerRef[layerIndex].outMat.data.grad[srcShift],
-					layerRef[layerIndex].outMat.height,
-					layerRef[layerIndex].outMat.width);
+			float* gradPtr = &layerRef[layerIndex].outMat.data.grad[gradShift];
+			float* preGradPtr = &layerRef[layerIndex - 1].outMat.data.grad[preGradShift];
+			float* mapPtr = &layerRef[layerIndex].conv.unroll.grad[mapShift];
+
+			cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+					mapRows, mapCols, chOut, 1.0,
+					gradPtr, mapRows, kernel, mapCols,
+					1.0, mapPtr, mapCols);
+
+			for(int i = 0; i < mapSize; i++)
+			{
+				preGradPtr[indexMap[i]] += mapPtr[i];
+			}
 		}
 	}
 }
