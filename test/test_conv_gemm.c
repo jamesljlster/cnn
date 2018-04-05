@@ -20,6 +20,7 @@
 void print_img(float* src, int width, int height, int channel);
 void print_img_int(int* src, int width, int height, int channel);
 
+/*
 void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int kSize,
 		int srcHeight, int srcWidth, int srcCh)
 {
@@ -56,6 +57,7 @@ void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int kSize,
 		}
 	}
 }
+*/
 
 int main()
 {

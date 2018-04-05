@@ -317,8 +317,8 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	outRows = batch;
 	outCols = outWidth * outHeight * filter;
 
-	kRows = filter * inChannel * size;
-	kCols = size;
+	kRows = filter;
+	kCols = size * size * inChannel;
 
 	bRows = 1;
 	bCols = outCols;
@@ -327,6 +327,9 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->kernel, kRows, kCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->unroll, outWidth * outHeight, kCols, 1), ret, ERR);
+
+	cnn_alloc(layerPtr->indexMap, outWidth * outHeight * kCols, int, ret, ERR);
 
 	// Assing value
 	layerPtr->outMat.width = outWidth;

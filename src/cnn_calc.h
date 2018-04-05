@@ -35,6 +35,43 @@ inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask, int size, f
 	}
 }
 
+inline void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int kSize,
+		int srcHeight, int srcWidth, int srcCh)
+{
+	int __kMemSize = kSize * kSize;
+	int __srcImSize = srcHeight * srcWidth;
+	int __indexMapCols = __kMemSize * srcCh;
+
+	for(int __h = 0; __h < dstHeight; __h++)
+	{
+		int __dstRowShift = __h * dstHeight;
+
+		for(int __w = 0; __w < dstWidth; __w++)
+		{
+			int __indexMapRow = __dstRowShift + __w;
+			int __indexMemBase = __indexMapRow * __indexMapCols;
+
+			for(int __ch = 0; __ch < srcCh; __ch++)
+			{
+				int __indexMemShiftBase = __indexMemBase + __kMemSize * __ch;
+				int __srcChShift = __ch * __srcImSize;
+
+				for(int __convH = 0; __convH < kSize; __convH++)
+				{
+					int __indexMemShift = __indexMemShiftBase + __convH * kSize;
+					int __srcShift = (__h + __convH) * srcWidth + __srcChShift;
+
+					for(int __convW = 0; __convW < kSize; __convW++)
+					{
+						indexMap[__indexMemShift + __convW] = __srcShift +
+							(__w + __convW);
+					}
+				}
+			}
+		}
+	}
+}
+
 inline void cnn_conv_2d(float* dst, int dstHeight, int dstWidth,
 		float* kernel, int kSize, int chIn, int chOut,
 		float* src, int srcHeight, int srcWidth)
