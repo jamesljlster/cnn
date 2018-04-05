@@ -107,6 +107,7 @@ int main()
 	int indexMapRows, indexMapCols;
 	int* indexMap;
 	float* unrollImg;
+	float* unrollImgGrad;
 
 	cnn_config_t cfg = NULL;
 
@@ -118,6 +119,7 @@ int main()
 
 	alloc(indexMap, indexMapRows * indexMapCols, int);
 	alloc(unrollImg, indexMapRows * indexMapCols, float);
+	alloc(unrollImgGrad, indexMapRows * indexMapCols, float);
 
 	cnn_conv_unroll_2d(indexMap, dstHeight, dstWidth, KERNEL_SIZE,
 			IMG_HEIGHT, IMG_WIDTH, CH_IN);
@@ -221,7 +223,27 @@ int main()
 	printf("***** BP *****\n");
 	memcpy(layer[2].outMat.data.grad, desire, sizeof(float) *
 			layer[2].outMat.data.rows * layer[2].outMat.data.cols);
-	cnn_backward_conv(layer, cfg, 2);
+
+	// Find kernel gradient
+	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+			CH_OUT, indexMapCols, indexMapRows, 1.0,
+			layer[2].outMat.data.grad, indexMapCols,
+			unrollImg, indexMapCols, 1.0,
+			layer[2].conv.kernel.grad, indexMapCols);
+
+	// Find layer gradient
+	cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+			indexMapRows, indexMapCols, CH_OUT, 1.0,
+			layer[2].outMat.data.grad, indexMapRows,
+			layer[2].conv.kernel.mat, indexMapCols, 1.0,
+			unrollImgGrad, indexMapCols);
+
+	for(int i = 0; i < indexMapRows * indexMapCols; i++)
+	{
+		layer[1].outMat.data.grad[indexMap[i]] += unrollImgGrad[i];
+	}
+
+	//cnn_backward_conv(layer, cfg, 2);
 
 	printf("Convolution layer gradient:\n");
 	print_img(layer[2].outMat.data.grad, layer[2].outMat.width, layer[2].outMat.height,
