@@ -20,6 +20,36 @@
 void print_img(float* src, int width, int height, int channel);
 void print_img_int(int* src, int width, int height, int channel);
 
+void cnn_conv_unroll_2d_trans(int* indexMap, int dstHeight, int dstWidth, int kSize,
+		int srcHeight, int srcWidth, int srcCh)
+{
+	int __kMemSize = kSize * kSize;
+	int __srcImSize = srcHeight * srcWidth;
+	int __indexMapCols = dstHeight * dstWidth;
+
+	for(int __h = 0; __h < dstHeight; __h++)
+	{
+		for(int __w = 0; __w < dstWidth; __w++)
+		{
+			int __indexMapCol = __h * dstHeight + __w;
+
+			for(int __ch = 0; __ch < srcCh; __ch++)
+			{
+				for(int __convH = 0; __convH < kSize; __convH++)
+				{
+					for(int __convW = 0; __convW < kSize; __convW++)
+					{
+						int __indexMapRow = __ch * __kMemSize + __convH * kSize + __convW;
+						indexMap[__indexMapRow * __indexMapCols + __indexMapCol] =
+							__ch * __srcImSize +
+							(__h + __convH) * srcHeight + (__w + __convW);
+					}
+				}
+			}
+		}
+	}
+}
+
 void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int kSize,
 		int srcHeight, int srcWidth, int srcCh)
 {
@@ -121,17 +151,36 @@ int main()
 
 	cnn_conv_unroll_2d(indexMap, dstHeight, dstWidth, KERNEL_SIZE,
 			IMG_HEIGHT, IMG_WIDTH, CH_IN);
+
 	for(int i = 0; i < indexMapRows * indexMapCols; i++)
 	{
 		unrollImg[i] = src[indexMap[i]];
 	}
 
-	//printf("indexMap:\n");
-	//print_img_int(indexMap, indexMapCols, indexMapRows, 1);
-	//printf("\n");
-	//printf("unrollImg:\n");
-	//print_img(unrollImg, indexMapCols, indexMapRows, 1);
-	//printf("\n");
+	printf("indexMap:\n");
+	print_img_int(indexMap, indexMapCols, indexMapRows, 1);
+	printf("\n");
+	printf("unrollImg:\n");
+	print_img(unrollImg, indexMapCols, indexMapRows, 1);
+	printf("\n");
+
+	indexMapRows = CH_IN * KERNEL_SIZE * KERNEL_SIZE;
+	indexMapCols = dstWidth * dstHeight;
+
+	cnn_conv_unroll_2d_trans(indexMap, dstHeight, dstWidth, KERNEL_SIZE,
+			IMG_HEIGHT, IMG_WIDTH, CH_IN);
+
+	for(int i = 0; i < indexMapRows * indexMapCols; i++)
+	{
+		unrollImg[i] = src[indexMap[i]];
+	}
+
+	printf("indexMap:\n");
+	print_img_int(indexMap, indexMapCols, indexMapRows, 1);
+	printf("\n");
+	printf("unrollImg:\n");
+	print_img(unrollImg, indexMapCols, indexMapRows, 1);
+	printf("\n");
 
 	// Create cnn
 	test(cnn_config_create(&cfg));
@@ -192,17 +241,10 @@ int main()
 
 	// Forward
 	printf("***** Forward *****\n");
-	int __kChSize = KERNEL_SIZE * KERNEL_SIZE * CH_IN;
-	int __dstImSize = indexMapRows;
-	for(int i = 0; i < CH_OUT; i++)
-	{
-		int __kShift = i * __kChSize;
-		int __dstImShift = i * __dstImSize;
-		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-				indexMapRows, 1, indexMapCols, 1.0,
-				unrollImg, indexMapCols, &kernel[__kShift], __kChSize,
-				0.0, &layer[2].outMat.data.mat[__dstImShift], 1);
-	}
+	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+			indexMapRows, CH_OUT, indexMapCols, 1.0,
+			unrollImg, indexMapCols, kernel, indexMapCols,
+			0.0, layer[2].outMat.data.mat, CH_OUT);
 
 	cblas_saxpy(layer[2].conv.bias.cols, 1.0,
 			layer[2].conv.bias.mat, 1,
@@ -224,24 +266,24 @@ int main()
 	printf("\n");
 
 	// BP
-	printf("***** BP *****\n");
-	memcpy(layer[2].outMat.data.grad, desire, sizeof(float) *
-			layer[2].outMat.data.rows * layer[2].outMat.data.cols);
-	cnn_backward_conv(layer, cfg, 2);
-
-	printf("Convolution layer gradient:\n");
-	print_img(layer[2].outMat.data.grad, layer[2].outMat.width, layer[2].outMat.height,
-			layer[2].outMat.channel);
-	printf("\n");
-
-	printf("Previous layer gradient:\n");
-	print_img(layer[1].outMat.data.grad, layer[1].outMat.width, layer[1].outMat.height,
-			layer[1].outMat.channel);
-	printf("\n");
-
-	printf("Kernel gradient:\n");
-	print_img(layer[2].conv.kernel.grad, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);
-	printf("\n");
+//	printf("***** BP *****\n");
+//	memcpy(layer[2].outMat.data.grad, desire, sizeof(float) *
+//			layer[2].outMat.data.rows * layer[2].outMat.data.cols);
+//	cnn_backward_conv(layer, cfg, 2);
+//
+//	printf("Convolution layer gradient:\n");
+//	print_img(layer[2].outMat.data.grad, layer[2].outMat.width, layer[2].outMat.height,
+//			layer[2].outMat.channel);
+//	printf("\n");
+//
+//	printf("Previous layer gradient:\n");
+//	print_img(layer[1].outMat.data.grad, layer[1].outMat.width, layer[1].outMat.height,
+//			layer[1].outMat.channel);
+//	printf("\n");
+//
+//	printf("Kernel gradient:\n");
+//	print_img(layer[2].conv.kernel.grad, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);
+//	printf("\n");
 
 	return 0;
 }
