@@ -227,7 +227,7 @@ int main()
 	// Find kernel gradient
 	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
 			CH_OUT, indexMapCols, indexMapRows, 1.0,
-			layer[2].outMat.data.grad, indexMapCols,
+			layer[2].outMat.data.grad, indexMapRows,
 			unrollImg, indexMapCols, 1.0,
 			layer[2].conv.kernel.grad, indexMapCols);
 
