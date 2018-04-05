@@ -126,12 +126,12 @@ int main()
 		unrollImg[i] = src[indexMap[i]];
 	}
 
-	printf("indexMap:\n");
-	print_img_int(indexMap, indexMapCols, indexMapRows, 1);
-	printf("\n");
-	printf("unrollImg:\n");
-	print_img(unrollImg, indexMapCols, indexMapRows, 1);
-	printf("\n");
+	//printf("indexMap:\n");
+	//print_img_int(indexMap, indexMapCols, indexMapRows, 1);
+	//printf("\n");
+	//printf("unrollImg:\n");
+	//print_img(unrollImg, indexMapCols, indexMapRows, 1);
+	//printf("\n");
 
 	// Create cnn
 	test(cnn_config_create(&cfg));
@@ -192,7 +192,23 @@ int main()
 
 	// Forward
 	printf("***** Forward *****\n");
-	cnn_forward_conv(layer, cfg, 2);
+	int __kChSize = KERNEL_SIZE * KERNEL_SIZE * CH_IN;
+	int __dstImSize = indexMapRows;
+	for(int i = 0; i < CH_OUT; i++)
+	{
+		int __kShift = i * __kChSize;
+		int __dstImShift = i * __dstImSize;
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+				indexMapRows, 1, indexMapCols, 1.0,
+				unrollImg, indexMapCols, &kernel[__kShift], __kChSize,
+				0.0, &layer[2].outMat.data.mat[__dstImShift], 1);
+	}
+
+	cblas_saxpy(layer[2].conv.bias.cols, 1.0,
+			layer[2].conv.bias.mat, 1,
+			layer[2].outMat.data.mat, 1);
+
+	//cnn_forward_conv(layer, cfg, 2);
 
 	printf("Convolution output:\n");
 	print_img(layer[2].outMat.data.mat, layer[2].outMat.width, layer[2].outMat.height,
