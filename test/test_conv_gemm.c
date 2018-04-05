@@ -164,23 +164,23 @@ int main()
 	print_img(unrollImg, indexMapCols, indexMapRows, 1);
 	printf("\n");
 
-	indexMapRows = CH_IN * KERNEL_SIZE * KERNEL_SIZE;
-	indexMapCols = dstWidth * dstHeight;
+	//indexMapRows = CH_IN * KERNEL_SIZE * KERNEL_SIZE;
+	//indexMapCols = dstWidth * dstHeight;
 
-	cnn_conv_unroll_2d_trans(indexMap, dstHeight, dstWidth, KERNEL_SIZE,
-			IMG_HEIGHT, IMG_WIDTH, CH_IN);
+	//cnn_conv_unroll_2d_trans(indexMap, dstHeight, dstWidth, KERNEL_SIZE,
+	//		IMG_HEIGHT, IMG_WIDTH, CH_IN);
 
-	for(int i = 0; i < indexMapRows * indexMapCols; i++)
-	{
-		unrollImg[i] = src[indexMap[i]];
-	}
+	//for(int i = 0; i < indexMapRows * indexMapCols; i++)
+	//{
+	//	unrollImg[i] = src[indexMap[i]];
+	//}
 
-	printf("indexMap:\n");
-	print_img_int(indexMap, indexMapCols, indexMapRows, 1);
-	printf("\n");
-	printf("unrollImg:\n");
-	print_img(unrollImg, indexMapCols, indexMapRows, 1);
-	printf("\n");
+	//printf("indexMap:\n");
+	//print_img_int(indexMap, indexMapCols, indexMapRows, 1);
+	//printf("\n");
+	//printf("unrollImg:\n");
+	//print_img(unrollImg, indexMapCols, indexMapRows, 1);
+	//printf("\n");
 
 	// Create cnn
 	test(cnn_config_create(&cfg));
@@ -242,9 +242,9 @@ int main()
 	// Forward
 	printf("***** Forward *****\n");
 	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-			indexMapRows, CH_OUT, indexMapCols, 1.0,
-			unrollImg, indexMapCols, kernel, indexMapCols,
-			0.0, layer[2].outMat.data.mat, CH_OUT);
+			CH_OUT, indexMapRows, indexMapCols, 1.0,
+			kernel, indexMapCols, unrollImg, indexMapCols,
+			0.0, layer[2].outMat.data.mat, indexMapRows);
 
 	cblas_saxpy(layer[2].conv.bias.cols, 1.0,
 			layer[2].conv.bias.mat, 1,
