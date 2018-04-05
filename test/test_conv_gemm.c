@@ -9,53 +9,19 @@
 
 #include <cblas.h>
 
+#include "test.h"
+
 #define KERNEL_SIZE 3
 #define CH_IN 3
 #define CH_OUT 2
 #define IMG_WIDTH 4
 #define IMG_HEIGHT 4
 
-#define test(func) \
-	ret = func; \
-	if(ret < 0) \
-	{ \
-		printf("%s failed with error: %d\n", #func, ret); \
-		return -1; \
-	}
-
-void print_img(float* src, int width, int height, int channel)
-{
-	int imSize = width * height;
-
-	for(int ch = 0; ch < channel; ch++)
-	{
-		int chShift = ch * imSize;
-
-		printf("[\n");
-		for(int h = 0; h < height; h++)
-		{
-			int shift = h * width + chShift;
-
-			printf("[");
-			for(int w = 0; w < width; w++)
-			{
-				printf("%g", src[shift + w]);
-				if(w < width - 1)
-				{
-					printf(", ");
-				}
-				else
-				{
-					printf("]\n");
-				}
-			}
-		}
-		printf("]\n");
-	}
-}
+void print_img(float* src, int width, int height, int channel);
+void print_img_int(int* src, int width, int height, int channel);
 
 void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int kSize,
-		float* src, int srcHeight, int srcWidth, int srcCh)
+		int srcHeight, int srcWidth, int srcCh)
 {
 	int __kMemSize = kSize * kSize;
 	int __srcImSize = srcHeight * srcWidth;
@@ -94,7 +60,6 @@ void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int kSize,
 int main()
 {
 	//int i;
-	int ret;
 	union CNN_LAYER layer[3];
 
 	//float src[IMG_WIDTH * IMG_HEIGHT * CH_IN] = {0};
@@ -138,7 +103,35 @@ int main()
 		4, 4, 4, 4
 	};
 
+	int dstWidth, dstHeight;
+	int indexMapRows, indexMapCols;
+	int* indexMap;
+	float* unrollImg;
+
 	cnn_config_t cfg = NULL;
+
+	// Allocate indexMap
+	dstWidth = IMG_WIDTH - KERNEL_SIZE + 1;
+	dstHeight = IMG_HEIGHT - KERNEL_SIZE + 1;
+	indexMapRows = dstWidth * dstHeight;
+	indexMapCols = CH_IN * KERNEL_SIZE * KERNEL_SIZE;
+
+	alloc(indexMap, indexMapRows * indexMapCols, int);
+	alloc(unrollImg, indexMapRows * indexMapCols, float);
+
+	cnn_conv_unroll_2d(indexMap, dstHeight, dstWidth, KERNEL_SIZE,
+			IMG_HEIGHT, IMG_WIDTH, CH_IN);
+	for(int i = 0; i < indexMapRows * indexMapCols; i++)
+	{
+		unrollImg[i] = src[indexMap[i]];
+	}
+
+	printf("indexMap:\n");
+	print_img_int(indexMap, indexMapCols, indexMapRows, 1);
+	printf("\n");
+	printf("unrollImg:\n");
+	print_img(unrollImg, indexMapCols, indexMapRows, 1);
+	printf("\n");
 
 	// Create cnn
 	test(cnn_config_create(&cfg));
@@ -236,3 +229,66 @@ int main()
 
 	return 0;
 }
+
+void print_img(float* src, int width, int height, int channel)
+{
+	int imSize = width * height;
+
+	for(int ch = 0; ch < channel; ch++)
+	{
+		int chShift = ch * imSize;
+
+		printf("[\n");
+		for(int h = 0; h < height; h++)
+		{
+			int shift = h * width + chShift;
+
+			printf("[");
+			for(int w = 0; w < width; w++)
+			{
+				printf("%g", src[shift + w]);
+				if(w < width - 1)
+				{
+					printf(", ");
+				}
+				else
+				{
+					printf("]\n");
+				}
+			}
+		}
+		printf("]\n");
+	}
+}
+
+void print_img_int(int* src, int width, int height, int channel)
+{
+	int imSize = width * height;
+
+	for(int ch = 0; ch < channel; ch++)
+	{
+		int chShift = ch * imSize;
+
+		printf("[\n");
+		for(int h = 0; h < height; h++)
+		{
+			int shift = h * width + chShift;
+
+			printf("[");
+			for(int w = 0; w < width; w++)
+			{
+				printf("%d", src[shift + w]);
+				if(w < width - 1)
+				{
+					printf(", ");
+				}
+				else
+				{
+					printf("]\n");
+				}
+			}
+		}
+		printf("]\n");
+	}
+}
+
