@@ -12,4 +12,12 @@
 	} \
 }
 
+#define alloc(ptr, size, type) \
+	ptr = calloc(size, sizeof(type)); \
+	if(ptr == NULL) \
+	{ \
+		fprintf(stderr, "%s(), %d: Memory allocation failed with size: %d, type: %s\n", \
+				__FUNCTION__, __LINE__, size, #type); \
+	}
+
 #endif
