@@ -12,9 +12,13 @@ elseif(MINGW)
 endif()
 
 # Compile setting
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-set(CMAKE_C_FLAGS_RELEASE "-O3")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O")
+if(MSVC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -W3")
+else()
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+	set(CMAKE_C_FLAGS_RELEASE "-O3")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O")
+endif()
 
 # Set project
 project(${PROJECT_NAME} ${PROJECT_LANGUAGE})
