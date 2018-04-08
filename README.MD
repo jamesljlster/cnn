@@ -10,6 +10,7 @@ Develop in [Intelligent Computation and Applications Laboratory (ICAL)](http://w
 
 ### TODO
 - Documentation.
+- Average pooling layer.
 - Pooling layer performance improve.
 - 1D convolution.
 - 1D pooling.
