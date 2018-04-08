@@ -82,6 +82,9 @@ void cnn_layer_conv_delete(struct CNN_LAYER_CONV* layerPtr)
 	cnn_mat_delete(&layerPtr->outMat.data);
 	cnn_mat_delete(&layerPtr->kernel);
 	cnn_mat_delete(&layerPtr->bias);
+	cnn_mat_delete(&layerPtr->unroll);
+
+	cnn_free(layerPtr->indexMap);
 
 	// Zero memory
 	memset(layerPtr, 0, sizeof(struct CNN_LAYER_CONV));

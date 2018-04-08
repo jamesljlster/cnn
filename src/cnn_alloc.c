@@ -5,6 +5,7 @@
 #include "cnn.h"
 #include "cnn_private.h"
 #include "cnn_builtin_math.h"
+#include "cnn_calc.h"
 
 int cnn_network_alloc(struct CNN* cnn)
 {
@@ -317,8 +318,8 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	outRows = batch;
 	outCols = outWidth * outHeight * filter;
 
-	kRows = filter * inChannel * size;
-	kCols = size;
+	kRows = filter;
+	kCols = size * size * inChannel;
 
 	bRows = 1;
 	bCols = outCols;
@@ -327,12 +328,20 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->kernel, kRows, kCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
+	cnn_run(cnn_mat_alloc(&layerPtr->unroll, outWidth * outHeight * batch, kCols, 1),
+			ret, ERR);
+
+	cnn_alloc(layerPtr->indexMap, outWidth * outHeight * kCols, int, ret, ERR);
 
 	// Assing value
 	layerPtr->outMat.width = outWidth;
 	layerPtr->outMat.height = outHeight;
 	layerPtr->inChannel = inChannel;
 	layerPtr->outMat.channel = filter;
+
+	// Initial index mapping
+	cnn_conv_unroll_2d(layerPtr->indexMap, outHeight, outWidth, size,
+			inHeight, inWidth, inChannel);
 
 	goto RET;
 

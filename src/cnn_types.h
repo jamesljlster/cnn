@@ -129,6 +129,10 @@ struct CNN_LAYER_CONV
 
 	// Channel
 	int inChannel;
+
+	// Convolution to gemm
+	int* indexMap;
+	struct CNN_MAT unroll;
 };
 
 struct CNN_LAYER_POOL
