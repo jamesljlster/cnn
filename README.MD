@@ -10,7 +10,7 @@ Develop in [Intelligent Computation and Applications Laboratory (ICAL)](http://w
 
 ### TODO
 - Documentation.
-- Convolution and pooling layer performance improve.
+- Pooling layer performance improve.
 - 1D convolution.
 - 1D pooling.
 - CUDA Support.
