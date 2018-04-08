@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 	timeCost = (tmpTime.tv_sec - timeHold.tv_sec) * 1000 +
 		(float)(tmpTime.tv_nsec - timeHold.tv_nsec) / 1000000.0;
 #endif
-	printf("With %d iteration, time cost: %f ms\n", ITER, timeCost);
+	printf("With %d iteration, time cost: %f ms\n", iter, timeCost);
 
 	return 0;
 }
