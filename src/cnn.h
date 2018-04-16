@@ -45,7 +45,15 @@ typedef enum CNN_ACTIVATION_FUNC
 {
 	CNN_SOFTMAX = 0,
 	CNN_RELU = 1,
-	CNN_SWISH = 2
+	CNN_SWISH = 2,
+	CNN_SIGMOID = 3,
+	CNN_HYPERBOLIC_TANGENT = 4,
+	CNN_GAUSSIAN = 5,
+	CNN_BENT_IDENTITY = 6,
+	CNN_SOFTPLUS = 7,
+	CNN_SOFTSIGN = 8,
+	CNN_SINC = 9,
+	CNN_SINUSOID = 10
 } cnn_activ_t;
 
 typedef struct CNN* cnn_t;
