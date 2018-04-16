@@ -41,7 +41,7 @@ typedef enum CNN_DIM_TYPE
 	CNN_DIM_2D = 2
 } cnn_dim_t;
 
-typedef enum CNN_ACTIVATION_FUNC
+typedef enum CNN_ACTIV_TYPE
 {
 	CNN_SOFTMAX = 0,
 	CNN_RELU = 1,
