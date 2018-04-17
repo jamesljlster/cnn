@@ -7,19 +7,43 @@
 CNN_ACTIV_DEF((*cnn_activ_list[])) = {
 	cnn_softmax,
 	cnn_relu,
-	cnn_swish
+	cnn_swish,
+	cnn_sigmoid,
+	cnn_tanh,
+	cnn_gaussian,
+	cnn_bent_identity,
+	cnn_softplus,
+	cnn_softsign,
+	cnn_sinc,
+	cnn_sinusoid
 };
 
 CNN_ACTIV_DEF((*cnn_activ_grad_list[])) = {
 	cnn_softmax_grad,
 	cnn_relu_grad,
-	cnn_swish_grad
+	cnn_swish_grad,
+	cnn_sigmoid_grad,
+	cnn_tanh_grad,
+	cnn_gaussian_grad,
+	cnn_bent_identity_grad,
+	cnn_softplus_grad,
+	cnn_softsign_grad,
+	cnn_sinc_grad,
+	cnn_sinusoid_grad
 };
 
 const char* cnn_activ_name[] = {
 	"Softmax",
 	"ReLU",
-	"Swish"
+	"Swish",
+	"Sigmoid",
+	"Hyperbolic Tangent",
+	"Gaussian",
+	"Bent Identity",
+	"SoftPlus",
+	"SoftSign",
+	"Sinc",
+	"Sinusoid"
 };
 
 CNN_ACTIV_DEF(cnn_softmax)
@@ -81,7 +105,7 @@ CNN_ACTIV_DEF(cnn_relu_grad)
 	int i;
 
 	// Find relu gradient
-	memset(dst, 0, len * sizeof(float));
+	//memset(dst, 0, len * sizeof(float));
 	for(i = 0; i < len; i++)
 	{
 		dst[i] = (src[i] < 0.0f) ? 0 : 1;
@@ -102,11 +126,188 @@ CNN_ACTIV_DEF(cnn_swish_grad)
 	int i;
 
 	// Find swish gradient
-	memset(dst, 0, len * sizeof(float));
+	//memset(dst, 0, len * sizeof(float));
 	cnn_swish(buf, src, len, NULL);
 	for(i = 0; i < len; i++)
 	{
 		dst[i] = buf[i] + (buf[i] / src[i]) * (1.0f - buf[i]);
+	}
+}
+
+CNN_ACTIV_DEF(cnn_sigmoid)
+{
+	int i;
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = 1.0 / (1.0 + exp(-src[i]));
+	}
+}
+
+CNN_ACTIV_DEF(cnn_sigmoid_grad)
+{
+	int i;
+
+	// Find sigmoid gradient
+	cnn_sigmoid(buf, src, len, NULL);
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = buf[i] * (1.0 - buf[i]);
+	}
+}
+
+CNN_ACTIV_DEF(cnn_tanh)
+{
+	int i;
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = 2.0 / (1.0 + exp(-2.0 * src[i])) - 1.0;
+	}
+}
+
+CNN_ACTIV_DEF(cnn_tanh_grad)
+{
+	int i;
+
+	// Find tanh gradient
+	cnn_tanh(buf, src, len, NULL);
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = 1.0 - buf[i] * buf[i];
+	}
+}
+
+CNN_ACTIV_DEF(cnn_gaussian)
+{
+	int i;
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = exp(-pow(src[i], 2.0) * 0.5);
+	}
+}
+
+CNN_ACTIV_DEF(cnn_gaussian_grad)
+{
+	int i;
+
+	// Find gaussian gradient
+	cnn_gaussian(buf, src, len, NULL);
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = -src[i] * buf[i];
+	}
+}
+
+CNN_ACTIV_DEF(cnn_bent_identity)
+{
+	int i;
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = (sqrt(pow(src[i], 2) + 1.0) - 1.0) / 2.0 + src[i];
+	}
+}
+
+CNN_ACTIV_DEF(cnn_bent_identity_grad)
+{
+	int i;
+
+	// Find bent indentity gradient
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = src[i] / (2.0 * sqrt(pow(src[i], 2.0) + 1.0)) + 1.0;
+	}
+}
+
+CNN_ACTIV_DEF(cnn_softplus)
+{
+	int i;
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = log1p(exp(src[i]));
+	}
+}
+
+CNN_ACTIV_DEF(cnn_softplus_grad)
+{
+	int i;
+
+	// Find softplus gradient
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = 1.0 / (1.0 + exp(-src[i]));
+	}
+}
+
+CNN_ACTIV_DEF(cnn_softsign)
+{
+	int i;
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = src[i] / (1.0 + fabs(src[i]));
+	}
+}
+
+CNN_ACTIV_DEF(cnn_softsign_grad)
+{
+	int i;
+
+	// Find softsign gradient
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = 1.0 / pow(1.0 + fabs(src[i]), 2.0);
+	}
+}
+
+CNN_ACTIV_DEF(cnn_sinc)
+{
+	int i;
+	for(i = 0; i < len; i++)
+	{
+		if(src[i] == 0.0)
+		{
+			dst[i] = 1.0;
+		}
+		else
+		{
+			dst[i] = sin(src[i]) / src[i];
+		}
+	}
+}
+
+CNN_ACTIV_DEF(cnn_sinc_grad)
+{
+	int i;
+
+	// Find sinc gradient
+	for(i = 0; i < len; i++)
+	{
+		if(src[i] == 0.0)
+		{
+			dst[i] = 0.0;
+		}
+		else
+		{
+			dst[i] = (cos(src[i]) / src[i]) - (sin(src[i]) / pow(src[i], 2.0));
+		}
+	}
+}
+
+CNN_ACTIV_DEF(cnn_sinusoid)
+{
+	int i;
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = sin(src[i]);
+	}
+}
+
+CNN_ACTIV_DEF(cnn_sinusoid_grad)
+{
+	int i;
+
+	// Find sinusoid gradient
+	for(i = 0; i < len; i++)
+	{
+		dst[i] = cos(src[i]);
 	}
 }
 

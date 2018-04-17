@@ -1,7 +1,7 @@
 #ifndef __CNN_BUILTIN_MATH_H__
 #define __CNN_BUILTIN_MATH_H__
 
-#define CNN_ACTIV_AMOUNT 3
+#define CNN_ACTIV_AMOUNT 11
 
 /**
  * CNN Activation Function Define Macro
