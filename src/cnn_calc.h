@@ -358,12 +358,12 @@ inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 				0.0, dstPtr, mapRows);
 
 		// Add bias
-		//for(int ch = 0; ch < chOut; ch++)
-		//{
-		//	cblas_saxpy(mapRows, 1.0,
-		//			&layerRef[layerIndex].conv.bias.mat[ch], 0,
-		//			&layerRef[layerIndex].outMat.data.mat[dstShift + ch * mapRows], 1);
-		//}
+		for(int ch = 0; ch < chOut; ch++)
+		{
+			cblas_saxpy(mapRows, 1.0,
+					&layerRef[layerIndex].conv.bias.mat[ch], 0,
+					&layerRef[layerIndex].outMat.data.mat[dstShift + ch * mapRows], 1);
+		}
 
 		//cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
 		//		layerRef[layerIndex].conv.bias.mat, 1,
@@ -536,12 +536,12 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 				1.0, kGrad, mapCols);
 
 		// Sum bias gradient matrix
-		//for(int ch = 0; ch < chOut; ch++)
-		//{
-		//	cblas_saxpy(mapRows, 1.0,
-		//			&gradPtr[ch * mapRows], 1,
-		//			&layerRef[layerIndex].conv.bias.grad[ch], 0);
-		//}
+		for(int ch = 0; ch < chOut; ch++)
+		{
+			cblas_saxpy(mapRows, 1.0,
+					&gradPtr[ch * mapRows], 1,
+					&layerRef[layerIndex].conv.bias.grad[ch], 0);
+		}
 
 		//cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
 		//		gradPtr, 1, layerRef[layerIndex].conv.bias.grad, 1);
