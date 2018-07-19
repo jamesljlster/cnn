@@ -198,5 +198,28 @@ int main()
 	print_img(layer[2].conv.kernel.grad, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);
 	printf("\n");
 
+	printf("***** BP #2 *****\n");
+	memcpy(layer[2].outMat.data.grad, desire, sizeof(float) *
+			layer[2].outMat.data.rows * layer[2].outMat.data.cols);
+	cnn_backward_conv(layer, cfg, 2);
+
+	printf("Convolution layer gradient:\n");
+	print_img(layer[2].outMat.data.grad, layer[2].outMat.width, layer[2].outMat.height,
+			layer[2].outMat.channel);
+	printf("\n");
+
+	printf("Previous layer gradient:\n");
+	print_img(layer[1].outMat.data.grad, layer[1].outMat.width, layer[1].outMat.height,
+			layer[1].outMat.channel);
+	printf("\n");
+
+	printf("Bias gradient:\n");
+	print_img(layer[2].conv.bias.grad, 1, 1, CH_OUT);
+	printf("\n");
+
+	printf("Kernel gradient:\n");
+	print_img(layer[2].conv.kernel.grad, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);
+	printf("\n");
+
 	return 0;
 }

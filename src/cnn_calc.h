@@ -567,7 +567,7 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 			cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
 					mapRows, mapCols, chOut, 1.0,
 					gradPtr, mapRows, kernel, mapCols,
-					1.0, mapPtr, mapCols);
+					0.0, mapPtr, mapCols);
 
 			for(int i = 0; i < mapSize; i++)
 			{
