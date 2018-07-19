@@ -362,7 +362,7 @@ inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 		{
 			cblas_saxpy(mapRows, 1.0,
 					&layerRef[layerIndex].conv.bias.mat[ch], 0,
-					&layerRef[layerIndex].outMat.data.mat[dstShift], 1);
+					&layerRef[layerIndex].outMat.data.mat[dstShift + ch * mapRows], 1);
 		}
 
 		//cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
