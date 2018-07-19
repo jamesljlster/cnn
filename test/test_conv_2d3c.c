@@ -190,6 +190,10 @@ int main()
 			layer[1].outMat.channel);
 	printf("\n");
 
+	printf("Bias gradient:\n");
+	print_img(layer[2].conv.bias.grad, 1, 1, CH_OUT);
+	printf("\n");
+
 	printf("Kernel gradient:\n");
 	print_img(layer[2].conv.kernel.grad, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);
 	printf("\n");

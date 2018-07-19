@@ -536,8 +536,15 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 				1.0, kGrad, mapCols);
 
 		// Sum bias gradient matrix
-		cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
-				gradPtr, 1, layerRef[layerIndex].conv.bias.grad, 1);
+		for(int ch = 0; ch < chOut; ch++)
+		{
+			cblas_saxpy(mapRows, 1.0,
+					&gradPtr[ch * mapRows], 1,
+					&layerRef[layerIndex].conv.bias.grad[ch], 0);
+		}
+
+		//cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
+		//		gradPtr, 1, layerRef[layerIndex].conv.bias.grad, 1);
 	}
 
 	// Find layer gradient
