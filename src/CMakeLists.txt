@@ -5,6 +5,14 @@ set(PROJECT_NAME cnn)
 set(PROJECT_LANGUAGE C)
 set(PROJECT_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/cnn.h)
 
+set(CNN_CONV_BIAS_TYPES "None;Filter;Layer" CACHE STRING "CNN convolution bias types" FORCE)
+if(DEFINED CNN_CONV_BIAS_TYPE)
+	set_property(CACHE CNN_CONV_BIAS_TYPE PROPERTY STRINGS ${CNN_CONV_BIAS_TYPES})
+endif()
+if(NOT CNN_CONV_BIAS_TYPE)
+	set(CNN_CONV_BIAS_TYPE "None" CACHE STRING "CNN convolution bias type")
+endif()
+
 # Compile setting
 if(MSVC)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -W3")
@@ -25,6 +33,12 @@ project(${PROJECT_NAME} ${PROJECT_LANGUAGE})
 # Add definition
 if(CMAKE_BUILD_TYPE MATCHES Debug)
 	add_definitions(-DDEBUG)
+endif()
+
+if(CNN_CONV_BIAS_TYPE MATCHES "Filter")
+	add_definitions(-DCNN_CONV_BIAS_FILTER)
+elseif(CNN_CONV_BIAS_TYPE MATCHES "Layer")
+	add_definitions(-DCNN_CONV_BIAS_LAYER)
 endif()
 
 # Include directory

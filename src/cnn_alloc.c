@@ -324,6 +324,13 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	bRows = 1;
 	bCols = filter;
 
+#if defined(CNN_CONV_BIAS_LAYER)
+#ifdef DEBUG
+#pragma message("cnn_layer_conv_alloc(): Enable convolution layer bias")
+#endif
+	bCols = outCols;
+#endif
+
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->kernel, kRows, kCols, 1), ret, ERR);
