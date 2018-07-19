@@ -358,9 +358,16 @@ inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 				0.0, dstPtr, mapRows);
 
 		// Add bias
-		cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
-				layerRef[layerIndex].conv.bias.mat, 1,
-				&layerRef[layerIndex].outMat.data.mat[dstShift], 1);
+		for(int ch = 0; ch < chOut; ch++)
+		{
+			cblas_saxpy(mapRows, 1.0,
+					&layerRef[layerIndex].conv.bias.mat[ch], 0,
+					&layerRef[layerIndex].outMat.data.mat[dstShift], 1);
+		}
+
+		//cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
+		//		layerRef[layerIndex].conv.bias.mat, 1,
+		//		&layerRef[layerIndex].outMat.data.mat[dstShift], 1);
 	}
 }
 

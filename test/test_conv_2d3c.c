@@ -88,9 +88,8 @@ int main()
 	};
 
 	//float bias[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {0};
-	float bias[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {
-		3, 1, 3, 4,
-		0, 4, 1, 1
+	float bias[CH_OUT] = {
+		1, 2
 	};
 
 	//float desire[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1)] = {0};
@@ -138,7 +137,7 @@ int main()
 	printf("\n");
 
 	printf("bias:\n");
-	print_img(bias, (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1), 1, CH_OUT);
+	print_img(bias, 1, 1, CH_OUT);
 	printf("\n");
 
 	printf("desire:\n");

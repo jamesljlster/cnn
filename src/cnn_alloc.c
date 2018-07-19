@@ -322,7 +322,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	kCols = size * size * inChannel;
 
 	bRows = 1;
-	bCols = outCols;
+	bCols = filter;
 
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
