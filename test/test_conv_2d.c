@@ -40,7 +40,7 @@ int main()
 	};
 
 	float src[IMG_WIDTH * IMG_HEIGHT];
-	float dst[DST_WIDTH * DST_HEIGHT];
+	float dst[DST_WIDTH * DST_HEIGHT] = {0};
 
 	for(i = 0; i < IMG_WIDTH * IMG_HEIGHT; i++)
 	{
