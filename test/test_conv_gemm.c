@@ -192,8 +192,11 @@ int main()
 			layer[1].outMat.data.rows * layer[1].outMat.data.cols);
 	memcpy(layer[2].conv.kernel.mat, kernel, sizeof(float) *
 			layer[2].conv.kernel.rows * layer[2].conv.kernel.cols);
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	memcpy(layer[2].conv.bias.mat, bias, sizeof(float) *
 			layer[2].conv.bias.rows * layer[2].conv.bias.cols);
+#endif
 
 	// Forward
 	printf("***** Forward *****\n");
@@ -202,9 +205,11 @@ int main()
 			kernel, indexMapCols, unrollImg, indexMapCols,
 			0.0, layer[2].outMat.data.mat, indexMapRows);
 
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	cblas_saxpy(layer[2].conv.bias.cols, 1.0,
 			layer[2].conv.bias.mat, 1,
 			layer[2].outMat.data.mat, 1);
+#endif
 
 	//cnn_forward_conv(layer, cfg, 2);
 

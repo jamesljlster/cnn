@@ -1,6 +1,8 @@
 #ifndef __CNN_TYPES_H__
 #define __CNN_TYPES_H__
 
+#include "cnn_config.h"
+
 // CNN matrix type
 struct CNN_MAT
 {
@@ -125,7 +127,9 @@ struct CNN_LAYER_CONV
 	struct CNN_MAT kernel;
 
 	// Bias vector
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	struct CNN_MAT bias;
+#endif
 
 	// Channel
 	int inChannel;

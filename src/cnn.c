@@ -129,9 +129,11 @@ void cnn_clone_network_detail(struct CNN* dst, const struct CNN* src)
 							srcLayerList[i].conv.kernel.cols);
 
 				// Clone bias
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 				memcpy(dstLayerList[i].conv.bias.mat, srcLayerList[i].conv.bias.mat,
 						sizeof(float) * srcLayerList[i].conv.bias.rows *
 							srcLayerList[i].conv.bias.cols);
+#endif
 				break;
 		}
 	}

@@ -13,6 +13,17 @@ if(NOT CNN_CONV_BIAS_TYPE)
 	set(CNN_CONV_BIAS_TYPE "None" CACHE STRING "CNN convolution bias type")
 endif()
 
+# Export configuration files
+if(CNN_CONV_BIAS_TYPE MATCHES "Filter")
+	set(CNN_CONV_BIAS_FILTER 1)
+elseif(CNN_CONV_BIAS_TYPE MATCHES "Layer")
+	set(CNN_CONV_BIAS_LAYER 1)
+endif()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cnn_config.h.cmake
+	${CMAKE_CURRENT_SOURCE_DIR}/cnn_config.h
+	)
+
 # Compile setting
 if(MSVC)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -W3")
@@ -35,12 +46,6 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
 	add_definitions(-DDEBUG)
 endif()
 
-if(CNN_CONV_BIAS_TYPE MATCHES "Filter")
-	add_definitions(-DCNN_CONV_BIAS_FILTER)
-elseif(CNN_CONV_BIAS_TYPE MATCHES "Layer")
-	add_definitions(-DCNN_CONV_BIAS_LAYER)
-endif()
-
 # Include directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -51,11 +56,10 @@ file(GLOB PROJECT_SRCS
 
 # Build library
 add_library(${PROJECT_NAME} STATIC ${PROJECT_SRCS})
-set_target_properties(${PROJECT_NAME}
-	PROPERTIES
+set_target_properties(${PROJECT_NAME} PROPERTIES
 	C_STANDARD 99
-	OUTPUT_NAME			${PROJECT_NAME}
-		PREFIX			"lib"
+	OUTPUT_NAME ${PROJECT_NAME}
+	PREFIX "lib"
 	)
 
 # Install

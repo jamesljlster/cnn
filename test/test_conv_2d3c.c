@@ -154,8 +154,11 @@ int main()
 			layer[1].outMat.data.rows * layer[1].outMat.data.cols);
 	memcpy(layer[2].conv.kernel.mat, kernel, sizeof(float) *
 			layer[2].conv.kernel.rows * layer[2].conv.kernel.cols);
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	memcpy(layer[2].conv.bias.mat, bias, sizeof(float) *
 			layer[2].conv.bias.rows * layer[2].conv.bias.cols);
+#endif
 
 	// Forward
 	printf("***** Forward *****\n");
@@ -190,9 +193,11 @@ int main()
 			layer[1].outMat.channel);
 	printf("\n");
 
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	printf("Bias gradient:\n");
 	print_img(layer[2].conv.bias.grad, 1, 1, CH_OUT);
 	printf("\n");
+#endif
 
 	printf("Kernel gradient:\n");
 	print_img(layer[2].conv.kernel.grad, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);
@@ -213,9 +218,11 @@ int main()
 			layer[1].outMat.channel);
 	printf("\n");
 
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	printf("Bias gradient:\n");
 	print_img(layer[2].conv.bias.grad, 1, 1, CH_OUT);
 	printf("\n");
+#endif
 
 	printf("Kernel gradient:\n");
 	print_img(layer[2].conv.kernel.grad, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);

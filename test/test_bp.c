@@ -198,11 +198,15 @@ int main()
 						cnn->layerList[i].conv.kernel.rows,
 						cnn->layerList[i].conv.kernel.cols);
 				printf("\n");
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 				printf("Bias:\n");
 				print_img(cnn->layerList[i].conv.bias.mat,
 						cnn->layerList[i].conv.bias.rows,
 						cnn->layerList[i].conv.bias.cols);
 				printf("\n");
+#endif
+
 				break;
 
 			case CNN_LAYER_ACTIV:
