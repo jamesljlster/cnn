@@ -15,7 +15,7 @@
 #define BATCH 1
 #define ITER 10000
 #define L_RATE 0.001
-#define DECAY 0.9996
+#define DECAY 1.0
 #define GRAD_LIMIT 30
 
 #define MODEL_PATH "test.xml"

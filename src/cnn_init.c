@@ -97,8 +97,10 @@ void cnn_rand_network(cnn_t cnn)
 				}
 
 				// Zero bias
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 				size = cnn->layerList[i].conv.bias.rows * cnn->layerList[i].conv.bias.cols;
 				memset(cnn->layerList[i].conv.bias.mat, 0, size * sizeof(float));
+#endif
 
 				break;
 		}
@@ -136,8 +138,10 @@ void cnn_zero_network(cnn_t cnn)
 				memset(cnn->layerList[i].conv.kernel.mat, 0, size * sizeof(float));
 
 				// Zero bias
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 				size = cnn->layerList[i].conv.bias.rows * cnn->layerList[i].conv.bias.cols;
 				memset(cnn->layerList[i].conv.bias.mat, 0, size * sizeof(float));
+#endif
 
 				break;
 		}

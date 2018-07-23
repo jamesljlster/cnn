@@ -94,11 +94,17 @@ void check_cnn_arch(cnn_t cnn)
 
 				print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 				print_mat_info("Kernel mat", cnn->layerList[i].conv.kernel);
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 				print_mat_info("Bias mat", cnn->layerList[i].conv.bias);
+#endif
 
 				test_mat(cnn->layerList[i].outMat.data);
 				test_mat(cnn->layerList[i].conv.kernel);
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 				test_mat(cnn->layerList[i].conv.bias);
+#endif
 				break;
 
 			case CNN_LAYER_POOL:

@@ -301,7 +301,10 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	int outRows, outCols; // Output matrix size
 	int outWidth, outHeight; // Valid convolution output size
 	int kRows, kCols; // Kernel matrix size
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	int bRows, bCols; // Bias matrix size
+#endif
 
 	// Find output image size
 	outWidth = inWidth - size + 1;
@@ -321,13 +324,26 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 	kRows = filter;
 	kCols = size * size * inChannel;
 
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	bRows = 1;
+	bCols = filter;
+
+#if defined(CNN_CONV_BIAS_LAYER)
+#ifdef DEBUG
+#pragma message("cnn_layer_conv_alloc(): Enable convolution layer bias")
+#endif
 	bCols = outCols;
+#endif
+#endif
 
 	// Allocate memory
 	cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret, ERR);
 	cnn_run(cnn_mat_alloc(&layerPtr->kernel, kRows, kCols, 1), ret, ERR);
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
+#endif
+
 	cnn_run(cnn_mat_alloc(&layerPtr->unroll, outWidth * outHeight * batch, kCols, 1),
 			ret, ERR);
 

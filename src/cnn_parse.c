@@ -760,10 +760,12 @@ int cnn_parse_network_detail_conv_xml(struct CNN* cnn, int layerIndex, xmlNodePt
 						ret, RET);
 				break;
 
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 			case CNN_STR_BIAS:
 				cnn_run(cnn_parse_mat(&cnn->layerList[layerIndex].conv.bias, cur),
 						ret, RET);
 				break;
+#endif
 		}
 
 		cur = cur->next;

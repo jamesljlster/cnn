@@ -165,10 +165,12 @@ int cnn_write_layer_conv_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRe
 					cnn_str_list[CNN_STR_KERNEL], writer),
 				ret, RET);
 
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 		// Write bias
 		cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].conv.bias,
 					cnn_str_list[CNN_STR_BIAS], writer),
 				ret, RET);
+#endif
 	}
 
 RET:
