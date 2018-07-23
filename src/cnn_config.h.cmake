@@ -1,0 +1,7 @@
+#ifndef __CNN_CONFIG_H__
+#define __CNN_CONFIG_H__
+
+#cmakedefine CNN_CONV_BIAS_FILTER @CNN_CONV_BIAS_FILTER@
+#cmakedefine CNN_CONV_BIAS_LAYER @CNN_CONV_BIAS_LAYER@
+
+#endif

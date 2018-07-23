@@ -358,9 +358,24 @@ inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 				0.0, dstPtr, mapRows);
 
 		// Add bias
+#if defined(CNN_CONV_BIAS_FILTER)
+#ifdef DEBUG
+#pragma message("cnn_forward_conv(): Enable convolution filter bias")
+#endif
+		for(int ch = 0; ch < chOut; ch++)
+		{
+			cblas_saxpy(mapRows, 1.0,
+					&layerRef[layerIndex].conv.bias.mat[ch], 0,
+					&layerRef[layerIndex].outMat.data.mat[dstShift + ch * mapRows], 1);
+		}
+#elif defined(CNN_CONV_BIAS_LAYER)
+#ifdef DEBUG
+#pragma message("cnn_forward_conv(): Enable convolution layer bias")
+#endif
 		cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
 				layerRef[layerIndex].conv.bias.mat, 1,
 				&layerRef[layerIndex].outMat.data.mat[dstShift], 1);
+#endif
 	}
 }
 
@@ -529,8 +544,23 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 				1.0, kGrad, mapCols);
 
 		// Sum bias gradient matrix
+#if defined(CNN_CONV_BIAS_FILTER)
+#ifdef DEBUG
+#pragma message("cnn_forward_conv(): Enable convolution filter bias")
+#endif
+		for(int ch = 0; ch < chOut; ch++)
+		{
+			cblas_saxpy(mapRows, 1.0,
+					&gradPtr[ch * mapRows], 1,
+					&layerRef[layerIndex].conv.bias.grad[ch], 0);
+		}
+#elif defined(CNN_CONV_BIAS_LAYER)
+#ifdef DEBUG
+#pragma message("cnn_forward_conv(): Enable convolution layer bias")
+#endif
 		cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
 				gradPtr, 1, layerRef[layerIndex].conv.bias.grad, 1);
+#endif
 	}
 
 	// Find layer gradient

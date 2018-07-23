@@ -81,7 +81,11 @@ void cnn_layer_conv_delete(struct CNN_LAYER_CONV* layerPtr)
 	// Free memory
 	cnn_mat_delete(&layerPtr->outMat.data);
 	cnn_mat_delete(&layerPtr->kernel);
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 	cnn_mat_delete(&layerPtr->bias);
+#endif
+
 	cnn_mat_delete(&layerPtr->unroll);
 
 	cnn_free(layerPtr->indexMap);

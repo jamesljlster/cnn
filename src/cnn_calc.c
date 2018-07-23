@@ -68,8 +68,11 @@ void cnn_update(cnn_t cnn, float lRate, float gradLimit)
 				cnn_restrict(layerRef[i].conv.kernel.grad,
 						layerRef[i].conv.kernel.rows * layerRef[i].conv.kernel.cols,
 						gradLimit);
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 				cnn_restrict(layerRef[i].conv.bias.grad, layerRef[i].conv.bias.cols,
 						gradLimit);
+#endif
 
 				// Update kernel
 				cblas_saxpy(layerRef[i].conv.kernel.cols * layerRef[i].conv.kernel.rows,
@@ -77,15 +80,20 @@ void cnn_update(cnn_t cnn, float lRate, float gradLimit)
 						layerRef[i].conv.kernel.mat, 1);
 
 				// Update bias
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 				cblas_saxpy(layerRef[i].conv.bias.cols, lRate,
 						layerRef[i].conv.bias.grad, 1,
 						layerRef[i].conv.bias.mat, 1);
+#endif
 
 				// Clear gradient
 				memset(layerRef[i].conv.kernel.grad, 0, sizeof(float) *
 						layerRef[i].conv.kernel.rows * layerRef[i].conv.kernel.cols);
+
+#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
 				memset(layerRef[i].conv.bias.grad, 0, sizeof(float) *
 						layerRef[i].conv.bias.rows * layerRef[i].conv.bias.cols);
+#endif
 
 				break;
 		}
