@@ -9,7 +9,7 @@
 #include "cnn_types.h"
 #include "cnn_builtin_math.h"
 
-inline void cnn_drop(float* dst, float* src, int* mask, int size, float scale)
+static inline void cnn_drop(float* dst, float* src, int* mask, int size, float scale)
 {
 	for(int __i = 0; __i < size; __i++)
 	{
@@ -24,7 +24,7 @@ inline void cnn_drop(float* dst, float* src, int* mask, int size, float scale)
 	}
 }
 
-inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask, int size, float scale)
+static inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask, int size, float scale)
 {
 	for(int __i = 0; __i < size; __i++)
 	{
@@ -35,7 +35,7 @@ inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask, int size, f
 	}
 }
 
-inline void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int kSize,
+static inline void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int kSize,
 		int srcHeight, int srcWidth, int srcCh)
 {
 	int __kMemSize = kSize * kSize;
@@ -72,7 +72,7 @@ inline void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int k
 	}
 }
 
-inline void cnn_conv_2d(float* dst, int dstHeight, int dstWidth,
+static inline void cnn_conv_2d(float* dst, int dstHeight, int dstWidth,
 		float* kernel, int kSize, int chIn, int chOut,
 		float* src, int srcHeight, int srcWidth)
 {
@@ -116,7 +116,7 @@ inline void cnn_conv_2d(float* dst, int dstHeight, int dstWidth,
 	}
 }
 
-inline void cnn_conv_2d_grad(float* srcGrad, int srcHeight, int srcWidth,
+static inline void cnn_conv_2d_grad(float* srcGrad, int srcHeight, int srcWidth,
 		float* kernel, int kSize, int srcCh, int lCh,
 		float* lGrad, int lHeight, int lWidth)
 {
@@ -157,7 +157,7 @@ inline void cnn_conv_2d_grad(float* srcGrad, int srcHeight, int srcWidth,
 	}
 }
 
-inline void cnn_conv_2d_kernel_grad(float* lGrad, int lHeight, int lWidth,
+static inline void cnn_conv_2d_kernel_grad(float* lGrad, int lHeight, int lWidth,
 		float* kGrad, int kSize, int lCh, int srcCh,
 		float* src, int srcHeight, int srcWidth)
 {
@@ -198,7 +198,7 @@ inline void cnn_conv_2d_kernel_grad(float* lGrad, int lHeight, int lWidth,
 	}
 }
 
-inline void cnn_pool_2d_max(float* dst, int* indexMat, int dstHeight, int dstWidth,
+static inline void cnn_pool_2d_max(float* dst, int* indexMat, int dstHeight, int dstWidth,
 		float* src, int srcWidth, int srcHeight, int poolSize, int channel)
 {
 	int __dstImSize = dstHeight * dstWidth;
@@ -242,7 +242,7 @@ inline void cnn_pool_2d_max(float* dst, int* indexMat, int dstHeight, int dstWid
 	}
 }
 
-inline void cnn_pool_2d_max_grad(float* grad, int* indexMat,
+static inline void cnn_pool_2d_max_grad(float* grad, int* indexMat,
 		float* iGrad, int iGradRows, int iGradCols, int iCh)
 {
 	int size = iGradRows * iGradCols * iCh;
@@ -252,7 +252,7 @@ inline void cnn_pool_2d_max_grad(float* grad, int* indexMat,
 	}
 }
 
-inline void cnn_forward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex)
+static inline void cnn_forward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef, int layerIndex)
 {
 	// Weight matrix multiplication
 	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
@@ -274,7 +274,7 @@ inline void cnn_forward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 	}
 }
 
-inline void cnn_forward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+static inline void cnn_forward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	int size = layerRef[layerIndex].outMat.data.rows *
@@ -300,7 +300,7 @@ inline void cnn_forward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 			mask, size, cfgRef->layerCfg[layerIndex].drop.scale);
 }
 
-inline void cnn_forward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+static inline void cnn_forward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	for(int j = 0; j < cfgRef->batch; j++)
@@ -316,7 +316,7 @@ inline void cnn_forward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 	}
 }
 
-inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+static inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	// Cache
@@ -379,7 +379,7 @@ inline void cnn_forward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 	}
 }
 
-inline void cnn_forward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+static inline void cnn_forward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	// Clear outputs
@@ -404,7 +404,7 @@ inline void cnn_forward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRe
 	}
 }
 
-inline void cnn_backward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+static inline void cnn_backward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	int srcShift;
@@ -443,7 +443,7 @@ inline void cnn_backward_fc(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef
 	}
 }
 
-inline void cnn_backward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+static inline void cnn_backward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	if(layerIndex > 1)
@@ -459,7 +459,7 @@ inline void cnn_backward_drop(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 	}
 }
 
-inline void cnn_backward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+static inline void cnn_backward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	int srcShift, dstShift;
@@ -513,7 +513,7 @@ inline void cnn_backward_activ(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfg
 	}
 }
 
-inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+static inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	// Cache
@@ -593,7 +593,7 @@ inline void cnn_backward_conv(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgR
 	}
 }
 
-inline void cnn_backward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
+static inline void cnn_backward_pool(union CNN_LAYER* layerRef, struct CNN_CONFIG* cfgRef,
 		int layerIndex)
 {
 	int srcShift, dstShift;

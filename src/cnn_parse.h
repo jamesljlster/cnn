@@ -5,7 +5,7 @@
 #include "cnn_private.h"
 #include "cnn_xml.h"
 
-inline int cnn_strtoi(int* valPtr, const char* str)
+static inline int cnn_strtoi(int* valPtr, const char* str)
 {
 	char* __ptr;
 	int __tmp;
@@ -25,7 +25,7 @@ inline int cnn_strtoi(int* valPtr, const char* str)
 	}
 }
 
-inline int cnn_strtof(float* valPtr, const char* str)
+static inline int cnn_strtof(float* valPtr, const char* str)
 {
 	char* __ptr;
 	float __tmp;
