@@ -5,21 +5,21 @@
 
 int main()
 {
-	int ret;
-	cnn_config_t cfg = NULL;
+    int ret;
+    cnn_config_t cfg = NULL;
 
-	while(1)
-	{
-		ret = cnn_config_create(&cfg);
-		if(ret < 0)
-		{
-			printf("cnn_config_create() failed with error: %d\n", ret);
-			return -1;
-		}
+    while (1)
+    {
+        ret = cnn_config_create(&cfg);
+        if (ret < 0)
+        {
+            printf("cnn_config_create() failed with error: %d\n", ret);
+            return -1;
+        }
 
-		// Cleanup
-		cnn_config_delete(cfg);
-	}
+        // Cleanup
+        cnn_config_delete(cfg);
+    }
 
-	return 0;
+    return 0;
 }
