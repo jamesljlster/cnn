@@ -5,17 +5,20 @@
 
 struct CNN_BOX_MULLER
 {
-	int saved;
-	double val;
+    int saved;
+    double val;
 };
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-float cnn_normal_distribution(struct CNN_BOX_MULLER* bmPtr, double mean, double stddev);
-float cnn_xavier_init(struct CNN_BOX_MULLER* bmPtr, int inSize, int outSize);
-float cnn_zero(void);
+    float cnn_normal_distribution(struct CNN_BOX_MULLER* bmPtr, double mean,
+                                  double stddev);
+    float cnn_xavier_init(struct CNN_BOX_MULLER* bmPtr, int inSize,
+                          int outSize);
+    float cnn_zero(void);
 
 #ifdef __cplusplus
 }

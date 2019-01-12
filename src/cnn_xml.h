@@ -3,36 +3,36 @@
 
 #include <assert.h>
 
-#include <libxml/xmlwriter.h>
 #include <libxml/parser.h>
+#include <libxml/xmlwriter.h>
 #include <libxml/xpath.h>
 
 #ifdef DEBUG
-#define cnn_xml_run(func, retVal, errLabel) \
-	retVal = func; \
-	if(retVal < 0) \
-	{ \
-		fprintf(stderr, "%s(), %d: %s failed with error: %d\n", __FUNCTION__, __LINE__, \
-			#func, retVal); \
-		ret = CNN_FILE_OP_FAILED; \
-		goto errLabel; \
-	} \
-	else \
-	{ \
-		retVal = CNN_NO_ERROR; \
-	}
+#define cnn_xml_run(func, retVal, errLabel)                                   \
+    retVal = func;                                                            \
+    if (retVal < 0)                                                           \
+    {                                                                         \
+        fprintf(stderr, "%s(), %d: %s failed with error: %d\n", __FUNCTION__, \
+                __LINE__, #func, retVal);                                     \
+        ret = CNN_FILE_OP_FAILED;                                             \
+        goto errLabel;                                                        \
+    }                                                                         \
+    else                                                                      \
+    {                                                                         \
+        retVal = CNN_NO_ERROR;                                                \
+    }
 #else
 #define cnn_xml_run(func, retVal, errLabel) \
-	retVal = func; \
-	if(retVal < 0) \
-	{ \
-		ret = CNN_FILE_OP_FAILED; \
-		goto errLabel; \
-	} \
-	else \
-	{ \
-		retVal = CNN_NO_ERROR; \
-	}
+    retVal = func;                          \
+    if (retVal < 0)                         \
+    {                                       \
+        ret = CNN_FILE_OP_FAILED;           \
+        goto errLabel;                      \
+    }                                       \
+    else                                    \
+    {                                       \
+        retVal = CNN_NO_ERROR;              \
+    }
 #endif
 
 #define CNN_XML_BUFLEN 64
