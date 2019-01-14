@@ -54,13 +54,14 @@ int main()
     // Test set config
     cnn_config_set_input_size(cfg, 640, 480, 1);
     cnn_config_set_layers(cfg, 8);
-    cnn_config_set_convolution(cfg, 1, 1, 1, 3);
-    cnn_config_set_activation(cfg, 2, CNN_RELU);
-    cnn_config_set_convolution(cfg, 3, 1, 1, 3);
-    cnn_config_set_activation(cfg, 4, CNN_RELU);
-    cnn_config_set_full_connect(cfg, 5, 128);
-    cnn_config_set_full_connect(cfg, 6, 2);
-    cnn_config_set_activation(cfg, 7, CNN_SOFTMAX);
+
+    cnn_config_append_convolution(cfg, CNN_PAD_VALID, 1, 1, 3);
+    cnn_config_append_activation(cfg, CNN_RELU);
+    cnn_config_append_convolution(cfg, CNN_PAD_VALID, 1, 1, 3);
+    cnn_config_append_activation(cfg, CNN_RELU);
+    cnn_config_append_full_connect(cfg, 128);
+    cnn_config_append_full_connect(cfg, 2);
+    cnn_config_append_activation(cfg, CNN_SOFTMAX);
 
     // Clone cnn setting
     ret = cnn_config_clone(&cpy, cfg);

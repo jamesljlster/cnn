@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
     test(cnn_config_set_input_size(cfg, width, height, chIn));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_convolution(cfg, 2, fSize, kSize));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, fSize, kSize));
 
     // Create cnn
     test(cnn_create(&cnn, cfg));

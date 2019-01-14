@@ -17,7 +17,6 @@
 
 int main()
 {
-    int i;
     int ret;
     cnn_config_t cfg = NULL;
     cnn_t cnn = NULL;
@@ -34,17 +33,16 @@ int main()
     test(cnn_config_set_batch_size(cfg, BATCH));
     test(cnn_config_set_layers(cfg, 11));
 
-    i = 1;
-    test(cnn_config_set_convolution(cfg, i++, 2, 1, 3));
-    test(cnn_config_set_pooling(cfg, i++, 2, CNN_POOL_MAX, 2));
-    test(cnn_config_set_activation(cfg, i++, CNN_RELU));
-    test(cnn_config_set_convolution(cfg, i++, 2, 1, 3));
-    test(cnn_config_set_pooling(cfg, i++, 2, CNN_POOL_MAX, 2));
-    test(cnn_config_set_activation(cfg, i++, CNN_RELU));
-    test(cnn_config_set_full_connect(cfg, i++, 16));
-    test(cnn_config_set_dropout(cfg, i++, 0.5));
-    test(cnn_config_set_full_connect(cfg, i++, 2));
-    test(cnn_config_set_activation(cfg, i++, CNN_SOFTMAX));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 1, 3));
+    test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
+    test(cnn_config_append_activation(cfg, CNN_RELU));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 1, 3));
+    test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
+    test(cnn_config_append_activation(cfg, CNN_RELU));
+    test(cnn_config_append_full_connect(cfg, 16));
+    test(cnn_config_append_dropout(cfg, 0.5));
+    test(cnn_config_append_full_connect(cfg, 2));
+    test(cnn_config_append_activation(cfg, CNN_SOFTMAX));
 
     while (1)
     {

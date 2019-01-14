@@ -41,6 +41,12 @@ typedef enum CNN_DIM_TYPE
     CNN_DIM_2D = 2
 } cnn_dim_t;
 
+typedef enum CNN_PAD_TYPE
+{
+    CNN_PAD_VALID = 0,
+    CNN_PAD_SAME = 1
+} cnn_pad_t;
+
 typedef enum CNN_ACTIV_TYPE
 {
     CNN_SOFTMAX = 0,
@@ -94,13 +100,14 @@ extern "C"
     int cnn_config_get_activation(cnn_config_t cfg, int layerIndex,
                                   cnn_activ_t* idPtr);
 
-    int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim,
-                                      int filter, int size);
+    int cnn_config_append_convolution(cnn_config_t cfg, cnn_pad_t padding,
+                                      cnn_dim_t convDim, int filter, int size);
     int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex,
-                                   cnn_dim_t convDim, int filter, int size);
+                                   cnn_pad_t padding, cnn_dim_t convDim,
+                                   int filter, int size);
     int cnn_config_get_convolution(cnn_config_t cfg, int layerIndex,
-                                   cnn_dim_t* dimPtr, int* filterPtr,
-                                   int* sizePtr);
+                                   cnn_pad_t* padPtr, cnn_dim_t* dimPtr,
+                                   int* filterPtr, int* sizePtr);
 
     int cnn_config_append_pooling(cnn_config_t cfg, cnn_dim_t dim,
                                   cnn_pool_t type, int size);

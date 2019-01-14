@@ -607,8 +607,8 @@ RET:
     return ret;
 }
 
-int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim,
-                                  int filter, int size)
+int cnn_config_append_convolution(cnn_config_t cfg, cnn_pad_t padding,
+                                  cnn_dim_t convDim, int filter, int size)
 {
     int ret = CNN_NO_ERROR;
     int layers;
@@ -624,7 +624,8 @@ int cnn_config_append_convolution(cnn_config_t cfg, cnn_dim_t convDim,
     cnn_config_get_layers(cfg, &layers);
     layers++;
     cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
-    cnn_run(cnn_config_set_convolution(cfg, layers - 1, convDim, filter, size),
+    cnn_run(cnn_config_set_convolution(cfg, layers - 1, padding, convDim,
+                                       filter, size),
             ret, RET);
 
 RET:
@@ -632,7 +633,8 @@ RET:
 }
 
 int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex,
-                               cnn_dim_t convDim, int filter, int size)
+                               cnn_pad_t padding, cnn_dim_t convDim, int filter,
+                               int size)
 {
     int ret = CNN_NO_ERROR;
 
@@ -646,6 +648,7 @@ int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex,
 
     // Set config
     cfg->layerCfg[layerIndex].type = CNN_LAYER_CONV;
+    cfg->layerCfg[layerIndex].conv.pad = padding;
     cfg->layerCfg[layerIndex].conv.dim = convDim;
     cfg->layerCfg[layerIndex].conv.size = size;
     cfg->layerCfg[layerIndex].conv.filter = filter;
@@ -655,7 +658,8 @@ RET:
 }
 
 int cnn_config_get_convolution(cnn_config_t cfg, int layerIndex,
-                               cnn_dim_t* dimPtr, int* filterPtr, int* sizePtr)
+                               cnn_pad_t* padPtr, cnn_dim_t* dimPtr,
+                               int* filterPtr, int* sizePtr)
 {
     int ret = CNN_NO_ERROR;
 

@@ -89,11 +89,12 @@ int main()
     test(cnn_config_create(&cfg));
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, 1));
     test(cnn_config_set_layers(cfg, 6));
-    test(cnn_config_set_convolution(cfg, 1, 2, 1, 3));
-    test(cnn_config_set_activation(cfg, 2, CNN_RELU));
-    test(cnn_config_set_pooling(cfg, 3, 2, CNN_POOL_MAX, 2));
-    test(cnn_config_set_full_connect(cfg, 4, OUTPUTS));
-    test(cnn_config_set_activation(cfg, 5, CNN_SOFTMAX));
+
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 1, 3));
+    test(cnn_config_append_activation(cfg, CNN_RELU));
+    test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
+    test(cnn_config_append_full_connect(cfg, OUTPUTS));
+    test(cnn_config_append_activation(cfg, CNN_SOFTMAX));
 
     // Create cnn
     test(cnn_create(&cnn, cfg));

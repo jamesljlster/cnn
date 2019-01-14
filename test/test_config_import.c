@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
     cnn_layer_t layerType;
     cnn_pool_t poolType;
     cnn_dim_t dim;
+    cnn_pad_t pad;
     cnn_activ_t id;
     int width, height, channel;
     int batch;
@@ -67,8 +68,10 @@ int main(int argc, char* argv[])
                 break;
 
             case CNN_LAYER_CONV:
-                test(cnn_config_get_convolution(cfg, i, &dim, &filter, &size));
+                test(cnn_config_get_convolution(cfg, i, &pad, &dim, &filter,
+                                                &size));
                 printf("Type: Convolution\n");
+                printf("Padding: %d\n", pad);
                 printf("Dimension: %d\n", dim);
                 printf("filter: %d\n", filter);
                 printf("Size: %d\n", size);

@@ -44,6 +44,7 @@ struct CNN_CONFIG_LAYER_CONV
     // Layer type
     int type;
 
+    int pad;
     int dim;
     int size;
     int filter;

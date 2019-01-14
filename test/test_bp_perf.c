@@ -48,13 +48,15 @@ int main()
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, 1));
     test(cnn_config_set_layers(cfg, 8));
 
-    test(cnn_config_set_convolution(cfg, 1, 2, FILTER_SIZE, KERNEL_SIZE));
-    test(cnn_config_set_activation(cfg, 2, CNN_RELU));
-    test(cnn_config_set_convolution(cfg, 3, 2, FILTER_SIZE, KERNEL_SIZE));
-    test(cnn_config_set_activation(cfg, 4, CNN_RELU));
-    test(cnn_config_set_full_connect(cfg, 5, 1024));
-    test(cnn_config_set_full_connect(cfg, 6, OUTPUTS));
-    test(cnn_config_set_activation(cfg, 7, CNN_SOFTMAX));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, FILTER_SIZE,
+                                       KERNEL_SIZE));
+    test(cnn_config_append_activation(cfg, CNN_RELU));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, FILTER_SIZE,
+                                       KERNEL_SIZE));
+    test(cnn_config_append_activation(cfg, CNN_RELU));
+    test(cnn_config_append_full_connect(cfg, 1024));
+    test(cnn_config_append_full_connect(cfg, OUTPUTS));
+    test(cnn_config_append_activation(cfg, CNN_SOFTMAX));
 
     // Create cnn
     test(cnn_create(&cnn, cfg));

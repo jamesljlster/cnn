@@ -79,10 +79,10 @@ int main()
     // Test set config
     test(cnn_config_set_input_size(cfg, 640, 480, 1));
 
-    test(cnn_config_append_convolution(cfg, 1, 1, 3));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 1, 1, 3));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_convolution(cfg, 1, 1, 3));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 1, 1, 3));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_full_connect(cfg, 128));
