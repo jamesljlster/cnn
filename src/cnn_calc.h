@@ -37,9 +37,10 @@ static inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask,
     }
 }
 
-static inline void cnn_conv_unroll_2d(int* indexMap, int dstHeight,
-                                      int dstWidth, int kSize, int srcHeight,
-                                      int srcWidth, int srcCh)
+static inline void cnn_conv_unroll_2d_valid(int* indexMap, int dstHeight,
+                                            int dstWidth, int kSize,
+                                            int srcHeight, int srcWidth,
+                                            int srcCh)
 {
     int __kMemSize = kSize * kSize;
     int __srcImSize = srcHeight * srcWidth;
@@ -68,6 +69,59 @@ static inline void cnn_conv_unroll_2d(int* indexMap, int dstHeight,
                     {
                         indexMap[__indexMemShift + __convW] =
                             __srcShift + (__w + __convW);
+                    }
+                }
+            }
+        }
+    }
+}
+
+static inline void cnn_conv_unroll_2d_same(int* indexMap, int dstHeight,
+                                           int dstWidth, int kSize,
+                                           int srcHeight, int srcWidth,
+                                           int srcCh)
+{
+    int __kMemSize = kSize * kSize;
+    int __srcImSize = srcHeight * srcWidth;
+    int __indexMapCols = __kMemSize * srcCh;
+
+    int __convHBase = -kSize / 2;
+    int __convWBase = -kSize / 2;
+
+    for (int __h = 0; __h < dstHeight; __h++)
+    {
+        int __dstRowShift = __h * dstHeight;
+
+        for (int __w = 0; __w < dstWidth; __w++)
+        {
+            int __indexMapRow = __dstRowShift + __w;
+            int __indexMemBase = __indexMapRow * __indexMapCols;
+
+            for (int __ch = 0; __ch < srcCh; __ch++)
+            {
+                int __indexMemShiftBase = __indexMemBase + __kMemSize * __ch;
+                int __srcChShift = __ch * __srcImSize;
+
+                for (int __convH = 0; __convH < kSize; __convH++)
+                {
+                    int __indexMemShift = __indexMemShiftBase + __convH * kSize;
+                    int __convHIndex = __h + __convH + __convHBase;
+
+                    if (__convHIndex >= 0 && __convHIndex < srcHeight)
+                    {
+                        int __srcShift = __convHIndex * srcWidth + __srcChShift;
+
+                        for (int __convW = 0; __convW < kSize; __convW++)
+                        {
+                            int __convWIndex = __w + __convW + __convWBase;
+                            if (__convWIndex >= 0 && __convWIndex < srcWidth)
+                            {
+                                int __tmpIndex = __srcShift + __convWIndex;
+
+                                indexMap[__indexMemShift + __convW] =
+                                    __tmpIndex;
+                            }
+                        }
                     }
                 }
             }
@@ -608,7 +662,11 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
 
             for (int i = 0; i < mapSize; i++)
             {
-                preGradPtr[indexMap[i]] += mapPtr[i];
+                int tmpIndex = indexMap[i];
+                if (tmpIndex >= 0)
+                {
+                    preGradPtr[tmpIndex] += mapPtr[i];
+                }
             }
         }
     }

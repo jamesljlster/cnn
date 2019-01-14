@@ -127,8 +127,8 @@ int main()
     alloc(unrollImg, indexMapRows * indexMapCols, float);
     alloc(unrollImgGrad, indexMapRows * indexMapCols, float);
 
-    cnn_conv_unroll_2d(indexMap, dstHeight, dstWidth, KERNEL_SIZE, IMG_HEIGHT,
-                       IMG_WIDTH, CH_IN);
+    cnn_conv_unroll_2d_same(indexMap, dstHeight, dstWidth, KERNEL_SIZE,
+                            IMG_HEIGHT, IMG_WIDTH, CH_IN);
 
     for (int i = 0; i < indexMapRows * indexMapCols; i++)
     {
@@ -197,7 +197,7 @@ int main()
     test(cnn_layer_activ_alloc(&layer[1].activ, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1,
                                CNN_RELU));
     test(cnn_layer_conv_alloc(&layer[2].conv, IMG_WIDTH, IMG_HEIGHT, CH_IN,
-                              CH_OUT, KERNEL_SIZE, 1));
+                              CH_OUT, CNN_PAD_VALID, KERNEL_SIZE, 1));
 
     // Copy memory
     memcpy(

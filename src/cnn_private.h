@@ -62,8 +62,8 @@ extern "C"
     int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr, int inWidth,
                            int inHeight, int inChannel, int outSize, int batch);
     int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inWidth,
-                             int inHeight, int inChannel, int filter, int size,
-                             int batch);
+                             int inHeight, int inChannel, int filter,
+                             int padding, int size, int batch);
     int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr, int inWidth,
                              int inHeight, int inChannel, int size, int batch);
     int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr, int inWidth,

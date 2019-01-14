@@ -54,6 +54,7 @@ int cnn_network_alloc(struct CNN* cnn)
                 cnn_run(cnn_layer_conv_alloc(
                             &cnn->layerList[i].conv, tmpWidth, tmpHeight,
                             tmpChannel, cfg->layerCfg[i].conv.filter,
+                            cfg->layerCfg[i].conv.pad,
                             cfg->layerCfg[i].conv.size, cfg->batch),
                         ret, ERR);
                 break;
@@ -301,8 +302,8 @@ RET:
 }
 
 int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inWidth,
-                         int inHeight, int inChannel, int filter, int size,
-                         int batch)
+                         int inHeight, int inChannel, int filter, int padding,
+                         int size, int batch)
 {
     int ret = CNN_NO_ERROR;
     int outRows, outCols;     // Output matrix size
@@ -314,8 +315,21 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inWidth,
 #endif
 
     // Find output image size
-    outWidth = inWidth - size + 1;
-    outHeight = inHeight - size + 1;
+    switch (padding)
+    {
+        case CNN_PAD_VALID:
+            outWidth = inWidth - size + 1;
+            outHeight = inHeight - size + 1;
+            break;
+
+        case CNN_PAD_SAME:
+            outWidth = inWidth;
+            outHeight = inHeight;
+            break;
+
+        default:
+            assert(!"Invalid padding type");
+    }
 
     // Checking
     if (outWidth <= 0 || outHeight <= 0)
@@ -365,8 +379,26 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inWidth,
     layerPtr->outMat.channel = filter;
 
     // Initial index mapping
-    cnn_conv_unroll_2d(layerPtr->indexMap, outHeight, outWidth, size, inHeight,
-                       inWidth, inChannel);
+    switch (padding)
+    {
+        case CNN_PAD_VALID:
+            cnn_conv_unroll_2d_valid(layerPtr->indexMap, outHeight, outWidth,
+                                     size, inHeight, inWidth, inChannel);
+            break;
+
+        case CNN_PAD_SAME:
+            for (int i = 0; i < outWidth * outHeight * kCols; i++)
+            {
+                layerPtr->indexMap[i] = -1;
+            }
+
+            cnn_conv_unroll_2d_same(layerPtr->indexMap, outHeight, outWidth,
+                                    size, inHeight, inWidth, inChannel);
+            break;
+
+        default:
+            assert(!"Invalid padding type");
+    }
 
     goto RET;
 

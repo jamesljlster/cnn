@@ -95,10 +95,16 @@ int main()
 
     // float desire[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH -
     // KERNEL_SIZE + 1)] = {0};
-    float desire[CH_OUT * (IMG_WIDTH - KERNEL_SIZE + 1) *
-                 (IMG_WIDTH - KERNEL_SIZE + 1)] = {
-        3, 1, 4, 2,  //
-        4, 4, 4, 4   //
+    float desire[IMG_WIDTH * IMG_HEIGHT * CH_OUT] = {
+        0, 0, 0, 0,  //
+        0, 3, 1, 0,  //
+        0, 4, 2, 0,  //
+        0, 0, 0, 0,  //
+
+        0, 0, 0, 0,  //
+        0, 4, 4, 0,  //
+        0, 4, 4, 0,  //
+        0, 0, 0, 0   //
     };
 
     cnn_config_t cfg = NULL;
@@ -108,7 +114,7 @@ int main()
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, CNN_DIM_2D, CH_OUT,
+    test(cnn_config_append_convolution(cfg, CNN_PAD_SAME, CNN_DIM_2D, CH_OUT,
                                        KERNEL_SIZE));
 
     // Rand
@@ -146,16 +152,14 @@ int main()
     printf("\n");
 
     printf("desire:\n");
-    print_img(desire,
-              (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1), 1,
-              CH_OUT);
+    print_img(desire, IMG_WIDTH, IMG_HEIGHT, CH_OUT);
     printf("\n");
 
     // Allocate cnn layer
     test(cnn_layer_activ_alloc(&layer[1].activ, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1,
                                CNN_RELU));
     test(cnn_layer_conv_alloc(&layer[2].conv, IMG_WIDTH, IMG_HEIGHT, CH_IN,
-                              CH_OUT, CNN_PAD_VALID, KERNEL_SIZE, 1));
+                              CH_OUT, CNN_PAD_SAME, KERNEL_SIZE, 1));
 
     // Copy memory
     memcpy(
