@@ -65,9 +65,9 @@ int main()
     // Create cnn
     test(cnn_config_create(&cfg));
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
-    test(cnn_config_set_layers(cfg, 3));
-    test(cnn_config_set_activation(cfg, 1, CNN_RELU));
-    test(cnn_config_set_pooling(cfg, 2, CNN_DIM_2D, CNN_POOL_MAX, POOL_SIZE));
+
+    test(cnn_config_append_activation(cfg, CNN_RELU));
+    test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_MAX, POOL_SIZE));
 
     test(cnn_create(&cnn, cfg));
 

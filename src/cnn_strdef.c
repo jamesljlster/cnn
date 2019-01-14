@@ -34,7 +34,10 @@ const char* cnn_str_list[] = {
     "1d",             //
     "2d",             //
     "rate",           //
-    "filter"          //
+    "filter",         //
+    "padding",        //
+    "valid",          //
+    "same"            //
 };
 
 int cnn_strdef_get_id(const char* str)

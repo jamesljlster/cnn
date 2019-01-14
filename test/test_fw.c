@@ -88,7 +88,6 @@ int main()
     // Set config
     test(cnn_config_create(&cfg));
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, 1));
-    test(cnn_config_set_layers(cfg, 6));
 
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 1, 3));
     test(cnn_config_append_activation(cfg, CNN_RELU));

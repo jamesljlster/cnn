@@ -135,8 +135,8 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
     xmlAttrPtr attrCur;
     xmlAttrPtr index = NULL, type = NULL;
-    xmlAttrPtr dim = NULL, size = NULL, poolType = NULL, id = NULL, rate = NULL,
-               filter = NULL;
+    xmlAttrPtr pad = NULL, dim = NULL, size = NULL, poolType = NULL, id = NULL,
+               rate = NULL, filter = NULL;
 
     xmlChar* xStr = NULL;
 
@@ -178,6 +178,10 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
             case CNN_STR_FILTER:
                 filter = attrCur;
+                break;
+
+            case CNN_STR_PAD:
+                pad = attrCur;
                 break;
         }
 
@@ -272,10 +276,30 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
             break;
 
         case CNN_LAYER_CONV:
-            if (dim == NULL || size == NULL || filter == NULL)
+            if (pad == NULL || dim == NULL || size == NULL || filter == NULL)
             {
                 ret = CNN_INFO_NOT_FOUND;
                 goto RET;
+            }
+
+            // Parse padding
+            xStr = xmlNodeGetContent(pad->children);
+            strId = cnn_strdef_get_id((const char*)xStr);
+            xmlFree(xStr);
+            xStr = NULL;
+
+            switch (strId)
+            {
+                case CNN_STR_VALID:
+                    cfgPtr->layerCfg[tmpIndex].conv.pad = CNN_PAD_VALID;
+                    break;
+
+                case CNN_STR_SAME:
+                    cfgPtr->layerCfg[tmpIndex].conv.pad = CNN_PAD_SAME;
+                    break;
+
+                default:
+                    assert(!"Invalid padding type");
             }
 
             // Parse dimension

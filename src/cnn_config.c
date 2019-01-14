@@ -639,8 +639,9 @@ int cnn_config_set_convolution(cnn_config_t cfg, int layerIndex,
     int ret = CNN_NO_ERROR;
 
     // Checking
-    if (layerIndex <= 0 || layerIndex >= cfg->layers || convDim <= 0 ||
-        convDim > 2 || size <= 0 || filter <= 0)
+    if (layerIndex <= 0 || layerIndex >= cfg->layers ||             //
+        convDim <= 0 || convDim > 2 || size <= 0 || filter <= 0 ||  //
+        padding < CNN_PAD_VALID || padding > CNN_PAD_SAME)
     {
         ret = CNN_INVALID_ARG;
         goto RET;

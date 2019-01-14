@@ -160,6 +160,11 @@ int cnn_write_layer_conv_xml(struct CNN_CONFIG* cfgRef,
                     (xmlChar*)cnn_str_list[CNN_STR_CONV]),
                 ret, RET);
 
+    // Write padding
+    cnn_run(
+        cnn_write_pad_attr_xml(cfgRef->layerCfg[layerIndex].conv.pad, writer),
+        ret, RET);
+
     // Write dimension
     cnn_run(
         cnn_write_dim_attr_xml(cfgRef->layerCfg[layerIndex].conv.dim, writer),
@@ -234,6 +239,34 @@ int cnn_write_mat_xml(struct CNN_MAT* matPtr, const char* nodeName,
 
     // End node
     cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
+
+RET:
+    return ret;
+}
+
+int cnn_write_pad_attr_xml(int pad, xmlTextWriterPtr writer)
+{
+    int ret = CNN_NO_ERROR;
+    const char* str = NULL;
+
+    // Write padding attribute
+    switch (pad)
+    {
+        case CNN_PAD_VALID:
+            str = cnn_str_list[CNN_STR_VALID];
+            break;
+
+        case CNN_PAD_SAME:
+            str = cnn_str_list[CNN_STR_SAME];
+            break;
+
+        default:
+            assert(!"Invalid padding type");
+    }
+
+    cnn_xml_run(xmlTextWriterWriteAttribute(
+                    writer, (xmlChar*)cnn_str_list[CNN_STR_PAD], (xmlChar*)str),
+                ret, RET);
 
 RET:
     return ret;

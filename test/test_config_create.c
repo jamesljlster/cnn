@@ -80,7 +80,6 @@ int main()
 
     // Test set config
     test(cnn_config_set_input_size(cfg, 640, 480, 1));
-    test(cnn_config_set_layers(cfg, 11));
 
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 1, 32, 3));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));

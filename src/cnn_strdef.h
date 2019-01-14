@@ -35,6 +35,9 @@ enum CNN_STR_LIST
     CNN_STR_2D,         //
     CNN_STR_RATE,       //
     CNN_STR_FILTER,     //
+    CNN_STR_PAD,        //
+    CNN_STR_VALID,      //
+    CNN_STR_SAME,       //
 
     CNN_STR_AMOUNT
 };

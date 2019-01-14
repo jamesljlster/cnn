@@ -113,7 +113,6 @@ int main(int argc, char* argv[])
     test(cnn_config_set_input_size(cfg, data.imgWidth, data.imgHeight,
                                    data.imgChannel));
     test(cnn_config_set_batch_size(cfg, BATCH));
-    test(cnn_config_set_layers(cfg, 13));
 
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 3, KERNEL_SIZE));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
