@@ -114,10 +114,10 @@ int main(int argc, char* argv[])
                                    data.imgChannel));
     test(cnn_config_set_batch_size(cfg, BATCH));
 
-    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 3, KERNEL_SIZE));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_SAME, 2, 3, KERNEL_SIZE));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 3, KERNEL_SIZE));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_SAME, 2, 3, KERNEL_SIZE));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_full_connect(cfg, 128));
