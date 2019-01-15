@@ -72,7 +72,7 @@ int main()
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
+    test(cnn_config_append_batchnorm(cfg, 0.87, 0.03));
 
     // Print information
     printf("src:\n");
@@ -86,8 +86,8 @@ int main()
     // Allocate cnn layer
     test(cnn_layer_activ_alloc(&layer[1].activ, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1,
                                CNN_RELU));
-    test(cnn_layer_bn_alloc(&layer[2].bn, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1, 1.0,
-                            0.0));
+    test(cnn_layer_bn_alloc(&layer[2].bn, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1, 0.87,
+                            0.03));
 
     // Copy memory
     memcpy(
@@ -106,7 +106,7 @@ int main()
     printf("***** Forward #2 *****\n");
     cnn_forward_bn(layer, cfg, 2);
 
-    printf("Convolution output:\n");
+    printf("BatchNorm output:\n");
     print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
               layer[2].outMat.height, layer[2].outMat.channel);
     printf("\n");

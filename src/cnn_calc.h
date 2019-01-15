@@ -851,7 +851,7 @@ static inline void cnn_backward_bn(union CNN_LAYER* layerRef,
                 for (int __i = 0; __i < chSize; __i++)
                 {
                     layerGrad[__i] =
-                        normGrad[__i] * 1.0 / stddev +
+                        normGrad[__i] / stddev +
                         (varGrad * 2.0 * srcShift[__i] + meanGrad) / fLen;
                 }
             }
