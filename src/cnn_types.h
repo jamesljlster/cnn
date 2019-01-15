@@ -176,7 +176,7 @@ struct CNN_LAYER_BN
     struct CNN_MAT bnVar;
 
     // Cache
-    float stddev;
+    float* stddev;
     struct CNN_MAT srcShift;
     struct CNN_MAT srcNorm;
 };

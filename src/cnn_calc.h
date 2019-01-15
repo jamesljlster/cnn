@@ -2,6 +2,7 @@
 #define __CNN_CALC_H__
 
 #include <cblas.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -476,6 +477,79 @@ static inline void cnn_forward_pool(union CNN_LAYER* layerRef,
     }
 }
 
+static inline void cnn_forward_bn(union CNN_LAYER* layerRef,
+                                  struct CNN_CONFIG* cfgRef, int layerIndex)
+{
+    // Cache
+    int channels = layerRef[layerIndex].outMat.channel;
+    int chSize =
+        layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
+
+    float* stddevCache = layerRef[layerIndex].bn.stddev;
+
+    // Batch normalization forward
+    for (int j = 0; j < cfgRef->batch; j++)
+    {
+        int dataShift = j * layerRef[layerIndex].outMat.data.cols;
+
+        for (int ch = 0; ch < channels; ch++)
+        {
+            int chShift = dataShift + ch * chSize;
+
+            float* src = &layerRef[layerIndex - 1].outMat.data.mat[chShift];
+            float* srcShift = &layerRef[layerIndex].bn.srcShift.mat[chShift];
+            float* srcNorm = &layerRef[layerIndex].bn.srcNorm.mat[chShift];
+            float* out = &layerRef[layerIndex].outMat.data.mat[chShift];
+
+            float gamma = layerRef[layerIndex].bn.bnVar.mat[ch * 2 + 0];
+            float beta = layerRef[layerIndex].bn.bnVar.mat[ch * 2 + 1];
+
+            float mean = 0;
+            float var = 0;
+            float stddev;
+            float fLen = (float)chSize;
+
+            // Find mean
+            for (int __i = 0; __i < chSize; __i++)
+            {
+                mean += src[__i];
+            }
+
+            mean /= fLen;
+
+            // Find shifted source vector
+            for (int __i = 0; __i < chSize; __i++)
+            {
+                srcShift[__i] = src[__i] - mean;
+            }
+
+            // Find variance, stddev
+            for (int __i = 0; __i < chSize; __i++)
+            {
+                var += srcShift[__i] * srcShift[__i];
+            }
+
+            var /= fLen;
+            stddev = sqrt(var + 1e-8);
+
+            // Find normalized source
+            for (int __i = 0; __i < chSize; __i++)
+            {
+                srcNorm[__i] = srcShift[__i] / stddev;
+            }
+
+            // Scale and shift
+            for (int __i = 0; __i < chSize; __i++)
+            {
+                out[__i] = gamma * srcNorm[__i] + beta;
+            }
+
+            // Assign cache
+            stddevCache[ch] = stddev;
+        }
+    }
+}
+
 static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
                                    struct CNN_CONFIG* cfgRef, int layerIndex)
 {
@@ -699,6 +773,92 @@ static inline void cnn_backward_pool(union CNN_LAYER* layerRef,
                 layerRef[layerIndex].outMat.height,
                 layerRef[layerIndex].outMat.width,
                 layerRef[layerIndex].outMat.channel);
+        }
+    }
+}
+
+static inline void cnn_backward_bn(union CNN_LAYER* layerRef,
+                                   struct CNN_CONFIG* cfgRef, int layerIndex)
+{
+    // Cache
+    int channels = layerRef[layerIndex].outMat.channel;
+    int chSize =
+        layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
+
+    float* stddevCache = layerRef[layerIndex].bn.stddev;
+
+    // Batch normalization backward
+    for (int j = 0; j < cfgRef->batch; j++)
+    {
+        int dataShift = j * layerRef[layerIndex].outMat.data.cols;
+
+        for (int ch = 0; ch < channels; ch++)
+        {
+            int chShift = dataShift + ch * chSize;
+
+            float* srcShift = &layerRef[layerIndex].bn.srcShift.mat[chShift];
+            float* srcNorm = &layerRef[layerIndex].bn.srcNorm.mat[chShift];
+            float* normGrad = &layerRef[layerIndex].bn.srcNorm.grad[chShift];
+            float* gradIn = &layerRef[layerIndex].outMat.data.grad[chShift];
+            float* layerGrad =
+                &layerRef[layerIndex - 1].outMat.data.grad[chShift];
+
+            float gamma = layerRef[layerIndex].bn.bnVar.mat[ch * 2];
+
+            float rGrad = 0;
+            float bGrad = 0;
+            float varGrad = 0;
+            float meanGrad = 0;
+            float tmp;
+
+            float stddev = stddevCache[ch];
+            float fLen = (float)chSize;
+
+            // Find gamma, beta gradient
+            for (int __i = 0; __i < chSize; __i++)
+            {
+                rGrad += srcNorm[__i] * gradIn[__i];
+                bGrad += gradIn[__i];
+            }
+
+            // Find gradient for normalization
+            for (int __i = 0; __i < chSize; __i++)
+            {
+                normGrad[__i] = gradIn[__i] * gamma;
+            }
+
+            // Find variance gradient
+            for (int __i = 0; __i < chSize; __i++)
+            {
+                varGrad += normGrad[__i] * srcShift[__i];
+            }
+
+            varGrad = varGrad * -0.5 * pow(stddev, 3);
+
+            // Find mean gradient
+            tmp = 0;
+            for (int __i = 0; __i < chSize; __i++)
+            {
+                meanGrad += normGrad[__i] * -1.0 / stddev;
+                tmp += varGrad * -2.0 * srcShift[__i];
+            }
+
+            meanGrad += tmp / fLen;
+
+            // Find layer gradient
+            if (layerIndex > 1)
+            {
+                for (int __i = 0; __i < chSize; __i++)
+                {
+                    layerGrad[__i] =
+                        normGrad[__i] * 1.0 / stddev +
+                        (varGrad * 2.0 * srcShift[__i] + meanGrad) / fLen;
+                }
+            }
+
+            // Assign gradient
+            layerRef[layerIndex].bn.bnVar.grad[ch * 2 + 0] += rGrad;
+            layerRef[layerIndex].bn.bnVar.grad[ch * 2 + 1] += bGrad;
         }
     }
 }

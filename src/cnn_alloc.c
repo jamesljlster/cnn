@@ -433,6 +433,7 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr, int inWidth, int inHeight,
     cnn_run(cnn_mat_alloc(&layerPtr->bnVar, inChannel, 2, 1), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->srcShift, outRows, outCols, 0), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->srcNorm, outRows, outCols, 1), ret, ERR);
+    cnn_alloc(layerPtr->stddev, inChannel, float, ret, ERR);
 
     // Set initial gamma, beta
     for (int i = 0; i < inChannel; i++)
