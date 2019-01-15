@@ -28,6 +28,7 @@ int main(int argc, char* argv[])
     int width, height, channel;
     int batch;
     float rate;
+    float rInit, bInit;
 
     if (argc < 2)
     {
@@ -89,6 +90,13 @@ int main(int argc, char* argv[])
                 test(cnn_config_get_dropout(cfg, i, &rate));
                 printf("Type: Dropout\n");
                 printf("Rate: %g\n", rate);
+                break;
+
+            case CNN_LAYER_BN:
+                test(cnn_config_get_batchnorm(cfg, i, &rInit, &bInit));
+                printf("Type: BatchNorm\n");
+                printf("rInit: %g\n", rInit);
+                printf("bInit: %g\n", bInit);
                 break;
         }
 

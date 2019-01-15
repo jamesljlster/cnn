@@ -136,7 +136,7 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
     xmlAttrPtr attrCur;
     xmlAttrPtr index = NULL, type = NULL;
     xmlAttrPtr pad = NULL, dim = NULL, size = NULL, poolType = NULL, id = NULL,
-               rate = NULL, filter = NULL;
+               rate = NULL, filter = NULL, gamma = NULL, beta = NULL;
 
     xmlChar* xStr = NULL;
 
@@ -183,6 +183,14 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
             case CNN_STR_PAD:
                 pad = attrCur;
                 break;
+
+            case CNN_STR_GAMMA:
+                gamma = attrCur;
+                break;
+
+            case CNN_STR_BETA:
+                beta = attrCur;
+                break;
         }
 
         attrCur = attrCur->next;
@@ -228,6 +236,10 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
         case CNN_STR_DROP:
             tmpType = CNN_LAYER_DROP;
+            break;
+
+        case CNN_STR_BN:
+            tmpType = CNN_LAYER_BN;
             break;
 
         default:
@@ -412,6 +424,31 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
             // Set dropout scale
             cfgPtr->layerCfg[tmpIndex].drop.scale =
                 1.0 / (1.0 - cfgPtr->layerCfg[tmpIndex].drop.rate);
+
+            break;
+
+        case CNN_LAYER_BN:
+            if (gamma == NULL || beta == NULL)
+            {
+                ret = CNN_INFO_NOT_FOUND;
+                goto RET;
+            }
+
+            // Parse gamma
+            xStr = xmlNodeGetContent(gamma->children);
+            cnn_run(cnn_strtof(&cfgPtr->layerCfg[tmpIndex].bn.rInit,
+                               (const char*)xStr),
+                    ret, RET);
+            xmlFree(xStr);
+            xStr = NULL;
+
+            // Parse beta
+            xStr = xmlNodeGetContent(beta->children);
+            cnn_run(cnn_strtof(&cfgPtr->layerCfg[tmpIndex].bn.bInit,
+                               (const char*)xStr),
+                    ret, RET);
+            xmlFree(xStr);
+            xStr = NULL;
 
             break;
 
@@ -726,6 +763,33 @@ int cnn_parse_network_detail_xml(struct CNN* cnn, xmlDocPtr doc)
                 }
 
                 break;
+
+            case CNN_LAYER_BN:
+                // Select node
+                ret = snprintf(buf, CNN_XML_BUFLEN, "/%s/%s/%s[@%s='%d']",
+                               cnn_str_list[CNN_STR_MODEL],
+                               cnn_str_list[CNN_STR_NETWORK],
+                               cnn_str_list[CNN_STR_LAYER],
+                               cnn_str_list[CNN_STR_INDEX], i);
+                assert(ret > 0 && ret < CNN_XML_BUFLEN &&
+                       "Insufficient buffer size");
+
+                obj = xmlXPathEval((xmlChar*)buf, cont);
+                if (obj == NULL)
+                {
+                    ret = CNN_MEM_FAILED;
+                    goto RET;
+                }
+
+                // Parse
+                if (!xmlXPathNodeSetIsEmpty(obj->nodesetval))
+                {
+                    cnn_run(cnn_parse_network_detail_bn_xml(
+                                cnn, i, obj->nodesetval->nodeTab[0]),
+                            ret, RET);
+                }
+
+                break;
         }
 
         if (obj != NULL)
@@ -806,6 +870,35 @@ int cnn_parse_network_detail_conv_xml(struct CNN* cnn, int layerIndex,
                     ret, RET);
                 break;
 #endif
+        }
+
+        cur = cur->next;
+    }
+
+RET:
+    return ret;
+}
+
+int cnn_parse_network_detail_bn_xml(struct CNN* cnn, int layerIndex,
+                                    xmlNodePtr node)
+{
+    int ret = CNN_NO_ERROR;
+    int strId;
+
+    xmlNodePtr cur;
+
+    // Parsing
+    cur = node->xmlChildrenNode;
+    while (cur != NULL)
+    {
+        strId = cnn_strdef_get_id((const char*)cur->name);
+        switch (strId)
+        {
+            case CNN_STR_PARAM:
+                cnn_run(
+                    cnn_parse_mat(&cnn->layerList[layerIndex].bn.bnVar, cur),
+                    ret, RET);
+                break;
         }
 
         cur = cur->next;

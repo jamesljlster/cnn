@@ -104,6 +104,25 @@ void cnn_update(cnn_t cnn, float lRate, float gradLimit)
 #endif
 
                 break;
+
+            // Batch normalization
+            case CNN_LAYER_BN:
+                // Limit gradient
+                cnn_restrict(
+                    layerRef[i].bn.bnVar.grad,
+                    layerRef[i].bn.bnVar.rows * layerRef[i].bn.bnVar.cols,
+                    gradLimit);
+
+                // Update variables
+                cblas_saxpy(
+                    layerRef[i].bn.bnVar.cols * layerRef[i].bn.bnVar.rows,
+                    lRate, layerRef[i].bn.bnVar.grad, 1,
+                    layerRef[i].bn.bnVar.mat, 1);
+
+                // Clear gradient
+                memset(layerRef[i].bn.bnVar.grad, 0,
+                       sizeof(float) * layerRef[i].bn.bnVar.rows *
+                           layerRef[i].bn.bnVar.cols);
         }
     }
 }
@@ -152,6 +171,11 @@ void cnn_backward(cnn_t cnn, float* errGrad)
             // Dropout
             case CNN_LAYER_DROP:
                 cnn_backward_drop(layerRef, cfgRef, i);
+                break;
+
+            // Batch normalization
+            case CNN_LAYER_BN:
+                cnn_backward_bn(layerRef, cfgRef, i);
                 break;
 
             default:
@@ -215,6 +239,11 @@ void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
                                layerRef[i].outMat.data.cols);
                 }
 
+                break;
+
+            // Batch normalization
+            case CNN_LAYER_BN:
+                cnn_forward_bn(layerRef, cfgRef, i);
                 break;
 
             default:

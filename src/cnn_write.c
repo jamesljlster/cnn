@@ -372,6 +372,45 @@ RET:
     return ret;
 }
 
+int cnn_write_layer_bn_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
+                           int layerIndex, xmlTextWriterPtr writer)
+{
+    int ret = CNN_NO_ERROR;
+    char buf[CNN_XML_BUFLEN] = {0};
+
+    // Write layer type
+    cnn_xml_run(xmlTextWriterWriteAttribute(
+                    writer, (xmlChar*)cnn_str_list[CNN_STR_TYPE],
+                    (xmlChar*)cnn_str_list[CNN_STR_BN]),
+                ret, RET);
+
+    // Write gamma
+    cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.rInit);
+    cnn_xml_run(
+        xmlTextWriterWriteAttribute(
+            writer, (xmlChar*)cnn_str_list[CNN_STR_GAMMA], (xmlChar*)buf),
+        ret, RET);
+
+    // Write beta
+    cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.bInit);
+    cnn_xml_run(
+        xmlTextWriterWriteAttribute(
+            writer, (xmlChar*)cnn_str_list[CNN_STR_BETA], (xmlChar*)buf),
+        ret, RET);
+
+    // Write network detail
+    if (layerRef != NULL)
+    {
+        // Write batch normalization parameter
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.bnVar,
+                                  cnn_str_list[CNN_STR_PARAM], writer),
+                ret, RET);
+    }
+
+RET:
+    return ret;
+}
+
 int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
                           xmlTextWriterPtr writer)
 {
@@ -432,6 +471,11 @@ int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 
             case CNN_LAYER_DROP:
                 cnn_run(cnn_write_layer_drop_xml(cfgRef, i, writer), ret, RET);
+                break;
+
+            case CNN_LAYER_BN:
+                cnn_run(cnn_write_layer_bn_xml(cfgRef, layerRef, i, writer),
+                        ret, RET);
                 break;
 
             default:

@@ -64,6 +64,8 @@ extern "C"
                                         xmlNodePtr node);
     int cnn_parse_network_detail_conv_xml(struct CNN* cnn, int layerIndex,
                                           xmlNodePtr node);
+    int cnn_parse_network_detail_bn_xml(struct CNN* cnn, int layerIndex,
+                                        xmlNodePtr node);
     int cnn_parse_mat(struct CNN_MAT* mat, xmlNodePtr node);
 
 #ifdef __cplusplus
