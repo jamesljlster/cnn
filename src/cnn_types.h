@@ -69,6 +69,15 @@ struct CNN_CONFIG_LAYER_DROP
     float scale;
 };
 
+struct CNN_CONFIG_LAYER_BN
+{
+    // Layer type
+    int type;
+
+    float rInit;
+    float bInit;
+};
+
 union CNN_CONFIG_LAYER {
     // Layer type
     int type;
@@ -78,6 +87,7 @@ union CNN_CONFIG_LAYER {
     struct CNN_CONFIG_LAYER_CONV conv;
     struct CNN_CONFIG_LAYER_POOL pool;
     struct CNN_CONFIG_LAYER_DROP drop;
+    struct CNN_CONFIG_LAYER_BN bn;
 };
 
 struct CNN_CONFIG
@@ -157,6 +167,25 @@ struct CNN_LAYER_DROP
     int* mask;
 };
 
+struct CNN_LAYER_BN
+{
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
+
+    // BatchNorm variables
+    float r;
+    float b;
+
+    // BatchNorm variables gradient
+    float rGrad;
+    float bGrad;
+
+    // Cache
+    float stddev;
+    struct CNN_SHAPE srcShift;
+    struct CNN_SHAPE srcNorm;
+};
+
 union CNN_LAYER {
     // Layer output matrix
     struct CNN_SHAPE outMat;
@@ -166,6 +195,7 @@ union CNN_LAYER {
     struct CNN_LAYER_CONV conv;
     struct CNN_LAYER_POOL pool;
     struct CNN_LAYER_DROP drop;
+    struct CNN_LAYER_BN bn;
 };
 
 struct CNN

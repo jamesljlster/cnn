@@ -851,3 +851,72 @@ int cnn_config_get_dropout(cnn_config_t cfg, int layerIndex, float* ratePtr)
 RET:
     return ret;
 }
+
+int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit)
+{
+    int ret = CNN_NO_ERROR;
+    int layers;
+
+    // Append batch normalization layer
+    cnn_config_get_layers(cfg, &layers);
+    layers++;
+    cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
+    cnn_run(cnn_config_set_batchnorm(cfg, layers - 1, rInit, bInit), ret, RET);
+
+RET:
+    return ret;
+}
+
+int cnn_config_set_batchnorm(cnn_config_t cfg, int layerIndex, float rInit,
+                             float bInit)
+{
+    int ret = CNN_NO_ERROR;
+
+    // Checking
+    if (layerIndex <= 0 || layerIndex >= cfg->layers)
+    {
+        ret = CNN_INVALID_ARG;
+        goto RET;
+    }
+
+    // Set config
+    cfg->layerCfg[layerIndex].type = CNN_LAYER_BN;
+    cfg->layerCfg[layerIndex].bn.rInit = rInit;
+    cfg->layerCfg[layerIndex].bn.bInit = bInit;
+
+RET:
+    return ret;
+}
+
+int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex, float* rInitPtr,
+                             float* bInitPtr)
+{
+    int ret = CNN_NO_ERROR;
+
+    // Checking
+    if (layerIndex < 0 || layerIndex >= cfg->layers)
+    {
+        ret = CNN_INVALID_ARG;
+        goto RET;
+    }
+
+    if (cfg->layerCfg[layerIndex].type != CNN_LAYER_BN)
+    {
+        ret = CNN_INVALID_ARG;
+        goto RET;
+    }
+
+    // Assign value
+    if (rInitPtr != NULL)
+    {
+        *rInitPtr = cfg->layerCfg[layerIndex].bn.rInit;
+    }
+
+    if (bInitPtr != NULL)
+    {
+        *bInitPtr = cfg->layerCfg[layerIndex].bn.bInit;
+    }
+
+RET:
+    return ret;
+}
