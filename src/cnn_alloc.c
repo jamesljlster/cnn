@@ -72,6 +72,14 @@ int cnn_network_alloc(struct CNN* cnn)
                         ret, ERR);
                 break;
 
+            case CNN_LAYER_BN:
+                cnn_run(cnn_layer_bn_alloc(&cnn->layerList[i].bn, tmpWidth,
+                                           tmpHeight, tmpChannel, cfg->batch,
+                                           cfg->layerCfg[i].bn.rInit,
+                                           cfg->layerCfg[i].bn.bInit),
+                        ret, ERR);
+                break;
+
             default:
                 assert(!"Invalid layer type");
         }
@@ -404,6 +412,44 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inWidth,
 
 ERR:
     cnn_layer_conv_delete(layerPtr);
+
+RET:
+    return ret;
+}
+
+int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr, int inWidth, int inHeight,
+                       int inChannel, int batch, float rInit, float bInit)
+{
+    int ret = CNN_NO_ERROR;
+    int outRows, outCols;
+
+    // Find allocate size
+    outRows = batch;
+    outCols = inWidth * inHeight * inChannel;
+
+    // Allocate memory
+    cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
+            ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->bnVar, inChannel, 2, 1), ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->srcShift, outRows, outCols, 0), ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->srcNorm, outRows, outCols, 1), ret, ERR);
+
+    // Set initial gamma, beta
+    for (int i = 0; i < inChannel; i++)
+    {
+        layerPtr->bnVar.mat[i * 2 + 0] = rInit;
+        layerPtr->bnVar.mat[i * 2 + 1] = bInit;
+    }
+
+    // Assign value
+    layerPtr->outMat.width = inWidth;
+    layerPtr->outMat.height = inHeight;
+    layerPtr->outMat.channel = inChannel;
+
+    goto RET;
+
+ERR:
+    cnn_layer_bn_delete(layerPtr);
 
 RET:
     return ret;

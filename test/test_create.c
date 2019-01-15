@@ -139,6 +139,23 @@ void check_cnn_arch(cnn_t cnn)
                 test_mat(cnn->layerList[i].outMat.data);
                 break;
 
+            case CNN_LAYER_BN:
+                printf("The layer is batchnorm\n");
+                printf("rInit: %g\n", cnn->cfg.layerCfg[i].bn.rInit);
+                printf("bInit: %g\n", cnn->cfg.layerCfg[i].bn.bInit);
+                printf("Output size: %dx%d\n", cnn->layerList[i].outMat.width,
+                       cnn->layerList[i].outMat.height);
+                printf("Output channel: %d\n",
+                       cnn->layerList[i].outMat.channel);
+
+                print_mat_info("Output mat", cnn->layerList[i].outMat.data);
+
+                test_mat(cnn->layerList[i].outMat.data);
+                test_mat(cnn->layerList[i].bn.bnVar);
+                test_mat(cnn->layerList[i].bn.srcShift);
+                test_mat(cnn->layerList[i].bn.srcNorm);
+                break;
+
             default:
                 printf("Not a cnn layer config?!\n");
         }
@@ -163,10 +180,12 @@ int main()
     test(cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT, 1));
     test(cnn_config_set_batch_size(cfg, BATCH));
 
-    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 1, 3));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 3, 3));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 1, 3));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 6, 3));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_full_connect(cfg, 16));

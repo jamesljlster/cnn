@@ -173,17 +173,12 @@ struct CNN_LAYER_BN
     struct CNN_SHAPE outMat;
 
     // BatchNorm variables
-    float r;
-    float b;
-
-    // BatchNorm variables gradient
-    float rGrad;
-    float bGrad;
+    struct CNN_MAT bnVar;
 
     // Cache
     float stddev;
-    struct CNN_SHAPE srcShift;
-    struct CNN_SHAPE srcNorm;
+    struct CNN_MAT srcShift;
+    struct CNN_MAT srcNorm;
 };
 
 union CNN_LAYER {
