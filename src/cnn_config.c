@@ -314,8 +314,22 @@ void cnn_config_get_output_size(cnn_config_t cfg, int* wPtr, int* hPtr,
                 break;
 
             case CNN_LAYER_CONV:
-                outWidth = inWidth - cfg->layerCfg[i].conv.size + 1;
-                outHeight = inHeight - cfg->layerCfg[i].conv.size + 1;
+                switch (cfg->layerCfg[i].conv.pad)
+                {
+                    case CNN_PAD_VALID:
+                        outWidth = inWidth - cfg->layerCfg[i].conv.size + 1;
+                        outHeight = inHeight - cfg->layerCfg[i].conv.size + 1;
+                        break;
+
+                    case CNN_PAD_SAME:
+                        outWidth = inWidth;
+                        outHeight = inHeight;
+                        break;
+
+                    default:
+                        assert(!"Invalid padding type");
+                }
+
                 outChannel = cfg->layerCfg[i].conv.filter;
                 break;
 

@@ -105,7 +105,7 @@ int main()
 
     // Test #5
     test(cnn_config_create(&cfg));
-    test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_MAX, 2));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_SAME, CNN_DIM_2D, 7, 3));
     test(cnn_create(&cnn, cfg));
 
     cnn_config_get_input_size(cfg, &w, &h, &ch);
@@ -121,7 +121,7 @@ int main()
 
     // Test #6
     test(cnn_config_create(&cfg));
-    test(cnn_config_append_dropout(cfg, 0.5));
+    test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_MAX, 2));
     test(cnn_create(&cnn, cfg));
 
     cnn_config_get_input_size(cfg, &w, &h, &ch);
@@ -137,7 +137,23 @@ int main()
 
     // Test #7
     test(cnn_config_create(&cfg));
-    test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, CNN_DIM_2D, 3, 7));
+    test(cnn_config_append_dropout(cfg, 0.5));
+    test(cnn_create(&cnn, cfg));
+
+    cnn_config_get_input_size(cfg, &w, &h, &ch);
+    cnn_get_input_size(cnn, &cmpW, &cmpH, &cmpCh);
+    test(size_cmp(w, h, ch, cmpW, cmpH, cmpCh));
+
+    cnn_config_get_output_size(cfg, &w, &h, &ch);
+    cnn_get_output_size(cnn, &cmpW, &cmpH, &cmpCh);
+    test(size_cmp(w, h, ch, cmpW, cmpH, cmpCh));
+
+    cnn_config_delete(cfg);
+    cnn_delete(cnn);
+
+    // Test #8
+    test(cnn_config_create(&cfg));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_SAME, CNN_DIM_2D, 3, 7));
     test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, CNN_DIM_2D, 16, 7));
