@@ -31,7 +31,7 @@ int cnn_network_alloc(struct CNN* cnn)
         {
             case CNN_LAYER_INPUT:
                 cnn_run(
-                    cnn_layer_input_alloc(&cnn->layerList[i], tmpWidth,
+                    cnn_layer_input_alloc(&cnn->layerList[i].input, tmpWidth,
                                           tmpHeight, tmpChannel, cfg->batch),
                     ret, ERR);
                 break;
@@ -134,8 +134,8 @@ RET:
     return ret;
 }
 
-int cnn_layer_input_alloc(union CNN_LAYER* layerPtr, int inWidth, int inHeight,
-                          int inChannel, int batch)
+int cnn_layer_input_alloc(struct CNN_LAYER_INPUT* layerPtr, int inWidth,
+                          int inHeight, int inChannel, int batch)
 {
     int ret = CNN_NO_ERROR;
     int outRows, outCols;

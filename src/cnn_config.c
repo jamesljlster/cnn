@@ -274,6 +274,66 @@ void cnn_config_get_input_size(cnn_config_t cfg, int* wPtr, int* hPtr,
     }
 }
 
+void cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
+                                   int inWidth, int inHeight, int inChannel,
+                                   union CNN_CONFIG_LAYER* layerCfg)
+{
+    int outWidth, outHeight, outChannel;
+
+    // Find output size
+    switch (layerCfg->type)
+    {
+        case CNN_LAYER_INPUT:
+        case CNN_LAYER_ACTIV:
+        case CNN_LAYER_DROP:
+        case CNN_LAYER_BN:
+            outWidth = inWidth;
+            outHeight = inHeight;
+            outChannel = inChannel;
+            break;
+
+        case CNN_LAYER_FC:
+            outWidth = layerCfg->fc.size;
+            outHeight = 1;
+            outChannel = 1;
+            break;
+
+        case CNN_LAYER_CONV:
+            switch (layerCfg->conv.pad)
+            {
+                case CNN_PAD_VALID:
+                    outWidth = inWidth - layerCfg->conv.size + 1;
+                    outHeight = inHeight - layerCfg->conv.size + 1;
+                    break;
+
+                case CNN_PAD_SAME:
+                    outWidth = inWidth;
+                    outHeight = inHeight;
+                    break;
+
+                default:
+                    assert(!"Invalid padding type");
+            }
+
+            outChannel = layerCfg->conv.filter;
+            break;
+
+        case CNN_LAYER_POOL:
+            outWidth = inWidth / layerCfg->pool.size;
+            outHeight = inHeight / layerCfg->pool.size;
+            outChannel = inChannel;
+            break;
+
+        default:
+            assert(!"Invalid layer type");
+    }
+
+    // Assign value
+    *outWPtr = outWidth;
+    *outHPtr = outHeight;
+    *outCPtr = outChannel;
+}
+
 void cnn_config_get_output_size(cnn_config_t cfg, int* wPtr, int* hPtr,
                                 int* cPtr)
 {
@@ -293,61 +353,9 @@ void cnn_config_get_output_size(cnn_config_t cfg, int* wPtr, int* hPtr,
     // Find output size
     for (i = 1; i < cfg->layers; i++)
     {
-        switch (cfg->layerCfg[i].type)
-        {
-            case CNN_LAYER_INPUT:
-                outWidth = inWidth;
-                outHeight = inHeight;
-                outChannel = inChannel;
-                break;
-
-            case CNN_LAYER_FC:
-                outWidth = cfg->layerCfg[i].fc.size;
-                outHeight = 1;
-                outChannel = 1;
-                break;
-
-            case CNN_LAYER_ACTIV:
-                outWidth = inWidth;
-                outHeight = inHeight;
-                outChannel = inChannel;
-                break;
-
-            case CNN_LAYER_CONV:
-                switch (cfg->layerCfg[i].conv.pad)
-                {
-                    case CNN_PAD_VALID:
-                        outWidth = inWidth - cfg->layerCfg[i].conv.size + 1;
-                        outHeight = inHeight - cfg->layerCfg[i].conv.size + 1;
-                        break;
-
-                    case CNN_PAD_SAME:
-                        outWidth = inWidth;
-                        outHeight = inHeight;
-                        break;
-
-                    default:
-                        assert(!"Invalid padding type");
-                }
-
-                outChannel = cfg->layerCfg[i].conv.filter;
-                break;
-
-            case CNN_LAYER_POOL:
-                outWidth = inWidth / cfg->layerCfg[i].pool.size;
-                outHeight = inHeight / cfg->layerCfg[i].pool.size;
-                outChannel = inChannel;
-                break;
-
-            case CNN_LAYER_DROP:
-                outWidth = inWidth;
-                outHeight = inHeight;
-                outChannel = inChannel;
-                break;
-
-            default:
-                assert(!"Invalid layer type");
-        }
+        cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                      inWidth, inHeight, inChannel,
+                                      &cfg->layerCfg[i]);
 
         inWidth = outWidth;
         inHeight = outHeight;

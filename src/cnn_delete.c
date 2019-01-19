@@ -35,13 +35,13 @@ void cnn_mat_delete(struct CNN_MAT* matPtr)
     memset(matPtr, 0, sizeof(struct CNN_MAT));
 }
 
-void cnn_layer_input_delete(union CNN_LAYER* layerPtr)
+void cnn_layer_input_delete(struct CNN_LAYER_INPUT* layerPtr)
 {
     // Free memory
     cnn_mat_delete(&layerPtr->outMat.data);
 
     // Zero memory
-    memset(layerPtr, 0, sizeof(union CNN_LAYER));
+    memset(layerPtr, 0, sizeof(struct CNN_LAYER_INPUT));
 }
 
 void cnn_layer_drop_delete(struct CNN_LAYER_DROP* layerPtr)
@@ -129,7 +129,7 @@ void cnn_network_delete(struct CNN* cnn)
             switch (cnn->cfg.layerCfg[i].type)
             {
                 case CNN_LAYER_INPUT:
-                    cnn_layer_input_delete(&cnn->layerList[i]);
+                    cnn_layer_input_delete(&cnn->layerList[i].input);
                     break;
 
                 case CNN_LAYER_FC:

@@ -23,6 +23,12 @@ struct CNN_SHAPE
     struct CNN_MAT data;
 };
 
+struct CNN_CONFIG_LAYER_INPUT
+{
+    // Layer type
+    int type;
+};
+
 struct CNN_CONFIG_LAYER_ACTIV
 {
     // Layer type
@@ -82,6 +88,7 @@ union CNN_CONFIG_LAYER {
     // Layer type
     int type;
 
+    struct CNN_CONFIG_LAYER_INPUT input;
     struct CNN_CONFIG_LAYER_FC fc;
     struct CNN_CONFIG_LAYER_ACTIV activ;
     struct CNN_CONFIG_LAYER_CONV conv;
@@ -102,6 +109,12 @@ struct CNN_CONFIG
 
     int layers;
     union CNN_CONFIG_LAYER* layerCfg;
+};
+
+struct CNN_LAYER_INPUT
+{
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
 };
 
 struct CNN_LAYER_ACTIV
@@ -185,6 +198,7 @@ union CNN_LAYER {
     // Layer output matrix
     struct CNN_SHAPE outMat;
 
+    struct CNN_LAYER_INPUT input;
     struct CNN_LAYER_FC fc;
     struct CNN_LAYER_ACTIV activ;
     struct CNN_LAYER_CONV conv;
