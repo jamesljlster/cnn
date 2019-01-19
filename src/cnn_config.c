@@ -274,9 +274,9 @@ void cnn_config_get_input_size(cnn_config_t cfg, int* wPtr, int* hPtr,
     }
 }
 
-void cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
-                                   int inWidth, int inHeight, int inChannel,
-                                   union CNN_CONFIG_LAYER* layerCfg)
+int cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
+                                  int inWidth, int inHeight, int inChannel,
+                                  union CNN_CONFIG_LAYER* layerCfg)
 {
     int outWidth, outHeight, outChannel;
 
@@ -328,10 +328,18 @@ void cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
             assert(!"Invalid layer type");
     }
 
+    // Check output shape
+    if (outWidth <= 0 || outHeight <= 0 || outChannel <= 0)
+    {
+        return CNN_INVALID_SHAPE;
+    }
+
     // Assign value
     *outWPtr = outWidth;
     *outHPtr = outHeight;
     *outCPtr = outChannel;
+
+    return CNN_NO_ERROR;
 }
 
 void cnn_config_get_output_size(cnn_config_t cfg, int* wPtr, int* hPtr,

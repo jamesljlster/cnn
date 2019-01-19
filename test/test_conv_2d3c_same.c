@@ -156,10 +156,12 @@ int main()
     printf("\n");
 
     // Allocate cnn layer
-    test(cnn_layer_activ_alloc(&layer[1].activ, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1,
-                               CNN_RELU));
-    test(cnn_layer_conv_alloc(&layer[2].conv, IMG_WIDTH, IMG_HEIGHT, CH_IN,
-                              CH_OUT, CNN_PAD_SAME, KERNEL_SIZE, 1));
+    test(cnn_layer_activ_alloc(
+        &layer[1].activ, (struct CNN_CONFIG_LAYER_ACTIV*)&cfg->layerCfg[1],
+        IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch));
+    test(cnn_layer_conv_alloc(&layer[2].conv,
+                              (struct CNN_CONFIG_LAYER_CONV*)&cfg->layerCfg[2],
+                              IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch));
 
     // Copy memory
     memcpy(

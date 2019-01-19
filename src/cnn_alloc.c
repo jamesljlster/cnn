@@ -30,53 +30,58 @@ int cnn_network_alloc(struct CNN* cnn)
         switch (cfg->layerCfg[i].type)
         {
             case CNN_LAYER_INPUT:
-                cnn_run(
-                    cnn_layer_input_alloc(&cnn->layerList[i].input, tmpWidth,
-                                          tmpHeight, tmpChannel, cfg->batch),
-                    ret, ERR);
+                cnn_run(cnn_layer_input_alloc(
+                            &cnn->layerList[i].input,
+                            (struct CNN_CONFIG_LAYER_INPUT*)&cfg->layerCfg[i],
+                            tmpWidth, tmpHeight, tmpChannel, cfg->batch),
+                        ret, ERR);
                 break;
 
             case CNN_LAYER_FC:
                 cnn_run(cnn_layer_fc_alloc(
-                            &cnn->layerList[i].fc, tmpWidth, tmpHeight,
-                            tmpChannel, cfg->layerCfg[i].fc.size, cfg->batch),
+                            &cnn->layerList[i].fc,
+                            (struct CNN_CONFIG_LAYER_FC*)&cfg->layerCfg[i],
+                            tmpWidth, tmpHeight, tmpChannel, cfg->batch),
                         ret, ERR);
                 break;
 
             case CNN_LAYER_ACTIV:
                 cnn_run(cnn_layer_activ_alloc(
-                            &cnn->layerList[i].activ, tmpWidth, tmpHeight,
-                            tmpChannel, cfg->batch, cfg->layerCfg[i].activ.id),
+                            &cnn->layerList[i].activ,
+                            (struct CNN_CONFIG_LAYER_ACTIV*)&cfg->layerCfg[i],
+                            tmpWidth, tmpHeight, tmpChannel, cfg->batch),
                         ret, ERR);
                 break;
 
             case CNN_LAYER_CONV:
                 cnn_run(cnn_layer_conv_alloc(
-                            &cnn->layerList[i].conv, tmpWidth, tmpHeight,
-                            tmpChannel, cfg->layerCfg[i].conv.filter,
-                            cfg->layerCfg[i].conv.pad,
-                            cfg->layerCfg[i].conv.size, cfg->batch),
+                            &cnn->layerList[i].conv,
+                            (struct CNN_CONFIG_LAYER_CONV*)&cfg->layerCfg[i],
+                            tmpWidth, tmpHeight, tmpChannel, cfg->batch),
                         ret, ERR);
                 break;
 
             case CNN_LAYER_POOL:
                 cnn_run(cnn_layer_pool_alloc(
-                            &cnn->layerList[i].pool, tmpWidth, tmpHeight,
-                            tmpChannel, cfg->layerCfg[i].pool.size, cfg->batch),
+                            &cnn->layerList[i].pool,
+                            (struct CNN_CONFIG_LAYER_POOL*)&cfg->layerCfg[i],
+                            tmpWidth, tmpHeight, tmpChannel, cfg->batch),
                         ret, ERR);
                 break;
 
             case CNN_LAYER_DROP:
-                cnn_run(cnn_layer_drop_alloc(&cnn->layerList[i].drop, tmpWidth,
-                                             tmpHeight, tmpChannel, cfg->batch),
+                cnn_run(cnn_layer_drop_alloc(
+                            &cnn->layerList[i].drop,
+                            (struct CNN_CONFIG_LAYER_DROP*)&cfg->layerCfg[i],
+                            tmpWidth, tmpHeight, tmpChannel, cfg->batch),
                         ret, ERR);
                 break;
 
             case CNN_LAYER_BN:
-                cnn_run(cnn_layer_bn_alloc(&cnn->layerList[i].bn, tmpWidth,
-                                           tmpHeight, tmpChannel, cfg->batch,
-                                           cfg->layerCfg[i].bn.rInit,
-                                           cfg->layerCfg[i].bn.bInit),
+                cnn_run(cnn_layer_bn_alloc(
+                            &cnn->layerList[i].bn,
+                            (struct CNN_CONFIG_LAYER_BN*)&cfg->layerCfg[i],
+                            tmpWidth, tmpHeight, tmpChannel, cfg->batch),
                         ret, ERR);
                 break;
 
@@ -134,11 +139,19 @@ RET:
     return ret;
 }
 
-int cnn_layer_input_alloc(struct CNN_LAYER_INPUT* layerPtr, int inWidth,
+int cnn_layer_input_alloc(struct CNN_LAYER_INPUT* layerPtr,
+                          struct CNN_CONFIG_LAYER_INPUT* cfgPtr, int inWidth,
                           int inHeight, int inChannel, int batch)
 {
     int ret = CNN_NO_ERROR;
     int outRows, outCols;
+    int outWidth, outHeight, outChannel;
+
+    // Find output shape
+    cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                          inWidth, inHeight, inChannel,
+                                          (union CNN_CONFIG_LAYER*)cfgPtr),
+            ret, RET);
 
     // Find allocate size
     outRows = batch;
@@ -149,9 +162,9 @@ int cnn_layer_input_alloc(struct CNN_LAYER_INPUT* layerPtr, int inWidth,
             ERR);
 
     // Assign value
-    layerPtr->outMat.width = inWidth;
-    layerPtr->outMat.height = inHeight;
-    layerPtr->outMat.channel = inChannel;
+    layerPtr->outMat.width = outWidth;
+    layerPtr->outMat.height = outHeight;
+    layerPtr->outMat.channel = outChannel;
 
     goto RET;
 
@@ -162,11 +175,19 @@ RET:
     return ret;
 }
 
-int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr, int inWidth,
+int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr,
+                         struct CNN_CONFIG_LAYER_DROP* cfgPtr, int inWidth,
                          int inHeight, int inChannel, int batch)
 {
     int ret = CNN_NO_ERROR;
     int outRows, outCols;
+    int outWidth, outHeight, outChannel;
+
+    // Find output shape
+    cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                          inWidth, inHeight, inChannel,
+                                          (union CNN_CONFIG_LAYER*)cfgPtr),
+            ret, RET);
 
     // Find allocate size
     outRows = batch;
@@ -178,9 +199,9 @@ int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr, int inWidth,
     cnn_alloc(layerPtr->mask, outRows * outCols, int, ret, ERR);
 
     // Assign value
-    layerPtr->outMat.width = inWidth;
-    layerPtr->outMat.height = inHeight;
-    layerPtr->outMat.channel = inChannel;
+    layerPtr->outMat.width = outWidth;
+    layerPtr->outMat.height = outHeight;
+    layerPtr->outMat.channel = outChannel;
 
     goto RET;
 
@@ -191,12 +212,20 @@ RET:
     return ret;
 }
 
-int cnn_layer_activ_alloc(struct CNN_LAYER_ACTIV* layerPtr, int inWidth,
-                          int inHeight, int inChannel, int batch, int activID)
+int cnn_layer_activ_alloc(struct CNN_LAYER_ACTIV* layerPtr,
+                          struct CNN_CONFIG_LAYER_ACTIV* cfgPtr, int inWidth,
+                          int inHeight, int inChannel, int batch)
 {
     int ret = CNN_NO_ERROR;
     int outRows, outCols;
     int gradRows, gradCols;
+    int outWidth, outHeight, outChannel;
+
+    // Find output shape
+    cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                          inWidth, inHeight, inChannel,
+                                          (union CNN_CONFIG_LAYER*)cfgPtr),
+            ret, RET);
 
     // Find allocate size
     outRows = batch;
@@ -205,7 +234,7 @@ int cnn_layer_activ_alloc(struct CNN_LAYER_ACTIV* layerPtr, int inWidth,
     gradRows = batch;
     gradCols = outCols;
 
-    if (activID == CNN_SOFTMAX)
+    if (cfgPtr->id == CNN_SOFTMAX)
     {
         gradRows = batch * outCols;
     }
@@ -217,9 +246,9 @@ int cnn_layer_activ_alloc(struct CNN_LAYER_ACTIV* layerPtr, int inWidth,
     cnn_run(cnn_mat_alloc(&layerPtr->buf, outRows, outCols, 0), ret, ERR);
 
     // Assign value
-    layerPtr->outMat.width = inWidth;
-    layerPtr->outMat.height = inHeight;
-    layerPtr->outMat.channel = inChannel;
+    layerPtr->outMat.width = outWidth;
+    layerPtr->outMat.height = outHeight;
+    layerPtr->outMat.channel = outChannel;
 
     goto RET;
 
@@ -230,23 +259,31 @@ RET:
     return ret;
 }
 
-int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr, int inWidth, int inHeight,
-                       int inChannel, int outSize, int batch)
+int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
+                       struct CNN_CONFIG_LAYER_FC* cfgPtr, int inWidth,
+                       int inHeight, int inChannel, int batch)
 {
     int ret = CNN_NO_ERROR;
     int outRows, outCols;  // Output matrix size
     int wRows, wCols;      // Weight matrix size
     int bRows, bCols;      // Bias matrix size
+    int outWidth, outHeight, outChannel;
+
+    // Find output shape
+    cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                          inWidth, inHeight, inChannel,
+                                          (union CNN_CONFIG_LAYER*)cfgPtr),
+            ret, RET);
 
     // Find allocate size
     outRows = batch;
-    outCols = outSize;
+    outCols = cfgPtr->size;
 
     wRows = inWidth * inHeight * inChannel;
-    wCols = outSize;
+    wCols = cfgPtr->size;
 
     bRows = 1;
-    bCols = outSize;
+    bCols = cfgPtr->size;
 
     // Allocate memory
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
@@ -255,9 +292,9 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr, int inWidth, int inHeight,
     cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 
     // Assign value
-    layerPtr->outMat.width = outCols;
-    layerPtr->outMat.height = 1;
-    layerPtr->outMat.channel = 1;
+    layerPtr->outMat.width = outWidth;
+    layerPtr->outMat.height = outHeight;
+    layerPtr->outMat.channel = outChannel;
 
     goto RET;
 
@@ -268,23 +305,19 @@ RET:
     return ret;
 }
 
-int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr, int inWidth,
-                         int inHeight, int inChannel, int size, int batch)
+int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
+                         struct CNN_CONFIG_LAYER_POOL* cfgPtr, int inWidth,
+                         int inHeight, int inChannel, int batch)
 {
     int ret = CNN_NO_ERROR;
-    int outRows, outCols;     // Output matrix size
-    int outWidth, outHeight;  // Valid pooling output size
+    int outRows, outCols;                 // Output matrix size
+    int outWidth, outHeight, outChannel;  // Valid pooling output size
 
     // Find output image size
-    outWidth = inWidth / size;
-    outHeight = inHeight / size;
-
-    // Checking
-    if (outWidth <= 0 || outHeight <= 0)
-    {
-        ret = CNN_INVALID_SHAPE;
-        goto RET;
-    }
+    cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                          inWidth, inHeight, inChannel,
+                                          (union CNN_CONFIG_LAYER*)cfgPtr),
+            ret, RET);
 
     // Find allocate size
     outRows = batch;
@@ -298,7 +331,7 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr, int inWidth,
     // Assing value
     layerPtr->outMat.width = outWidth;
     layerPtr->outMat.height = outHeight;
-    layerPtr->outMat.channel = inChannel;
+    layerPtr->outMat.channel = outChannel;
 
     goto RET;
 
@@ -309,53 +342,35 @@ RET:
     return ret;
 }
 
-int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inWidth,
-                         int inHeight, int inChannel, int filter, int padding,
-                         int size, int batch)
+int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
+                         struct CNN_CONFIG_LAYER_CONV* cfgPtr, int inWidth,
+                         int inHeight, int inChannel, int batch)
 {
     int ret = CNN_NO_ERROR;
-    int outRows, outCols;     // Output matrix size
-    int outWidth, outHeight;  // Valid convolution output size
-    int kRows, kCols;         // Kernel matrix size
+    int outRows, outCols;                 // Output matrix size
+    int outWidth, outHeight, outChannel;  // Valid convolution output size
+    int kRows, kCols;                     // Kernel matrix size
 
 #if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
     int bRows, bCols;  // Bias matrix size
 #endif
 
     // Find output image size
-    switch (padding)
-    {
-        case CNN_PAD_VALID:
-            outWidth = inWidth - size + 1;
-            outHeight = inHeight - size + 1;
-            break;
-
-        case CNN_PAD_SAME:
-            outWidth = inWidth;
-            outHeight = inHeight;
-            break;
-
-        default:
-            assert(!"Invalid padding type");
-    }
-
-    // Checking
-    if (outWidth <= 0 || outHeight <= 0)
-    {
-        ret = CNN_INVALID_SHAPE;
-        goto RET;
-    }
+    cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                          inWidth, inHeight, inChannel,
+                                          (union CNN_CONFIG_LAYER*)cfgPtr),
+            ret, RET);
 
     // Find allocate size
     outRows = batch;
-    outCols = outWidth * outHeight * filter;
+    outCols = outWidth * outHeight * cfgPtr->filter;
 
-    kRows = filter;
-    kCols = size * size * inChannel;
+    kRows = cfgPtr->filter;
+    kCols = cfgPtr->size * cfgPtr->size * inChannel;
 
 #if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
     bRows = 1;
-    bCols = filter;
+    bCols = cfgPtr->filter;
 
 #if defined(CNN_CONV_BIAS_LAYER)
 #ifdef DEBUG
@@ -384,14 +399,15 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inWidth,
     layerPtr->outMat.width = outWidth;
     layerPtr->outMat.height = outHeight;
     layerPtr->inChannel = inChannel;
-    layerPtr->outMat.channel = filter;
+    layerPtr->outMat.channel = outChannel;
 
     // Initial index mapping
-    switch (padding)
+    switch (cfgPtr->pad)
     {
         case CNN_PAD_VALID:
             cnn_conv_unroll_2d_valid(layerPtr->indexMap, outHeight, outWidth,
-                                     size, inHeight, inWidth, inChannel);
+                                     cfgPtr->size, inHeight, inWidth,
+                                     inChannel);
             break;
 
         case CNN_PAD_SAME:
@@ -401,7 +417,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inWidth,
             }
 
             cnn_conv_unroll_2d_same(layerPtr->indexMap, outHeight, outWidth,
-                                    size, inHeight, inWidth, inChannel);
+                                    cfgPtr->size, inHeight, inWidth, inChannel);
             break;
 
         default:
@@ -417,11 +433,19 @@ RET:
     return ret;
 }
 
-int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr, int inWidth, int inHeight,
-                       int inChannel, int batch, float rInit, float bInit)
+int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
+                       struct CNN_CONFIG_LAYER_BN* cfgPtr, int inWidth,
+                       int inHeight, int inChannel, int batch)
 {
     int ret = CNN_NO_ERROR;
     int outRows, outCols;
+    int outWidth, outHeight, outChannel;
+
+    // Find output size
+    cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                          inWidth, inHeight, inChannel,
+                                          (union CNN_CONFIG_LAYER*)cfgPtr),
+            ret, RET);
 
     // Find allocate size
     outRows = batch;
@@ -438,14 +462,14 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr, int inWidth, int inHeight,
     // Set initial gamma, beta
     for (int i = 0; i < inChannel; i++)
     {
-        layerPtr->bnVar.mat[i * 2 + 0] = rInit;
-        layerPtr->bnVar.mat[i * 2 + 1] = bInit;
+        layerPtr->bnVar.mat[i * 2 + 0] = cfgPtr->rInit;
+        layerPtr->bnVar.mat[i * 2 + 1] = cfgPtr->bInit;
     }
 
     // Assign value
-    layerPtr->outMat.width = inWidth;
-    layerPtr->outMat.height = inHeight;
-    layerPtr->outMat.channel = inChannel;
+    layerPtr->outMat.width = outWidth;
+    layerPtr->outMat.height = outHeight;
+    layerPtr->outMat.channel = outChannel;
 
     goto RET;
 

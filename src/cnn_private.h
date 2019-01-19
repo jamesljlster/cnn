@@ -51,30 +51,36 @@ extern "C"
     int cnn_config_struct_clone(struct CNN_CONFIG* dstPtr,
                                 const struct CNN_CONFIG* src);
 
-    void cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
-                                       int inWidth, int inHeight, int inChannel,
-                                       union CNN_CONFIG_LAYER* layerCfg);
+    int cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
+                                      int inWidth, int inHeight, int inChannel,
+                                      union CNN_CONFIG_LAYER* layerCfg);
 
     // Private allocate functions
     int cnn_mat_alloc(struct CNN_MAT* matPtr, int rows, int cols, int needGrad);
 
-    int cnn_layer_input_alloc(struct CNN_LAYER_INPUT* layerPtr, int inWidth,
-                              int inHeight, int inChannel, int batch);
-    int cnn_layer_activ_alloc(struct CNN_LAYER_ACTIV* layerPtr, int inWidth,
-                              int inHeight, int inChannel, int batch,
-                              int activID);
-    int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr, int inWidth,
-                           int inHeight, int inChannel, int outSize, int batch);
-    int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr, int inWidth,
-                             int inHeight, int inChannel, int filter,
-                             int padding, int size, int batch);
-    int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr, int inWidth,
-                             int inHeight, int inChannel, int size, int batch);
-    int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr, int inWidth,
+    int cnn_layer_input_alloc(struct CNN_LAYER_INPUT* layerPtr,
+                              struct CNN_CONFIG_LAYER_INPUT* cfgPtr,
+                              int inWidth, int inHeight, int inChannel,
+                              int batch);
+    int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
+                           struct CNN_CONFIG_LAYER_FC* cfgPtr, int inWidth,
+                           int inHeight, int inChannel, int batch);
+    int cnn_layer_activ_alloc(struct CNN_LAYER_ACTIV* layerPtr,
+                              struct CNN_CONFIG_LAYER_ACTIV* cfgPtr,
+                              int inWidth, int inHeight, int inChannel,
+                              int batch);
+    int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
+                             struct CNN_CONFIG_LAYER_CONV* cfgPtr, int inWidth,
                              int inHeight, int inChannel, int batch);
-    int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr, int inWidth,
-                           int inHeight, int inChannel, int batch, float rInit,
-                           float bInit);
+    int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
+                             struct CNN_CONFIG_LAYER_POOL* cfgPtr, int inWidth,
+                             int inHeight, int inChannel, int batch);
+    int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr,
+                             struct CNN_CONFIG_LAYER_DROP* cfgPtr, int inWidth,
+                             int inHeight, int inChannel, int batch);
+    int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
+                           struct CNN_CONFIG_LAYER_BN* cfgPtr, int inWidth,
+                           int inHeight, int inChannel, int batch);
 
     int cnn_network_alloc(struct CNN* cnn);
 
