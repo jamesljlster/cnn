@@ -52,6 +52,12 @@ void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
             printf("Rate: %g\n", cfg->layerCfg[layerIndex].drop.rate);
             break;
 
+        case CNN_LAYER_BN:
+            printf("The layer is batchnorm\n");
+            printf("Gamma: %g\n", cfg->layerCfg[layerIndex].bn.rInit);
+            printf("Beta: %g\n", cfg->layerCfg[layerIndex].bn.bInit);
+            break;
+
         default:
             printf("Not a cnn layer config?!\n");
     }
@@ -82,9 +88,11 @@ int main()
     test(cnn_config_set_input_size(cfg, 640, 480, 1));
 
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 1, 32, 3));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 1, 64, 3));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_full_connect(cfg, 128));
