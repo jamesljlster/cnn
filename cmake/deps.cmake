@@ -2,6 +2,7 @@
 if(${WITH_CUDA})
     set(CUDA_SEPARABLE_COMPILATION ON)
     find_package(CUDA QUIET REQUIRED)
+    include_directories(${CUDA_INCLUDE_DIRS})
 endif()
 
 # Find OpenBlas

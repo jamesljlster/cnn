@@ -1,8 +1,10 @@
 #ifndef __CNN_MACRO_H__
 #define __CNN_MACRO_H__
 
+#include "cnn_config.h"
+
 // Includes
-#ifdef WITH_CUDA
+#ifdef CNN_WITH_CUDA
 #include <cuda_runtime.h>
 #endif
 
@@ -28,7 +30,7 @@
     }
 
 // CUDA allocation macros
-#ifdef WITH_CUDA
+#ifdef CNN_WITH_CUDA
 
 #ifdef DEBUG
 #define cnn_free_cu(ptr)                                                  \
@@ -41,7 +43,7 @@
 #ifdef DEBUG
 #define cnn_alloc_cu(ptr, len, type, retVar, errLabel)                      \
     {                                                                       \
-        cudaError_t cuRet = cudaMalloc(&ptr, len * sizeof(type));           \
+        cudaError_t cuRet = cudaMalloc((void**)&ptr, len * sizeof(type));   \
         if (cuRet != cudaSuccess)                                           \
         {                                                                   \
             fprintf(stderr,                                                 \
@@ -61,16 +63,16 @@
         }                                                                   \
     }
 #else
-#define cnn_alloc_cu(ptr, len, type, retVar, errLabel)         \
-    if (cudaMalloc(&ptr, len * sizeof(type)) != cudaSuccess)   \
-    {                                                          \
-        retVar = CNN_MEM_FAILED;                               \
-        goto errLabel;                                         \
-    }                                                          \
-    if (cudaMemset(ptr, 0, len * sizeof(type)) != cudaSuccess) \
-    {                                                          \
-        retVar = CNN_MEM_FAILED;                               \
-        goto errLabel;                                         \
+#define cnn_alloc_cu(ptr, len, type, retVar, errLabel)               \
+    if (cudaMalloc((void**)&ptr, len * sizeof(type)) != cudaSuccess) \
+    {                                                                \
+        retVar = CNN_MEM_FAILED;                                     \
+        goto errLabel;                                               \
+    }                                                                \
+    if (cudaMemset(ptr, 0, len * sizeof(type)) != cudaSuccess)       \
+    {                                                                \
+        retVar = CNN_MEM_FAILED;                                     \
+        goto errLabel;                                               \
     }
 #endif
 

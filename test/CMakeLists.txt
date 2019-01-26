@@ -5,6 +5,14 @@ set(PROJECT_NAME cnn_test)
 set(PROJECT_LANGUAGE C)
 set(PROJECT_DEPS cnn ${OpenBLAS_LIB} ${LIBXML2_LIBRARIES})
 
+if(${WITH_CUDA})
+    set(PROJECT_DEPS
+        ${PROJECT_DEPS}
+        ${CUDA_CUBLAS_LIBRARIES}
+        ${CUDA_LIBRARIES}
+        )
+endif()
+
 if(UNIX)
     set(PROJECT_DEPS ${PROJECT_DEPS} m)
 elseif(MINGW)

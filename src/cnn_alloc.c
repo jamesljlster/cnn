@@ -116,10 +116,18 @@ int cnn_mat_alloc(struct CNN_MAT* matPtr, int rows, int cols, int needGrad)
     }
 
     // Memory allocation
+#ifdef CNN_WITH_CUDA
+    cnn_alloc_cu(matPtr->mat, rows * cols, float, ret, ERR);
+#else
     cnn_alloc(matPtr->mat, rows * cols, float, ret, ERR);
+#endif
     if (needGrad > 0)
     {
+#ifdef CNN_WITH_CUDA
+        cnn_alloc_cu(matPtr->grad, rows * cols, float, ret, ERR);
+#else
         cnn_alloc(matPtr->grad, rows * cols, float, ret, ERR);
+#endif
     }
     else
     {

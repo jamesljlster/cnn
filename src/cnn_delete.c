@@ -28,8 +28,13 @@ void cnn_struct_delete(struct CNN* cnn)
 void cnn_mat_delete(struct CNN_MAT* matPtr)
 {
     // Free memory
+#ifdef CNN_WITH_CUDA
+    cnn_free_cu(matPtr->mat);
+    cnn_free_cu(matPtr->grad);
+#else
     cnn_free(matPtr->mat);
     cnn_free(matPtr->grad);
+#endif
 
     // Zero memory
     memset(matPtr, 0, sizeof(struct CNN_MAT));
