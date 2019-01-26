@@ -15,6 +15,7 @@ set(PROJECT_LANGUAGE C)
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation directory")
 option(BUILD_TEST "Enable building test" OFF)
 option(BUILD_SHARED_LIBS "Build shared library" OFF)
+option(WITH_CUDA "Build library with CUDA support" OFF)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Build configure" FORCE)
 if(DEFINED CMAKE_BUILD_TYPE)

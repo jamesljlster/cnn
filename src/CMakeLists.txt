@@ -34,6 +34,11 @@ else()
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O")
 endif()
 
+if(${WITH_CUDA})
+    set(CMAKE_NVCC_FLAGS "${CMAKE_NVCC_FLAGS} -Wall")
+    set(CMAKE_NVCC_FLAGS_RELEASE "${CMAKE_NVCC_FLAGS} -O3")
+endif()
+
 # Set default build option
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -59,8 +64,16 @@ file(GLOB PROJECT_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/*.c
     )
 
+if(${WITH_CUDA})
+    file(GLOB PROJECT_CUDA_SRCS
+        ${CMAKE_CURRENT_SOURCE_DIR}/*.cu
+        )
+
+    set(PROJECT_SRCS ${PROJECT_SRCS} ${PROJECT_CUDA_SRCS})
+endif()
+
 # Build library
-add_library(${PROJECT_NAME} STATIC ${PROJECT_SRCS})
+add_library(${PROJECT_NAME} ${PROJECT_SRCS})
 set_target_properties(${PROJECT_NAME} PROPERTIES
     C_STANDARD 99
     OUTPUT_NAME ${PROJECT_NAME}
