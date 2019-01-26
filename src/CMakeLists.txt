@@ -21,6 +21,10 @@ elseif(CNN_CONV_BIAS_TYPE MATCHES "Layer")
     set(CNN_CONV_BIAS_LAYER 1)
 endif()
 
+if(${WITH_CUDA})
+    set(CNN_WITH_CUDA 1)
+endif()
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cnn_config.h.cmake
     ${CMAKE_CURRENT_SOURCE_DIR}/cnn_config.h
     )
