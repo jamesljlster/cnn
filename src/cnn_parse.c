@@ -914,6 +914,10 @@ int cnn_parse_mat(struct CNN_MAT* mat, xmlNodePtr node)
     int strId;
     int tmpIndex;
 
+#ifdef CNN_WITH_CUDA
+    float tmpVal;
+#endif
+
     xmlNodePtr cur;
 
     xmlChar* xStr = NULL;
@@ -935,8 +939,17 @@ int cnn_parse_mat(struct CNN_MAT* mat, xmlNodePtr node)
                 if (tmpIndex >= 0 && tmpIndex < mat->rows * mat->cols)
                 {
                     xStr = xmlNodeGetContent(cur);
+
+#ifdef CNN_WITH_CUDA
+                    cnn_run(cnn_strtof(&tmpVal, (const char*)xStr), ret, RET);
+                    cnn_run_cu(
+                        cudaMemcpy(mat->mat + tmpIndex, &tmpVal, sizeof(float),
+                                   cudaMemcpyHostToDevice),
+                        ret, RET);
+#else
                     cnn_run(cnn_strtof(&mat->mat[tmpIndex], (const char*)xStr),
                             ret, RET);
+#endif
                     xmlFree(xStr);
                     xStr = NULL;
                 }

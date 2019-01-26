@@ -211,6 +211,10 @@ int cnn_write_mat_xml(struct CNN_MAT* matPtr, const char* nodeName,
     int ret = CNN_NO_ERROR;
     char buf[CNN_XML_BUFLEN] = {0};
 
+#ifdef CNN_WITH_CUDA
+    float tmpVal;
+#endif
+
     // Start node
     cnn_xml_run(xmlTextWriterStartElement(writer, (xmlChar*)nodeName), ret,
                 RET);
@@ -230,7 +234,15 @@ int cnn_write_mat_xml(struct CNN_MAT* matPtr, const char* nodeName,
             ret, RET);
 
         // Write value
+#ifdef CNN_WITH_CUDA
+        cnn_run_cu(cudaMemcpy(&tmpVal, matPtr->mat + i, sizeof(float),
+                              cudaMemcpyDeviceToHost),
+                   ret, RET);
+        cnn_ftostr(buf, CNN_XML_BUFLEN, tmpVal);
+#else
         cnn_ftostr(buf, CNN_XML_BUFLEN, matPtr->mat[i]);
+#endif
+
         cnn_xml_run(xmlTextWriterWriteString(writer, (xmlChar*)buf), ret, RET);
 
         // End value node
