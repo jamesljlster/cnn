@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include <cnn_config.h>
+
 #include <cnn.h>
 #include <cnn_private.h>
 #include <cnn_types.h>
@@ -12,6 +14,32 @@
     printf("%s: %dx%d, %p, %p\n", str, matVar.rows, matVar.cols, matVar.mat, \
            matVar.grad)
 
+#ifdef CNN_WITH_CUDA
+#define test_mat(matVar)                                                      \
+    {                                                                         \
+        size_t size = matVar.rows * matVar.cols * sizeof(float);              \
+        cudaError_t cuRet = cudaMemset(matVar.mat, -1, size);                 \
+        if (cuRet != cudaSuccess)                                             \
+        {                                                                     \
+            fprintf(                                                          \
+                stderr,                                                       \
+                "%s: cudaMemset(matVar.mat, 0, %lu) failed with error: %d\n", \
+                #matVar, size, cuRet);                                        \
+        }                                                                     \
+                                                                              \
+        if (matVar.grad != NULL)                                              \
+        {                                                                     \
+            cuRet = cudaMemset(matVar.grad, -1, size);                        \
+            if (cuRet != cudaSuccess)                                         \
+            {                                                                 \
+                fprintf(stderr,                                               \
+                        "%s: cudaMemset(matVar.grad, 0, %lu) failed with "    \
+                        "error: %d\n",                                        \
+                        #matVar, size, cuRet);                                \
+            }                                                                 \
+        }                                                                     \
+    }
+#else
 #define test_mat(matVar)                                   \
     {                                                      \
         int _i;                                            \
@@ -24,6 +52,7 @@
             }                                              \
         }                                                  \
     }
+#endif
 
 #define test(func)                                        \
     ret = func;                                           \

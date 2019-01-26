@@ -7,10 +7,12 @@ set(PROJECT_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/cnn.h)
 set(PROJECT_DEPS ${OpenBLAS_LIB} ${LIBXML2_LIBRARIES})
 
 if(${WITH_CUDA})
+    set(PROJECT_LANGUAGE C CXX)
     set(PROJECT_DEPS
         ${PROJECT_DEPS}
         ${CUDA_CUBLAS_LIBRARIES}
         ${CUDA_LIBRARIES}
+        stdc++
         )
 endif()
 
@@ -85,7 +87,12 @@ if(${WITH_CUDA})
 endif()
 
 # Build library
-add_library(${PROJECT_NAME} ${PROJECT_SRCS})
+if(${WITH_CUDA})
+    cuda_add_library(${PROJECT_NAME} ${PROJECT_SRCS})
+else()
+    add_library(${PROJECT_NAME} ${PROJECT_SRCS})
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
     C_STANDARD 99
     OUTPUT_NAME ${PROJECT_NAME}

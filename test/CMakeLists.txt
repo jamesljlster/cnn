@@ -10,6 +10,7 @@ if(${WITH_CUDA})
         ${PROJECT_DEPS}
         ${CUDA_CUBLAS_LIBRARIES}
         ${CUDA_LIBRARIES}
+        stdc++
         )
 endif()
 

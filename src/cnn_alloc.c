@@ -7,6 +7,10 @@
 #include "cnn_calc.h"
 #include "cnn_private.h"
 
+#ifdef CNN_WITH_CUDA
+#include "cnn_init_cu.h"
+#endif
+
 int cnn_network_alloc(struct CNN* cnn)
 {
     int i;
@@ -121,6 +125,7 @@ int cnn_mat_alloc(struct CNN_MAT* matPtr, int rows, int cols, int needGrad)
 #else
     cnn_alloc(matPtr->mat, rows * cols, float, ret, ERR);
 #endif
+
     if (needGrad > 0)
     {
 #ifdef CNN_WITH_CUDA
@@ -204,7 +209,12 @@ int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr,
     // Allocate memory
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
             ERR);
+
+#ifdef CNN_WITH_CUDA
+    cnn_alloc_cu(layerPtr->mask, outRows * outCols, int, ret, ERR);
+#else
     cnn_alloc(layerPtr->mask, outRows * outCols, int, ret, ERR);
+#endif
 
     // Assign value
     layerPtr->outMat.width = outWidth;
@@ -334,7 +344,12 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
     // Allocate memory
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
             ERR);
+
+#ifdef CNN_WITH_CUDA
+    cnn_alloc_cu(layerPtr->indexMat, outRows * outCols, int, ret, ERR);
+#else
     cnn_alloc(layerPtr->indexMat, outRows * outCols, int, ret, ERR);
+#endif
 
     // Assing value
     layerPtr->outMat.width = outWidth;
@@ -401,7 +416,12 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
                           kCols, 1),
             ret, ERR);
 
+#ifdef CNN_WITH_CUDA
+    cnn_alloc_cu(layerPtr->indexMap, outWidth * outHeight * kCols, int, ret,
+                 ERR);
+#else
     cnn_alloc(layerPtr->indexMap, outWidth * outHeight * kCols, int, ret, ERR);
+#endif
 
     // Assing value
     layerPtr->outMat.width = outWidth;
@@ -413,12 +433,23 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
     switch (cfgPtr->pad)
     {
         case CNN_PAD_VALID:
+#ifdef CNN_WITH_CUDA
+            cnn_conv_unroll_2d_valid_cu(layerPtr->indexMap, outHeight, outWidth,
+                                        cfgPtr->size, inHeight, inWidth,
+                                        inChannel);
+#else
             cnn_conv_unroll_2d_valid(layerPtr->indexMap, outHeight, outWidth,
                                      cfgPtr->size, inHeight, inWidth,
                                      inChannel);
+#endif
             break;
 
         case CNN_PAD_SAME:
+#ifdef CNN_WITH_CUDA
+            cnn_conv_unroll_2d_same_cu(layerPtr->indexMap, outHeight, outWidth,
+                                       cfgPtr->size, inHeight, inWidth,
+                                       inChannel);
+#else
             for (int i = 0; i < outWidth * outHeight * kCols; i++)
             {
                 layerPtr->indexMap[i] = -1;
@@ -426,6 +457,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 
             cnn_conv_unroll_2d_same(layerPtr->indexMap, outHeight, outWidth,
                                     cfgPtr->size, inHeight, inWidth, inChannel);
+#endif
             break;
 
         default:
@@ -465,14 +497,24 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     cnn_run(cnn_mat_alloc(&layerPtr->bnVar, inChannel, 2, 1), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->srcShift, outRows, outCols, 0), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->srcNorm, outRows, outCols, 1), ret, ERR);
+
+#ifdef CNN_WITH_CUDA
+    cnn_alloc_cu(layerPtr->stddev, inChannel, float, ret, ERR);
+#else
     cnn_alloc(layerPtr->stddev, inChannel, float, ret, ERR);
+#endif
 
     // Set initial gamma, beta
+#ifdef CNN_WITH_CUDA
+    cnn_bn_init_cu(layerPtr->bnVar.mat, inChannel, cfgPtr->rInit,
+                   cfgPtr->bInit);
+#else
     for (int i = 0; i < inChannel; i++)
     {
         layerPtr->bnVar.mat[i * 2 + 0] = cfgPtr->rInit;
         layerPtr->bnVar.mat[i * 2 + 1] = cfgPtr->bInit;
     }
+#endif
 
     // Assign value
     layerPtr->outMat.width = outWidth;
