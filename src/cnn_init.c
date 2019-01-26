@@ -7,6 +7,10 @@
 #include "cnn_init.h"
 #include "cnn_private.h"
 
+#ifdef CNN_WITH_CUDA
+#include <assert.h>
+#endif
+
 #define CNN_M_PI 3.14159265359
 
 float cnn_normal_distribution(struct CNN_BOX_MULLER* bmPtr, double mean,
@@ -58,6 +62,11 @@ void cnn_rand_network(cnn_t cnn)
 
     struct CNN_BOX_MULLER bm;
 
+#ifdef CNN_WITH_CUDA
+    int ret;
+    float* tmpVec = NULL;
+#endif
+
     srand(time(NULL));
 
     // Get reference
@@ -75,17 +84,49 @@ void cnn_rand_network(cnn_t cnn)
                 // Random weight
                 size = cnn->layerList[i].fc.weight.rows *
                        cnn->layerList[i].fc.weight.cols;
+
+#ifdef CNN_WITH_CUDA
+                // Buffer allocation
+                cnn_alloc(tmpVec, size, float, ret, ERR);
+
+                // Generate random distribution
+                for (j = 0; j < size; j++)
+                {
+                    tmpVec[j] = cnn_xavier_init(
+                        &bm, cnn->layerList[i - 1].outMat.data.cols,
+                        cnn->layerList[i].outMat.data.cols);
+                }
+
+                // Copy memory
+                cnn_run_cu(
+                    cudaMemcpy(cnn->layerList[i].fc.weight.mat, tmpVec,
+                               size * sizeof(float), cudaMemcpyHostToDevice),
+                    ret, ERR);
+
+                // Free buffer
+                cnn_free(tmpVec);
+                tmpVec = NULL;
+#else
+                // Generate random distribution
                 for (j = 0; j < size; j++)
                 {
                     cnn->layerList[i].fc.weight.mat[j] = cnn_xavier_init(
                         &bm, cnn->layerList[i - 1].outMat.data.cols,
                         cnn->layerList[i].outMat.data.cols);
                 }
+#endif
 
                 // Zero bias
                 size = cnn->layerList[i].fc.bias.rows *
-                       cnn->layerList[i].fc.weight.cols;
+                       cnn->layerList[i].fc.bias.cols;
+
+#ifdef CNN_WITH_CUDA
+                cnn_run_cu(cudaMemset(cnn->layerList[i].fc.bias.mat, 0,
+                                      size * sizeof(float)),
+                           ret, ERR);
+#else
                 memset(cnn->layerList[i].fc.bias.mat, 0, size * sizeof(float));
+#endif
 
                 break;
 
@@ -93,24 +134,67 @@ void cnn_rand_network(cnn_t cnn)
                 // Random kernel
                 size = cnn->layerList[i].conv.kernel.rows *
                        cnn->layerList[i].conv.kernel.cols;
+
+#ifdef CNN_WITH_CUDA
+                // Buffer allocation
+                cnn_alloc(tmpVec, size, float, ret, ERR);
+
+                // Generate random distribution
+                for (j = 0; j < size; j++)
+                {
+                    tmpVec[j] = cnn_xavier_init(
+                        &bm, cnn->layerList[i - 1].outMat.data.cols,
+                        cnn->layerList[i].outMat.data.cols);
+                }
+
+                // Copy memory
+                cnn_run_cu(
+                    cudaMemcpy(cnn->layerList[i].conv.kernel.mat, tmpVec,
+                               size * sizeof(float), cudaMemcpyHostToDevice),
+                    ret, ERR);
+
+                // Free buffer
+                cnn_free(tmpVec);
+                tmpVec = NULL;
+#else
+                // Generate random distribution
                 for (j = 0; j < size; j++)
                 {
                     cnn->layerList[i].conv.kernel.mat[j] = cnn_xavier_init(
                         &bm, cnn->layerList[i - 1].outMat.data.cols,
                         cnn->layerList[i].outMat.data.cols);
                 }
+#endif
 
                 // Zero bias
 #if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
                 size = cnn->layerList[i].conv.bias.rows *
                        cnn->layerList[i].conv.bias.cols;
+
+#ifdef CNN_WITH_CUDA
+                cnn_run_cu(cudaMemset(cnn->layerList[i].conv.bias.mat, 0,
+                                      size * sizeof(float)),
+                           ret, ERR);
+#else
                 memset(cnn->layerList[i].conv.bias.mat, 0,
                        size * sizeof(float));
+#endif
 #endif
 
                 break;
         }
     }
+
+#ifdef CNN_WITH_CUDA
+    goto RET;
+
+ERR:
+    (void)ret;
+    assert(!"Rumtime error!");
+
+RET:
+    cnn_free(tmpVec);
+#endif
 }
 
 void cnn_zero_network(cnn_t cnn)
@@ -118,6 +202,10 @@ void cnn_zero_network(cnn_t cnn)
     int i;
     size_t size;
     struct CNN_CONFIG* cfgRef;
+
+#ifdef CNN_WITH_CUDA
+    int ret;
+#endif
 
     // Get reference
     cfgRef = &cnn->cfg;
@@ -131,13 +219,27 @@ void cnn_zero_network(cnn_t cnn)
                 // Zero weight
                 size = cnn->layerList[i].fc.weight.rows *
                        cnn->layerList[i].fc.weight.cols;
+
+#ifdef CNN_WITH_CUDA
+                cnn_run_cu(cudaMemset(cnn->layerList[i].fc.weight.mat, 0,
+                                      size * sizeof(float)),
+                           ret, ERR);
+#else
                 memset(cnn->layerList[i].fc.weight.mat, 0,
                        size * sizeof(float));
+#endif
 
                 // Zero bias
                 size = cnn->layerList[i].fc.bias.rows *
-                       cnn->layerList[i].fc.weight.cols;
+                       cnn->layerList[i].fc.bias.cols;
+
+#ifdef CNN_WITH_CUDA
+                cnn_run_cu(cudaMemset(cnn->layerList[i].fc.bias.mat, 0,
+                                      size * sizeof(float)),
+                           ret, ERR);
+#else
                 memset(cnn->layerList[i].fc.bias.mat, 0, size * sizeof(float));
+#endif
 
                 break;
 
@@ -145,18 +247,42 @@ void cnn_zero_network(cnn_t cnn)
                 // Zero kernel
                 size = cnn->layerList[i].conv.kernel.rows *
                        cnn->layerList[i].conv.kernel.cols;
+
+#ifdef CNN_WITH_CUDA
+                cnn_run_cu(cudaMemset(cnn->layerList[i].conv.kernel.mat, 0,
+                                      size * sizeof(float)),
+                           ret, ERR);
+#else
                 memset(cnn->layerList[i].conv.kernel.mat, 0,
                        size * sizeof(float));
+#endif
 
                 // Zero bias
 #if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
                 size = cnn->layerList[i].conv.bias.rows *
                        cnn->layerList[i].conv.bias.cols;
+
+#ifdef CNN_WITH_CUDA
+                cnn_run_cu(cudaMemset(cnn->layerList[i].conv.bias.mat, 0,
+                                      size * sizeof(float)),
+                           ret, ERR);
+#else
                 memset(cnn->layerList[i].conv.bias.mat, 0,
                        size * sizeof(float));
+#endif
 #endif
 
                 break;
         }
     }
+
+#ifdef CNN_WITH_CUDA
+    goto RET;
+
+ERR:
+    assert(!"Rumtime error!");
+
+RET:
+    (void)ret;
+#endif
 }

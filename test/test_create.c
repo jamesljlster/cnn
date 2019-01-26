@@ -233,6 +233,9 @@ int main()
     // Check cnn arch
     check_cnn_arch(cnn);
 
+    cnn_zero_network(cnn);
+    cnn_rand_network(cnn);
+
     printf("Press enter to continue...");
     getchar();
 

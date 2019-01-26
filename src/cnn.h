@@ -16,7 +16,8 @@ enum CNN_RETVAL
     CNN_PARSE_FAILED = -6,
     CNN_INVALID_FILE = -7,
     CNN_INFO_NOT_FOUND = -8,
-    CNN_CONFLICT = -9
+    CNN_CONFLICT = -9,
+    CNN_CUDA_RUNTIME_ERROR = -10
 };
 
 typedef enum CNN_LAYER_TYPE

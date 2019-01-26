@@ -97,4 +97,28 @@
     }
 #endif
 
+// Cuda error handling macros
+#ifdef DEBUG
+#define cnn_run_cu(func, retVal, errLabel)                          \
+    {                                                               \
+        cudaError_t cuRet = func;                                   \
+        if (cuRet != cudaSuccess)                                   \
+        {                                                           \
+            fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
+                    __FUNCTION__, __LINE__, #func, retVal);         \
+            retVal = CNN_CUDA_RUNTIME_ERROR;                        \
+            goto errLabel;                                          \
+        }                                                           \
+    }
+#else
+#define cnn_run_cu(func, retVal, errLabel)   \
+    {                                        \
+        if (func != cudaSuccess)             \
+        {                                    \
+            retVal = CNN_CUDA_RUNTIME_ERROR; \
+            goto errLabel;                   \
+        }                                    \
+    }
+#endif
+
 #endif
