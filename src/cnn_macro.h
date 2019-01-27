@@ -105,7 +105,7 @@
         if (cuRet != cudaSuccess)                                   \
         {                                                           \
             fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
-                    __FUNCTION__, __LINE__, #func, retVal);         \
+                    __FUNCTION__, __LINE__, #func, cuRet);          \
             retVal = CNN_CUDA_RUNTIME_ERROR;                        \
             goto errLabel;                                          \
         }                                                           \
