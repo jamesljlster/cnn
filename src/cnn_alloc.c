@@ -7,10 +7,6 @@
 #include "cnn_calc.h"
 #include "cnn_private.h"
 
-#ifdef CNN_WITH_CUDA
-#include "cnn_init_cu.h"
-#endif
-
 int cnn_network_alloc(struct CNN* cnn)
 {
     int i;
@@ -378,6 +374,11 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
     int bRows, bCols;  // Bias matrix size
 #endif
 
+#ifdef CNN_WITH_CUDA
+    int size;
+    int* tmpVec = NULL;
+#endif
+
     // Find output image size
     cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
                                           inWidth, inHeight, inChannel,
@@ -429,14 +430,22 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
     layerPtr->inChannel = inChannel;
     layerPtr->outMat.channel = outChannel;
 
+#ifdef CNN_WITH_CUDA
+    // Cache index map size
+    size = outWidth * outHeight * kCols;
+
+    // Buffer allocation
+    cnn_alloc(tmpVec, size, int, ret, ERR);
+#endif
+
     // Initial index mapping
     switch (cfgPtr->pad)
     {
         case CNN_PAD_VALID:
 #ifdef CNN_WITH_CUDA
-            cnn_conv_unroll_2d_valid_cu(layerPtr->indexMap, outHeight, outWidth,
-                                        cfgPtr->size, inHeight, inWidth,
-                                        inChannel);
+            cnn_conv_unroll_2d_valid(tmpVec, outHeight, outWidth, cfgPtr->size,
+                                     inHeight, inWidth, inChannel);
+
 #else
             cnn_conv_unroll_2d_valid(layerPtr->indexMap, outHeight, outWidth,
                                      cfgPtr->size, inHeight, inWidth,
@@ -446,9 +455,13 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 
         case CNN_PAD_SAME:
 #ifdef CNN_WITH_CUDA
-            cnn_conv_unroll_2d_same_cu(layerPtr->indexMap, outHeight, outWidth,
-                                       cfgPtr->size, inHeight, inWidth,
-                                       inChannel);
+            for (int i = 0; i < outWidth * outHeight * kCols; i++)
+            {
+                tmpVec[i] = -1;
+            }
+
+            cnn_conv_unroll_2d_valid(tmpVec, outHeight, outWidth, cfgPtr->size,
+                                     inHeight, inWidth, inChannel);
 #else
             for (int i = 0; i < outWidth * outHeight * kCols; i++)
             {
@@ -464,12 +477,24 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
             assert(!"Invalid padding type");
     }
 
+#ifdef CNN_WITH_CUDA
+    // Copy memory
+    cnn_run_cu(cudaMemcpy(layerPtr->indexMap, tmpVec, size * sizeof(int),
+                          cudaMemcpyHostToDevice),
+               ret, ERR);
+#endif
+
     goto RET;
 
 ERR:
     cnn_layer_conv_delete(layerPtr);
 
 RET:
+#ifdef CNN_WITH_CUDA
+    // Free buffer
+    cnn_free(tmpVec);
+#endif
+
     return ret;
 }
 
@@ -480,6 +505,11 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     int ret = CNN_NO_ERROR;
     int outRows, outCols;
     int outWidth, outHeight, outChannel;
+
+#ifdef CNN_WITH_CUDA
+    int size;
+    float* tmpVec = NULL;
+#endif
 
     // Find output size
     cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
@@ -504,11 +534,25 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     cnn_alloc(layerPtr->stddev, inChannel, float, ret, ERR);
 #endif
 
-    // Set initial gamma, beta
 #ifdef CNN_WITH_CUDA
-    cnn_bn_init_cu(layerPtr->bnVar.mat, inChannel, cfgPtr->rInit,
-                   cfgPtr->bInit);
+    // Buffer allocation
+    size = inChannel * 2;
+    cnn_alloc(tmpVec, size, float, ret, ERR);
+
+    // Set initial gamma, beta
+    for (int i = 0; i < inChannel; i++)
+    {
+        tmpVec[i * 2 + 0] = cfgPtr->rInit;
+        tmpVec[i * 2 + 1] = cfgPtr->bInit;
+    }
+
+    // Copy memory
+    cnn_run_cu(cudaMemcpy(layerPtr->bnVar.mat, tmpVec, size * sizeof(float),
+                          cudaMemcpyHostToDevice),
+               ret, ERR);
+
 #else
+    // Set initial gamma, beta
     for (int i = 0; i < inChannel; i++)
     {
         layerPtr->bnVar.mat[i * 2 + 0] = cfgPtr->rInit;
@@ -527,5 +571,10 @@ ERR:
     cnn_layer_bn_delete(layerPtr);
 
 RET:
+#ifdef CNN_WITH_CUDA
+    // Free buffer
+    cnn_free(tmpVec);
+#endif
+
     return ret;
 }
