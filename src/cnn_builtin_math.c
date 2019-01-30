@@ -3,6 +3,11 @@
 
 #include "cnn.h"
 #include "cnn_builtin_math.h"
+#include "cnn_config.h"
+
+#ifdef CNN_WITH_CUDA
+#include "cnn_calc_cu.h"
+#endif
 
 CNN_ACTIV_DEF((*cnn_activ_list[])) = {
     cnn_softmax,        //
@@ -48,8 +53,25 @@ const char* cnn_activ_name[] = {
 
 CNN_ACTIV_DEF(cnn_softmax)
 {
-    int i;
     float max, sum;
+
+#ifdef CNN_WITH_CUDA
+    // Find max value
+    cnn_max_gpu(&max, src, len, buf);
+
+    // Find shifted vector
+    cnn_add_gpu(src, buf, len, -max);
+
+    // Find exponential vector
+    cnn_exp_gpu(buf, buf, len);
+
+    // Find sum
+    cnn_sum_gpu(&sum, buf, len, dst);
+
+    // Find softmax
+    cnn_div_gpu(buf, dst, len, sum);
+#else
+    int i;
 
     // Find max value
     max = src[0];
@@ -74,14 +96,18 @@ CNN_ACTIV_DEF(cnn_softmax)
     {
         dst[i] = exp(dst[i]) / sum;
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_softmax_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_smax_grad_gpu(dst, buf, len);
+#else
     int i, j;
 
     // Find softmax gradient
-    cnn_softmax(buf, src, len, NULL);
+    // cnn_softmax(buf, src, len, NULL);
     for (i = 0; i < len; i++)
     {
         for (j = 0; j < len; j++)
@@ -89,6 +115,7 @@ CNN_ACTIV_DEF(cnn_softmax_grad)
             dst[i * len + j] = buf[i] * ((float)(i == j) - buf[j]);
         }
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_relu)
