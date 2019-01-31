@@ -8,6 +8,7 @@
 #include <cnn_builtin_math.h>
 #include <cnn_config.h>
 
+#include <debug.h>
 #include "test.h"
 
 #ifdef CNN_WITH_CUDA
@@ -98,7 +99,7 @@ int main(int argc, char* argv[])
                     }
                 }
 
-#ifdef CNN_WHTI_CUDA
+#ifdef CNN_WITH_CUDA
                 cudaMemcpy(cuSrc, src, len * sizeof(float),
                            cudaMemcpyHostToDevice);
                 cnn_activ_list[id](cuBuf, cuSrc, len, cuDeri);
@@ -152,7 +153,8 @@ int main(int argc, char* argv[])
 #ifdef CNN_WITH_CUDA
         cudaMemcpy(cuSrc, src, len * sizeof(float), cudaMemcpyHostToDevice);
         cnn_activ_grad_list[id](cuDeri, cuSrc, len, cuDst);
-        cudaMemcpy(deri, cuDeri, len * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(deri, cuDeri, len * len * sizeof(float),
+                   cudaMemcpyDeviceToHost);
 #else
         cnn_activ_grad_list[id](deri, src, len, dst);
 #endif

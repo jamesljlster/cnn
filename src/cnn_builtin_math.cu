@@ -221,5 +221,5 @@ void cnn_smax_grad_gpu(float* dst, float* cache, int len)
     dim3 blk(CNN_THREAD_PER_BLOCK_2D, CNN_THREAD_PER_BLOCK_2D);
     dim3 grid(blocks, blocks);
 
-    cnn_smax_grad_kernel<<<grid, blk>>>(cache, dst, len);
+    cnn_smax_grad_kernel<<<grid, blk>>>(dst, cache, len);
 }

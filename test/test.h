@@ -25,7 +25,7 @@
 
 #define cu_alloc(ptr, size, type)                                             \
     {                                                                         \
-        cudaError_t cuRet = cudaMalloc((void**)&ptr, len * sizeof(type));     \
+        cudaError_t cuRet = cudaMalloc((void**)&ptr, size * sizeof(type));    \
         if (cuRet != cudaSuccess)                                             \
         {                                                                     \
             fprintf(stderr,                                                   \

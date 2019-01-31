@@ -6,6 +6,7 @@
 #include "cnn_config.h"
 
 #ifdef CNN_WITH_CUDA
+#include <cuda_runtime.h>
 #include "cnn_builtin_math_cu.h"
 #endif
 
@@ -70,6 +71,8 @@ CNN_ACTIV_DEF(cnn_softmax)
 
     // Find softmax
     cnn_div_gpu(buf, dst, len, sum);
+
+    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -103,6 +106,7 @@ CNN_ACTIV_DEF(cnn_softmax_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_smax_grad_gpu(dst, buf, len);
+    cudaDeviceSynchronize();
 #else
     int i, j;
 
