@@ -1,6 +1,6 @@
 #include <cuda_runtime.h>
 
-#include "cnn_calc_cu.h"
+#include "cnn_builtin_math_cu.h"
 #include "cnn_cudef.h"
 
 __device__ float max_cu(float src1, float src2)

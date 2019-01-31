@@ -1,5 +1,5 @@
-#ifndef __CNN_CALC_CU_H__
-#define __CNN_CALC_CU_H__
+#ifndef __CNN_BUILTIN_MATH_CU_H__
+#define __CNN_BUILTIN_MATH_CU_H__
 
 #ifdef __cplusplus
 extern "C"

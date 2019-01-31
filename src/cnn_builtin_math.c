@@ -6,7 +6,7 @@
 #include "cnn_config.h"
 
 #ifdef CNN_WITH_CUDA
-#include "cnn_calc_cu.h"
+#include "cnn_builtin_math_cu.h"
 #endif
 
 CNN_ACTIV_DEF((*cnn_activ_list[])) = {
