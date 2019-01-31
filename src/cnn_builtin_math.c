@@ -124,15 +124,24 @@ CNN_ACTIV_DEF(cnn_softmax_grad)
 
 CNN_ACTIV_DEF(cnn_relu)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_fmaxf_gpu(src, dst, len, 0.0f);
+    cudaDeviceSynchronize();
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = fmaxf(src[i], 0.0f);
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_relu_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_relu_grad_gpu(dst, src, len);
+    cudaDeviceSynchronize();
+#else
     int i;
 
     // Find relu gradient
@@ -141,6 +150,7 @@ CNN_ACTIV_DEF(cnn_relu_grad)
     {
         dst[i] = (src[i] < 0.0f) ? 0 : 1;
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_swish)

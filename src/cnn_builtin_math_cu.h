@@ -12,8 +12,10 @@ extern "C"
     void cnn_add_gpu(float* src, float* dst, int len, float addend);
     void cnn_exp_gpu(float* src, float* dst, int len);
     void cnn_div_gpu(float* src, float* dst, int len, float divider);
+    void cnn_fmaxf_gpu(float* src, float* dst, int len, float num);
 
     void cnn_smax_grad_gpu(float* dst, float* cache, int len);
+    void cnn_relu_grad_gpu(float* dst, float* src, int len);
 
 #ifdef __cplusplus
 }

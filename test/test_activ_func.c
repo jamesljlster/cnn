@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 
     // Test activation functions
     // for (id = 0; id < CNN_ACTIV_AMOUNT; id++)
-    for (id = 0; id < 1; id++)
+    for (id = 0; id <= CNN_RELU; id++)
     {
         // Parse argument
         for (i = 0; i < len; i++)
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
                     }
                 }
 
-#ifdef CNN_WHTI_CUDA
+#ifdef CNN_WITH_CUDA
                 cudaMemcpy(cuSrc, src, len * sizeof(float),
                            cudaMemcpyHostToDevice);
                 cnn_activ_list[id](cuBuf, cuSrc, len, cuDeri);
@@ -151,6 +151,7 @@ int main(int argc, char* argv[])
         memset(deri, 0, len * len * sizeof(float));
 
 #ifdef CNN_WITH_CUDA
+        cudaMemset(cuDeri, 0, len * len * sizeof(float));
         cudaMemcpy(cuSrc, src, len * sizeof(float), cudaMemcpyHostToDevice);
         cnn_activ_grad_list[id](cuDeri, cuSrc, len, cuDst);
         cudaMemcpy(deri, cuDeri, len * len * sizeof(float),

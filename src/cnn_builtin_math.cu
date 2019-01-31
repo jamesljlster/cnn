@@ -198,6 +198,28 @@ void cnn_div_gpu(float* src, float* dst, int len, float divider)
     cnn_div_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(src, dst, len, divider);
 }
 
+__global__ void cnn_fmaxf_kernel(float* src, float* dst, int len, float num)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = fmaxf(src[index], num);
+}
+
+void cnn_fmaxf_gpu(float* src, float* dst, int len, float num)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_fmaxf_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(src, dst, len, num);
+}
+
 __global__ void cnn_smax_grad_kernel(float* dst, float* cache, int len)
 {
     int i = blockIdx.y * blockDim.y + threadIdx.y;
@@ -222,4 +244,26 @@ void cnn_smax_grad_gpu(float* dst, float* cache, int len)
     dim3 grid(blocks, blocks);
 
     cnn_smax_grad_kernel<<<grid, blk>>>(dst, cache, len);
+}
+
+__global__ void cnn_relu_grad_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = (src[index] < 0.0f) ? 0 : 1;
+}
+
+void cnn_relu_grad_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_relu_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
 }
