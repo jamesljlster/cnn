@@ -6,6 +6,13 @@
 
 #include <cnn.h>
 #include <cnn_builtin_math.h>
+#include <cnn_config.h>
+
+#include "test.h"
+
+#ifdef CNN_WITH_CUDA
+#include <cuda_runtime.h>
+#endif
 
 void print_mat(float* src, int rows, int cols);
 
@@ -20,6 +27,14 @@ int main(int argc, char* argv[])
     float* buf = NULL;
     float* deri = NULL;
     float* grad = NULL;
+
+#ifdef CNN_WITH_CUDA
+    float* cuSrc = NULL;
+    float* cuDst = NULL;
+    float* cuBuf = NULL;
+    float* cuDeri = NULL;
+    float* cuGrad = NULL;
+#endif
 
     float err;
     float dx = pow(10, -4);
@@ -36,20 +51,24 @@ int main(int argc, char* argv[])
 
     // Memory allocation
     len = argc - 1;
-    src = calloc(len, sizeof(float));
-    dst = calloc(len, sizeof(float));
-    buf = calloc(len, sizeof(float));
-    deri = calloc(len * len, sizeof(float));
-    grad = calloc(len * len, sizeof(float));
-    if (src == NULL || dst == NULL || buf == NULL || deri == NULL ||
-        grad == NULL)
-    {
-        printf("Memory allocation failed!\n");
-        return -1;
-    }
+
+    alloc(src, len, float);
+    alloc(dst, len, float);
+    alloc(buf, len, float);
+    alloc(deri, len * len, float);
+    alloc(grad, len * len, float);
+
+#ifdef CNN_WITH_CUDA
+    cu_alloc(cuSrc, len, float);
+    cu_alloc(cuDst, len, float);
+    cu_alloc(cuBuf, len, float);
+    cu_alloc(cuDeri, len * len, float);
+    cu_alloc(cuGrad, len * len, float);
+#endif
 
     // Test activation functions
-    for (id = 0; id < CNN_ACTIV_AMOUNT; id++)
+    // for (id = 0; id < CNN_ACTIV_AMOUNT; id++)
+    for (id = 0; id < 1; id++)
     {
         // Parse argument
         for (i = 0; i < len; i++)
@@ -59,7 +78,13 @@ int main(int argc, char* argv[])
 
         // Find grad
         memset(grad, 0, len * len * sizeof(float));
+#ifdef CNN_WITH_CUDA
+        cudaMemcpy(cuSrc, src, len * sizeof(float), cudaMemcpyHostToDevice);
+        cnn_activ_list[id](cuDst, cuSrc, len, cuBuf);
+        cudaMemcpy(dst, cuDst, len * sizeof(float), cudaMemcpyDeviceToHost);
+#else
         cnn_activ_list[id](dst, src, len, NULL);
+#endif
         if (id == CNN_SOFTMAX)
         {
             for (i = 0; i < len; i++)
@@ -73,7 +98,15 @@ int main(int argc, char* argv[])
                     }
                 }
 
+#ifdef CNN_WHTI_CUDA
+                cudaMemcpy(cuSrc, src, len * sizeof(float),
+                           cudaMemcpyHostToDevice);
+                cnn_activ_list[id](cuBuf, cuSrc, len, cuDeri);
+                cudaMemcpy(buf, cuBuf, len * sizeof(float),
+                           cudaMemcpyDeviceToHost);
+#else
                 cnn_activ_list[id](buf, src, len, NULL);
+#endif
 
                 for (j = 0; j < len; j++)
                 {
@@ -94,7 +127,15 @@ int main(int argc, char* argv[])
                     }
                 }
 
+#ifdef CNN_WHTI_CUDA
+                cudaMemcpy(cuSrc, src, len * sizeof(float),
+                           cudaMemcpyHostToDevice);
+                cnn_activ_list[id](cuBuf, cuSrc, len, cuDeri);
+                cudaMemcpy(buf, cuBuf, len * sizeof(float),
+                           cudaMemcpyDeviceToHost);
+#else
                 cnn_activ_list[id](buf, src, len, NULL);
+#endif
 
                 grad[i] = (buf[i] - dst[i]) / dx;
             }
@@ -107,7 +148,14 @@ int main(int argc, char* argv[])
         }
 
         memset(deri, 0, len * len * sizeof(float));
-        cnn_activ_grad_list[id](deri, src, len, buf);
+
+#ifdef CNN_WITH_CUDA
+        cudaMemcpy(cuSrc, src, len * sizeof(float), cudaMemcpyHostToDevice);
+        cnn_activ_grad_list[id](cuDeri, cuSrc, len, cuDst);
+        cudaMemcpy(deri, cuDeri, len * sizeof(float), cudaMemcpyDeviceToHost);
+#else
+        cnn_activ_grad_list[id](deri, src, len, dst);
+#endif
 
         // Find error
         err = 0;

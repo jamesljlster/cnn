@@ -20,6 +20,20 @@
             stderr,                                                         \
             "%s(), %d: Memory allocation failed with size: %d, type: %s\n", \
             __FUNCTION__, __LINE__, size, #type);                           \
+        return -1;                                                          \
+    }
+
+#define cu_alloc(ptr, size, type)                                             \
+    {                                                                         \
+        cudaError_t cuRet = cudaMalloc((void**)&ptr, len * sizeof(type));     \
+        if (cuRet != cudaSuccess)                                             \
+        {                                                                     \
+            fprintf(stderr,                                                   \
+                    "%s(), %d: Cuda memory allocation failed with size: %d, " \
+                    "type: %s\n",                                             \
+                    __FUNCTION__, __LINE__, size, #type);                     \
+            return -1;                                                        \
+        }                                                                     \
     }
 
 #endif
