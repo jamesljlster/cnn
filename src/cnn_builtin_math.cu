@@ -3,6 +3,53 @@
 #include "cnn_builtin_math_cu.h"
 #include "cnn_cudef.h"
 
+#define CNN_SCALAR_ACTIV_IMPL(name, fwProc, bpProc)                           \
+    __global__ void cnn_##name##_kernel(float* dst, float* src, int len)      \
+    {                                                                         \
+        int index = blockIdx.x * blockDim.x + threadIdx.x;                    \
+        if (index >= len)                                                     \
+        {                                                                     \
+            return;                                                           \
+        }                                                                     \
+                                                                              \
+        fwProc                                                                \
+    }                                                                         \
+                                                                              \
+    void cnn_##name##_gpu(float* dst, float* src, int len)                    \
+    {                                                                         \
+        int blocks = len / CNN_THREAD_PER_BLOCK;                              \
+        if (len % CNN_THREAD_PER_BLOCK)                                       \
+        {                                                                     \
+            blocks += 1;                                                      \
+        }                                                                     \
+                                                                              \
+        cnn_##name##_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len); \
+    }                                                                         \
+                                                                              \
+    __global__ void cnn_##name##_grad_kernel(float* dst, float* src,          \
+                                             float* cache, int len)           \
+    {                                                                         \
+        int index = blockIdx.x * blockDim.x + threadIdx.x;                    \
+        if (index >= len)                                                     \
+        {                                                                     \
+            return;                                                           \
+        }                                                                     \
+                                                                              \
+        bpProc                                                                \
+    }                                                                         \
+                                                                              \
+    void cnn_##name##_grad_gpu(float* dst, float* src, float* cache, int len) \
+    {                                                                         \
+        int blocks = len / CNN_THREAD_PER_BLOCK;                              \
+        if (len % CNN_THREAD_PER_BLOCK)                                       \
+        {                                                                     \
+            blocks += 1;                                                      \
+        }                                                                     \
+                                                                              \
+        cnn_##name##_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(           \
+            dst, src, cache, len);                                            \
+    }
+
 __device__ float max_cu(float src1, float src2)
 {
     return (src1 > src2) ? src1 : src2;
@@ -246,471 +293,98 @@ void cnn_smax_grad_gpu(float* dst, float* cache, int len)
     cnn_smax_grad_kernel<<<grid, blk>>>(dst, cache, len);
 }
 
-__global__ void cnn_relu_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = fmaxf(src[index], 0.0f);
-}
-
-void cnn_relu_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_relu_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_relu_grad_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = (src[index] < 0.0f) ? 0 : 1;
-}
-
-void cnn_relu_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_relu_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_swish_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = src[index] / (1.0f + expf(-src[index]));
-}
-
-void cnn_swish_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_swish_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_swish_grad_kernel(float* dst, float* src, float* cache,
-                                      int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    if (src[index] == 0.0f)
-    {
-        dst[index] = 0.5;
-    }
-    else
-    {
-        dst[index] =
-            cache[index] + (cache[index] / src[index]) * (1.0f - cache[index]);
-    }
-}
-
-void cnn_swish_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_swish_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, cache,
-                                                            len);
-}
-
-__global__ void cnn_sigmoid_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = 1.0f / (1.0f + expf(-src[index]));
-}
-
-void cnn_sigmoid_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_sigmoid_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_sigmoid_grad_kernel(float* dst, float* cache, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = cache[index] * (1.0 - cache[index]);
-}
-
-void cnn_sigmoid_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_sigmoid_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, cache, len);
-}
-
-__global__ void cnn_tanh_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = 2.0 / (1.0 + exp(-2.0 * src[index])) - 1.0;
-}
-
-void cnn_tanh_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_tanh_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_tanh_grad_kernel(float* dst, float* cache, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = 1.0 - cache[index] * cache[index];
-}
-
-void cnn_tanh_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_tanh_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, cache, len);
-}
-
-__global__ void cnn_gaussian_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = exp(-src[index] * src[index] * 0.5);
-}
-
-void cnn_gaussian_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_gaussian_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_gaussian_grad_kernel(float* dst, float* src, float* cache,
-                                         int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = -src[index] * cache[index];
-}
-
-void cnn_gaussian_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_gaussian_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, cache,
-                                                               len);
-}
-
-__global__ void cnn_bent_identity_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = (sqrt(src[index] * src[index] + 1.0) - 1.0) / 2.0 + src[index];
-}
-
-void cnn_bent_identity_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_bent_identity_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_bent_identity_grad_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = src[index] / (2.0 * sqrt(src[index] * src[index] + 1.0)) + 1.0;
-}
-
-void cnn_bent_identity_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_bent_identity_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src,
-                                                                    len);
-}
-
-__global__ void cnn_softplus_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = log1p(exp(src[index]));
-}
-
-void cnn_softplus_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_softplus_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_softplus_grad_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = 1.0 / (1.0 + exp(-src[index]));
-}
-
-void cnn_softplus_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_softplus_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_softsign_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = src[index] / (1.0 + fabs(src[index]));
-}
-
-void cnn_softsign_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_softsign_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_softsign_grad_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    float tmp = 1.0 + fabs(src[index]);
-    dst[index] = 1.0 / (tmp * tmp);
-}
-
-void cnn_softsign_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_softsign_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_sinc_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    if (src[index] == 0.0)
-    {
-        dst[index] = 1.0;
-    }
-    else
-    {
-        dst[index] = sin(src[index]) / src[index];
-    }
-}
-
-void cnn_sinc_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_sinc_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_sinc_grad_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    if (src[index] == 0.0)
-    {
-        dst[index] = 0.0;
-    }
-    else
-    {
+CNN_SCALAR_ACTIV_IMPL(                         //
+    relu,                                      //
+    dst[index] = fmaxf(src[index], 0.0f);      //
+    ,                                          //
+    dst[index] = (src[index] < 0.0f) ? 0 : 1;  //
+)
+
+CNN_SCALAR_ACTIV_IMPL(                                     //
+    swish,                                                 //
+    dst[index] = src[index] / (1.0f + expf(-src[index]));  //
+    ,                                                      //
+    if (src[index] == 0.0f)                                //
+    {                                                      //
+        dst[index] = 0.5;                                  //
+    }                                                      //
+    else                                                   //
+    {                                                      //
+        dst[index] = cache[index] +
+                     (cache[index] / src[index]) * (1.0f - cache[index]);  //
+    }                                                                      //
+)
+
+CNN_SCALAR_ACTIV_IMPL(                                 //
+    sigmoid,                                           //
+    dst[index] = 1.0f / (1.0f + expf(-src[index]));    //
+    ,                                                  //
+    dst[index] = cache[index] * (1.0 - cache[index]);  //
+)
+
+CNN_SCALAR_ACTIV_IMPL(                                        //
+    tanh,                                                     //
+    dst[index] = 2.0 / (1.0 + exp(-2.0 * src[index])) - 1.0;  //
+    ,                                                         //
+    dst[index] = 1.0 - cache[index] * cache[index];           //
+)
+
+CNN_SCALAR_ACTIV_IMPL(                                 //
+    gaussian,                                          //
+    dst[index] = exp(-src[index] * src[index] * 0.5);  //
+    ,                                                  //
+    dst[index] = -src[index] * cache[index];           //
+)
+
+CNN_SCALAR_ACTIV_IMPL(  //
+    bent_identity,      //
+    dst[index] = (sqrt(src[index] * src[index] + 1.0) - 1.0) / 2.0 +
+                 src[index];  //
+    ,                         //
+    dst[index] = src[index] / (2.0 * sqrt(src[index] * src[index] + 1.0)) +
+                 1.0;  //
+)
+
+CNN_SCALAR_ACTIV_IMPL(                            //
+    softplus,                                     //
+    dst[index] = log1p(exp(src[index]));          //
+    ,                                             //
+    dst[index] = 1.0 / (1.0 + exp(-src[index]));  //
+)
+
+CNN_SCALAR_ACTIV_IMPL(                                   //
+    softsign,                                            //
+    dst[index] = src[index] / (1.0 + fabs(src[index]));  //
+    ,                                                    //
+    float tmp = 1.0 + fabs(src[index]);                  //
+    dst[index] = 1.0 / (tmp * tmp);                      //
+)
+
+CNN_SCALAR_ACTIV_IMPL(                              //
+    sinc,                                           //
+    if (src[index] == 0.0)                          //
+    {                                               //
+        dst[index] = 1.0;                           //
+    }                                               //
+    else                                            //
+    {                                               //
+        dst[index] = sin(src[index]) / src[index];  //
+    }                                               //
+    ,                                               //
+    if (src[index] == 0.0)                          //
+    {                                               //
+        dst[index] = 0.0;                           //
+    }                                               //
+    else                                            //
+    {                                               //
         dst[index] = (cos(src[index]) / src[index]) -
-                     (sin(src[index]) / (src[index] * src[index]));
-    }
-}
+                     (sin(src[index]) / (src[index] * src[index]));  //
+    }                                                                //
+)
 
-void cnn_sinc_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_sinc_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_sin_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = sin(src[index]);
-}
-
-void cnn_sin_gpu(float* dst, float* src, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_sin_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
-
-__global__ void cnn_sin_grad_kernel(float* dst, float* src, int len)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= len)
-    {
-        return;
-    }
-
-    dst[index] = cos(src[index]);
-}
-
-void cnn_sin_grad_gpu(float* dst, float* src, float* cache, int len)
-{
-    int blocks = len / CNN_THREAD_PER_BLOCK;
-    if (len % CNN_THREAD_PER_BLOCK)
-    {
-        blocks += 1;
-    }
-
-    cnn_sin_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
-}
+CNN_SCALAR_ACTIV_IMPL(             //
+    sin,                           //
+    dst[index] = sin(src[index]);  //
+    ,                              //
+    dst[index] = cos(src[index]);  //
+)
