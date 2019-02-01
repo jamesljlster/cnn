@@ -162,7 +162,7 @@ __global__ void cnn_exp_kernel(float* dst, float* src, int len)
         return;
     }
 
-    dst[index] = __expf(src[index]);
+    dst[index] = expf(src[index]);
 }
 
 void cnn_exp_gpu(float* dst, float* src, int len)
@@ -276,7 +276,7 @@ __global__ void cnn_swish_kernel(float* dst, float* src, int len)
         return;
     }
 
-    dst[index] = src[index] / (1.0f + __expf(-src[index]));
+    dst[index] = src[index] / (1.0f + expf(-src[index]));
 }
 
 void cnn_swish_gpu(float* dst, float* src, int len)
@@ -320,4 +320,48 @@ void cnn_swish_grad_gpu(float* dst, float* src, float* cache, int len)
 
     cnn_swish_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, cache,
                                                             len);
+}
+
+__global__ void cnn_sigmoid_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = 1.0f / (1.0f + expf(-src[index]));
+}
+
+void cnn_sigmoid_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_sigmoid_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_sigmoid_grad_kernel(float* dst, float* cache, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = cache[index] * (1.0 - cache[index]);
+}
+
+void cnn_sigmoid_grad_gpu(float* dst, float* cache, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_sigmoid_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, cache, len);
 }

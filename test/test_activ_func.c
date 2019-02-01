@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 
     // Test activation functions
     // for (id = 0; id < CNN_ACTIV_AMOUNT; id++)
-    for (id = 0; id <= CNN_SWISH; id++)
+    for (id = 0; id <= CNN_SIGMOID; id++)
     {
         // Parse argument
         for (i = 0; i < len; i++)
