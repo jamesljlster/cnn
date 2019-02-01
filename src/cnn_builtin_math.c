@@ -125,7 +125,7 @@ CNN_ACTIV_DEF(cnn_softmax_grad)
 CNN_ACTIV_DEF(cnn_relu)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_fmaxf_gpu(dst, src, len, 0.0f);
+    cnn_relu_gpu(dst, src, len);
     cudaDeviceSynchronize();
 #else
     int i;

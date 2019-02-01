@@ -246,6 +246,28 @@ void cnn_smax_grad_gpu(float* dst, float* cache, int len)
     cnn_smax_grad_kernel<<<grid, blk>>>(dst, cache, len);
 }
 
+__global__ void cnn_relu_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = fmaxf(src[index], 0.0f);
+}
+
+void cnn_relu_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_relu_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
 __global__ void cnn_relu_grad_kernel(float* dst, float* src, int len)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;

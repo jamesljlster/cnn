@@ -13,6 +13,8 @@ extern "C"
     void cnn_exp_gpu(float* dst, float* src, int len);
     void cnn_div_gpu(float* dst, float* src, int len, float divider);
     void cnn_fmaxf_gpu(float* dst, float* src, int len, float num);
+
+    void cnn_relu_gpu(float* dst, float* src, int len);
     void cnn_swish_gpu(float* dst, float* src, int len);
     void cnn_sigmoid_gpu(float* dst, float* src, int len);
     void cnn_tanh_gpu(float* dst, float* src, int len);
