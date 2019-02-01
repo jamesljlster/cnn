@@ -61,7 +61,7 @@ CNN_ACTIV_DEF(cnn_softmax)
     cnn_max_gpu(&max, src, len, buf);
 
     // Find shifted vector
-    cnn_add_gpu(src, buf, len, -max);
+    cnn_add_gpu(buf, src, len, -max);
 
     // Find exponential vector
     cnn_exp_gpu(buf, buf, len);
@@ -70,7 +70,7 @@ CNN_ACTIV_DEF(cnn_softmax)
     cnn_sum_gpu(&sum, buf, len, dst);
 
     // Find softmax
-    cnn_div_gpu(buf, dst, len, sum);
+    cnn_div_gpu(dst, buf, len, sum);
 
     cudaDeviceSynchronize();
 #else
@@ -125,7 +125,7 @@ CNN_ACTIV_DEF(cnn_softmax_grad)
 CNN_ACTIV_DEF(cnn_relu)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_fmaxf_gpu(src, dst, len, 0.0f);
+    cnn_fmaxf_gpu(dst, src, len, 0.0f);
     cudaDeviceSynchronize();
 #else
     int i;

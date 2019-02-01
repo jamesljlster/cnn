@@ -132,7 +132,7 @@ void cnn_sum_gpu(float* sumPtr, float* vec, int len, float* buf)
     cudaMemcpy(sumPtr, buf, sizeof(float), cudaMemcpyDeviceToHost);
 }
 
-__global__ void cnn_add_kernel(float* src, float* dst, int len, float addend)
+__global__ void cnn_add_kernel(float* dst, float* src, int len, float addend)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index >= len)
@@ -143,7 +143,7 @@ __global__ void cnn_add_kernel(float* src, float* dst, int len, float addend)
     dst[index] = src[index] + addend;
 }
 
-void cnn_add_gpu(float* src, float* dst, int len, float addend)
+void cnn_add_gpu(float* dst, float* src, int len, float addend)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -151,10 +151,10 @@ void cnn_add_gpu(float* src, float* dst, int len, float addend)
         blocks += 1;
     }
 
-    cnn_add_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(src, dst, len, addend);
+    cnn_add_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len, addend);
 }
 
-__global__ void cnn_exp_kernel(float* src, float* dst, int len)
+__global__ void cnn_exp_kernel(float* dst, float* src, int len)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index >= len)
@@ -165,7 +165,7 @@ __global__ void cnn_exp_kernel(float* src, float* dst, int len)
     dst[index] = __expf(src[index]);
 }
 
-void cnn_exp_gpu(float* src, float* dst, int len)
+void cnn_exp_gpu(float* dst, float* src, int len)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -173,10 +173,10 @@ void cnn_exp_gpu(float* src, float* dst, int len)
         blocks += 1;
     }
 
-    cnn_exp_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(src, dst, len);
+    cnn_exp_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
 }
 
-__global__ void cnn_div_kernel(float* src, float* dst, int len, float divider)
+__global__ void cnn_div_kernel(float* dst, float* src, int len, float divider)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index >= len)
@@ -187,7 +187,7 @@ __global__ void cnn_div_kernel(float* src, float* dst, int len, float divider)
     dst[index] = src[index] / divider;
 }
 
-void cnn_div_gpu(float* src, float* dst, int len, float divider)
+void cnn_div_gpu(float* dst, float* src, int len, float divider)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -195,10 +195,10 @@ void cnn_div_gpu(float* src, float* dst, int len, float divider)
         blocks += 1;
     }
 
-    cnn_div_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(src, dst, len, divider);
+    cnn_div_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len, divider);
 }
 
-__global__ void cnn_fmaxf_kernel(float* src, float* dst, int len, float num)
+__global__ void cnn_fmaxf_kernel(float* dst, float* src, int len, float num)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index >= len)
@@ -209,7 +209,7 @@ __global__ void cnn_fmaxf_kernel(float* src, float* dst, int len, float num)
     dst[index] = fmaxf(src[index], num);
 }
 
-void cnn_fmaxf_gpu(float* src, float* dst, int len, float num)
+void cnn_fmaxf_gpu(float* dst, float* src, int len, float num)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -217,7 +217,7 @@ void cnn_fmaxf_gpu(float* src, float* dst, int len, float num)
         blocks += 1;
     }
 
-    cnn_fmaxf_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(src, dst, len, num);
+    cnn_fmaxf_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len, num);
 }
 
 __global__ void cnn_smax_grad_kernel(float* dst, float* cache, int len)
