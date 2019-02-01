@@ -71,8 +71,6 @@ CNN_ACTIV_DEF(cnn_softmax)
 
     // Find softmax
     cnn_div_gpu(dst, buf, len, sum);
-
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -106,7 +104,6 @@ CNN_ACTIV_DEF(cnn_softmax_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_smax_grad_gpu(dst, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i, j;
 
@@ -126,7 +123,6 @@ CNN_ACTIV_DEF(cnn_relu)
 {
 #ifdef CNN_WITH_CUDA
     cnn_relu_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -140,7 +136,6 @@ CNN_ACTIV_DEF(cnn_relu_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_relu_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -157,7 +152,6 @@ CNN_ACTIV_DEF(cnn_swish)
 {
 #ifdef CNN_WITH_CUDA
     cnn_swish_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -171,7 +165,6 @@ CNN_ACTIV_DEF(cnn_swish_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_swish_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -196,7 +189,6 @@ CNN_ACTIV_DEF(cnn_sigmoid)
 {
 #ifdef CNN_WITH_CUDA
     cnn_sigmoid_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -210,7 +202,6 @@ CNN_ACTIV_DEF(cnn_sigmoid_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_sigmoid_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -227,7 +218,6 @@ CNN_ACTIV_DEF(cnn_tanh)
 {
 #ifdef CNN_WITH_CUDA
     cnn_tanh_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -241,7 +231,6 @@ CNN_ACTIV_DEF(cnn_tanh_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_tanh_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -258,7 +247,6 @@ CNN_ACTIV_DEF(cnn_gaussian)
 {
 #ifdef CNN_WITH_CUDA
     cnn_gaussian_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -272,7 +260,6 @@ CNN_ACTIV_DEF(cnn_gaussian_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_gaussian_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -289,7 +276,6 @@ CNN_ACTIV_DEF(cnn_bent_identity)
 {
 #ifdef CNN_WITH_CUDA
     cnn_bent_identity_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -303,7 +289,6 @@ CNN_ACTIV_DEF(cnn_bent_identity_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_bent_identity_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -319,7 +304,6 @@ CNN_ACTIV_DEF(cnn_softplus)
 {
 #ifdef CNN_WITH_CUDA
     cnn_softplus_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -333,7 +317,6 @@ CNN_ACTIV_DEF(cnn_softplus_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_softplus_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -349,7 +332,6 @@ CNN_ACTIV_DEF(cnn_softsign)
 {
 #ifdef CNN_WITH_CUDA
     cnn_softsign_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -363,7 +345,6 @@ CNN_ACTIV_DEF(cnn_softsign_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_softsign_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -379,7 +360,6 @@ CNN_ACTIV_DEF(cnn_sinc)
 {
 #ifdef CNN_WITH_CUDA
     cnn_sinc_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -400,7 +380,6 @@ CNN_ACTIV_DEF(cnn_sinc_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_sinc_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
@@ -423,7 +402,6 @@ CNN_ACTIV_DEF(cnn_sinusoid)
 {
 #ifdef CNN_WITH_CUDA
     cnn_sin_gpu(dst, src, len);
-    cudaDeviceSynchronize();
 #else
     int i;
     for (i = 0; i < len; i++)
@@ -437,7 +415,6 @@ CNN_ACTIV_DEF(cnn_sinusoid_grad)
 {
 #ifdef CNN_WITH_CUDA
     cnn_sin_grad_gpu(dst, src, buf, len);
-    cudaDeviceSynchronize();
 #else
     int i;
 
