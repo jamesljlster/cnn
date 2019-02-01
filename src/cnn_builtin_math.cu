@@ -267,3 +267,57 @@ void cnn_relu_grad_gpu(float* dst, float* src, int len)
 
     cnn_relu_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
 }
+
+__global__ void cnn_swish_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = src[index] / (1.0f + __expf(-src[index]));
+}
+
+void cnn_swish_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_swish_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_swish_grad_kernel(float* dst, float* src, float* cache,
+                                      int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    if (src[index] == 0.0f)
+    {
+        dst[index] = 0.5;
+    }
+    else
+    {
+        dst[index] =
+            cache[index] + (cache[index] / src[index]) * (1.0f - cache[index]);
+    }
+}
+
+void cnn_swish_grad_gpu(float* dst, float* src, float* cache, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_swish_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, cache,
+                                                            len);
+}

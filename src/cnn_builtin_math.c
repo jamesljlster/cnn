@@ -155,15 +155,24 @@ CNN_ACTIV_DEF(cnn_relu_grad)
 
 CNN_ACTIV_DEF(cnn_swish)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_swish_gpu(dst, src, len);
+    cudaDeviceSynchronize();
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = src[i] / (1.0f + expf(-src[i]));
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_swish_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_swish_grad_gpu(dst, src, buf, len);
+    cudaDeviceSynchronize();
+#else
     int i;
 
     // Find swish gradient
@@ -171,8 +180,16 @@ CNN_ACTIV_DEF(cnn_swish_grad)
     cnn_swish(buf, src, len, NULL);
     for (i = 0; i < len; i++)
     {
-        dst[i] = buf[i] + (buf[i] / src[i]) * (1.0f - buf[i]);
+        if (src[i] == 0.0f)
+        {
+            dst[i] = 0.5;
+        }
+        else
+        {
+            dst[i] = buf[i] + (buf[i] / src[i]) * (1.0f - buf[i]);
+        }
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_sigmoid)
