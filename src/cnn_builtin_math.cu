@@ -365,3 +365,330 @@ void cnn_sigmoid_grad_gpu(float* dst, float* cache, int len)
 
     cnn_sigmoid_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, cache, len);
 }
+
+__global__ void cnn_tanh_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = 2.0 / (1.0 + exp(-2.0 * src[index])) - 1.0;
+}
+
+void cnn_tanh_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_tanh_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_tanh_grad_kernel(float* dst, float* cache, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = 1.0 - cache[index] * cache[index];
+}
+
+void cnn_tanh_grad_gpu(float* dst, float* cache, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_tanh_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, cache, len);
+}
+
+__global__ void cnn_gaussian_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = exp(-src[index] * src[index] * 0.5);
+}
+
+void cnn_gaussian_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_gaussian_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_gaussian_grad_kernel(float* dst, float* src, float* cache,
+                                         int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = -src[index] * cache[index];
+}
+
+void cnn_gaussian_grad_gpu(float* dst, float* src, float* cache, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_gaussian_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, cache,
+                                                               len);
+}
+
+__global__ void cnn_bent_identity_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = (sqrt(src[index] * src[index] + 1.0) - 1.0) / 2.0 + src[index];
+}
+
+void cnn_bent_identity_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_bent_identity_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_bent_identity_grad_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = src[index] / (2.0 * sqrt(src[index] * src[index] + 1.0)) + 1.0;
+}
+
+void cnn_bent_identity_grad_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_bent_identity_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src,
+                                                                    len);
+}
+
+__global__ void cnn_softplus_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = log1p(exp(src[index]));
+}
+
+void cnn_softplus_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_softplus_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_softplus_grad_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = 1.0 / (1.0 + exp(-src[index]));
+}
+
+void cnn_softplus_grad_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_softplus_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_softsign_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = src[index] / (1.0 + fabs(src[index]));
+}
+
+void cnn_softsign_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_softsign_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_softsign_grad_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    float tmp = 1.0 + fabs(src[index]);
+    dst[index] = 1.0 / (tmp * tmp);
+}
+
+void cnn_softsign_grad_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_softsign_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_sinc_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    if (src[index] == 0.0)
+    {
+        dst[index] = 1.0;
+    }
+    else
+    {
+        dst[index] = sin(src[index]) / src[index];
+    }
+}
+
+void cnn_sinc_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_sinc_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_sinc_grad_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    if (src[index] == 0.0)
+    {
+        dst[index] = 0.0;
+    }
+    else
+    {
+        dst[index] = (cos(src[index]) / src[index]) -
+                     (sin(src[index]) / (src[index] * src[index]));
+    }
+}
+
+void cnn_sinc_grad_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_sinc_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_sin_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = sin(src[index]);
+}
+
+void cnn_sin_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_sin_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
+
+__global__ void cnn_sin_grad_kernel(float* dst, float* src, int len)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= len)
+    {
+        return;
+    }
+
+    dst[index] = cos(src[index]);
+}
+
+void cnn_sin_grad_gpu(float* dst, float* src, int len)
+{
+    int blocks = len / CNN_THREAD_PER_BLOCK;
+    if (len % CNN_THREAD_PER_BLOCK)
+    {
+        blocks += 1;
+    }
+
+    cnn_sin_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
+}
