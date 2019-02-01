@@ -279,7 +279,7 @@ __global__ void cnn_relu_grad_kernel(float* dst, float* src, int len)
     dst[index] = (src[index] < 0.0f) ? 0 : 1;
 }
 
-void cnn_relu_grad_gpu(float* dst, float* src, int len)
+void cnn_relu_grad_gpu(float* dst, float* src, float* cache, int len)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -377,7 +377,7 @@ __global__ void cnn_sigmoid_grad_kernel(float* dst, float* cache, int len)
     dst[index] = cache[index] * (1.0 - cache[index]);
 }
 
-void cnn_sigmoid_grad_gpu(float* dst, float* cache, int len)
+void cnn_sigmoid_grad_gpu(float* dst, float* src, float* cache, int len)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -421,7 +421,7 @@ __global__ void cnn_tanh_grad_kernel(float* dst, float* cache, int len)
     dst[index] = 1.0 - cache[index] * cache[index];
 }
 
-void cnn_tanh_grad_gpu(float* dst, float* cache, int len)
+void cnn_tanh_grad_gpu(float* dst, float* src, float* cache, int len)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -511,7 +511,7 @@ __global__ void cnn_bent_identity_grad_kernel(float* dst, float* src, int len)
     dst[index] = src[index] / (2.0 * sqrt(src[index] * src[index] + 1.0)) + 1.0;
 }
 
-void cnn_bent_identity_grad_gpu(float* dst, float* src, int len)
+void cnn_bent_identity_grad_gpu(float* dst, float* src, float* cache, int len)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -556,7 +556,7 @@ __global__ void cnn_softplus_grad_kernel(float* dst, float* src, int len)
     dst[index] = 1.0 / (1.0 + exp(-src[index]));
 }
 
-void cnn_softplus_grad_gpu(float* dst, float* src, int len)
+void cnn_softplus_grad_gpu(float* dst, float* src, float* cache, int len)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -601,7 +601,7 @@ __global__ void cnn_softsign_grad_kernel(float* dst, float* src, int len)
     dst[index] = 1.0 / (tmp * tmp);
 }
 
-void cnn_softsign_grad_gpu(float* dst, float* src, int len)
+void cnn_softsign_grad_gpu(float* dst, float* src, float* cache, int len)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -660,7 +660,7 @@ __global__ void cnn_sinc_grad_kernel(float* dst, float* src, int len)
     }
 }
 
-void cnn_sinc_grad_gpu(float* dst, float* src, int len)
+void cnn_sinc_grad_gpu(float* dst, float* src, float* cache, int len)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
@@ -704,7 +704,7 @@ __global__ void cnn_sin_grad_kernel(float* dst, float* src, int len)
     dst[index] = cos(src[index]);
 }
 
-void cnn_sin_grad_gpu(float* dst, float* src, int len)
+void cnn_sin_grad_gpu(float* dst, float* src, float* cache, int len)
 {
     int blocks = len / CNN_THREAD_PER_BLOCK;
     if (len % CNN_THREAD_PER_BLOCK)
