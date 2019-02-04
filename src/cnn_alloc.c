@@ -205,11 +205,10 @@ int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr,
     // Allocate memory
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
             ERR);
+    cnn_alloc(layerPtr->mask, outRows * outCols, int, ret, ERR);
 
 #ifdef CNN_WITH_CUDA
-    cnn_alloc_cu(layerPtr->mask, outRows * outCols, int, ret, ERR);
-#else
-    cnn_alloc(layerPtr->mask, outRows * outCols, int, ret, ERR);
+    cnn_alloc_cu(layerPtr->maskGpu, outRows * outCols, int, ret, ERR);
 #endif
 
     // Assign value

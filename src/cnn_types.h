@@ -178,6 +178,7 @@ struct CNN_LAYER_DROP
 
     // Dropout mask
     int* mask;
+    int* maskGpu;
 };
 
 struct CNN_LAYER_BN

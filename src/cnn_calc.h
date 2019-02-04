@@ -10,6 +10,11 @@
 #include "cnn_builtin_math.h"
 #include "cnn_types.h"
 
+#ifdef CNN_WITH_CUDA
+#include <cuda_runtime.h>
+#include "cnn_calc_cu.h"
+#endif
+
 static inline void cnn_drop(float* dst, float* src, int* mask, int size,
                             float scale)
 {
@@ -351,6 +356,11 @@ static inline void cnn_forward_drop(union CNN_LAYER* layerRef,
     int size = layerRef[layerIndex].outMat.data.rows *
                layerRef[layerIndex].outMat.data.cols;
     int* mask = layerRef[layerIndex].drop.mask;
+
+#ifdef CNN_WITH_CUDA
+    int* maskGpu = layerRef[layerIndex].drop.maskGpu;
+#endif
+
     float rate = cfgRef->layerCfg[layerIndex].drop.rate;
 
     // Generate dropout mask
@@ -366,9 +376,16 @@ static inline void cnn_forward_drop(union CNN_LAYER* layerRef,
         }
     }
 
+#ifdef CNN_WITH_CUDA
+    cudaMemcpy(maskGpu, mask, size * sizeof(int), cudaMemcpyHostToDevice);
+    cnn_drop_gpu(layerRef[layerIndex].outMat.data.mat,
+                 layerRef[layerIndex - 1].outMat.data.mat, maskGpu, size,
+                 cfgRef->layerCfg[layerIndex].drop.scale);
+#else
     cnn_drop(layerRef[layerIndex].outMat.data.mat,
              layerRef[layerIndex - 1].outMat.data.mat, mask, size,
              cfgRef->layerCfg[layerIndex].drop.scale);
+#endif
 }
 
 static inline void cnn_forward_activ(union CNN_LAYER* layerRef,
@@ -598,12 +615,19 @@ static inline void cnn_backward_drop(union CNN_LAYER* layerRef,
     {
         int size = layerRef[layerIndex].outMat.data.rows *
                    layerRef[layerIndex].outMat.data.cols;
-        int* mask = layerRef[layerIndex].drop.mask;
 
         // Find layer gradient
+#ifdef CNN_WITH_CUDA
+        int* maskGpu = layerRef[layerIndex].drop.maskGpu;
+        cnn_drop_grad(layerRef[layerIndex - 1].outMat.data.grad,
+                      layerRef[layerIndex].outMat.data.grad, maskGpu, size,
+                      cfgRef->layerCfg[layerIndex].drop.scale);
+#else
+        int* mask = layerRef[layerIndex].drop.mask;
         cnn_drop_grad(layerRef[layerIndex - 1].outMat.data.grad,
                       layerRef[layerIndex].outMat.data.grad, mask, size,
                       cfgRef->layerCfg[layerIndex].drop.scale);
+#endif
     }
 }
 
