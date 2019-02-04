@@ -21,7 +21,7 @@ if(DEFINED CNN_CONV_BIAS_TYPE)
     set_property(CACHE CNN_CONV_BIAS_TYPE PROPERTY STRINGS ${CNN_CONV_BIAS_TYPES})
 endif()
 if(NOT CNN_CONV_BIAS_TYPE)
-    set(CNN_CONV_BIAS_TYPE "None" CACHE STRING "CNN convolution bias type")
+    set(CNN_CONV_BIAS_TYPE "Filter" CACHE STRING "CNN convolution bias type")
 endif()
 
 # Export configuration files
