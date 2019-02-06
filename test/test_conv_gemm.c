@@ -17,48 +17,6 @@
 #define IMG_WIDTH 4
 #define IMG_HEIGHT 4
 
-void print_img(float* src, int width, int height, int channel);
-void print_img_int(int* src, int width, int height, int channel);
-
-/*
-void cnn_conv_unroll_2d(int* indexMap, int dstHeight, int dstWidth, int kSize,
-        int srcHeight, int srcWidth, int srcCh)
-{
-    int __kMemSize = kSize * kSize;
-    int __srcImSize = srcHeight * srcWidth;
-    int __indexMapCols = __kMemSize * srcCh;
-
-    for(int __h = 0; __h < dstHeight; __h++)
-    {
-        int __dstRowShift = __h * dstHeight;
-
-        for(int __w = 0; __w < dstWidth; __w++)
-        {
-            int __indexMapRow = __dstRowShift + __w;
-            int __indexMemBase = __indexMapRow * __indexMapCols;
-
-            for(int __ch = 0; __ch < srcCh; __ch++)
-            {
-                int __indexMemShiftBase = __indexMemBase + __kMemSize * __ch;
-                int __srcChShift = __ch * __srcImSize;
-
-                for(int __convH = 0; __convH < kSize; __convH++)
-                {
-                    int __indexMemShift = __indexMemShiftBase + __convH * kSize;
-                    int __srcShift = (__h + __convH) * srcWidth + __srcChShift;
-
-                    for(int __convW = 0; __convW < kSize; __convW++)
-                    {
-                        indexMap[__indexMemShift + __convW] = __srcShift +
-                            (__w + __convW);
-                    }
-                }
-            }
-        }
-    }
-}
-*/
-
 int main()
 {
     // int i;
@@ -281,66 +239,4 @@ int main()
     printf("\n");
 
     return 0;
-}
-
-void print_img(float* src, int width, int height, int channel)
-{
-    int imSize = width * height;
-
-    for (int ch = 0; ch < channel; ch++)
-    {
-        int chShift = ch * imSize;
-
-        printf("[\n");
-        for (int h = 0; h < height; h++)
-        {
-            int shift = h * width + chShift;
-
-            printf("[");
-            for (int w = 0; w < width; w++)
-            {
-                printf("%g", src[shift + w]);
-                if (w < width - 1)
-                {
-                    printf(", ");
-                }
-                else
-                {
-                    printf("]\n");
-                }
-            }
-        }
-        printf("]\n");
-    }
-}
-
-void print_img_int(int* src, int width, int height, int channel)
-{
-    int imSize = width * height;
-
-    for (int ch = 0; ch < channel; ch++)
-    {
-        int chShift = ch * imSize;
-
-        printf("[\n");
-        for (int h = 0; h < height; h++)
-        {
-            int shift = h * width + chShift;
-
-            printf("[");
-            for (int w = 0; w < width; w++)
-            {
-                printf("%d", src[shift + w]);
-                if (w < width - 1)
-                {
-                    printf(", ");
-                }
-                else
-                {
-                    printf("]\n");
-                }
-            }
-        }
-        printf("]\n");
-    }
 }

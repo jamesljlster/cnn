@@ -4,7 +4,7 @@
 #define test(func)                                                  \
     {                                                               \
         int __retVal = func;                                        \
-        if (__retVal != CNN_NO_ERROR)                               \
+        if (__retVal < 0)                                           \
         {                                                           \
             fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
                     __FUNCTION__, __LINE__, #func, __retVal);       \
@@ -35,5 +35,85 @@
             return -1;                                                        \
         }                                                                     \
     }
+
+void print_mat(float* src, int rows, int cols)
+{
+    int i, j;
+    for (i = 0; i < rows; i++)
+    {
+        printf(" | ");
+        for (j = 0; j < cols; j++)
+        {
+            printf("%+f", src[i * cols + j]);
+            if (j < cols - 1)
+            {
+                printf("  ");
+            }
+        }
+        printf(" |\n");
+    }
+}
+
+void print_img(float* src, int width, int height, int channel)
+{
+    int imSize = width * height;
+
+    for (int ch = 0; ch < channel; ch++)
+    {
+        int chShift = ch * imSize;
+
+        printf("[\n");
+        for (int h = 0; h < height; h++)
+        {
+            int shift = h * width + chShift;
+
+            printf("[");
+            for (int w = 0; w < width; w++)
+            {
+                printf("%g", src[shift + w]);
+                if (w < width - 1)
+                {
+                    printf(", ");
+                }
+                else
+                {
+                    printf("]\n");
+                }
+            }
+        }
+        printf("]\n");
+    }
+}
+
+void print_img_int(int* src, int width, int height, int channel)
+{
+    int imSize = width * height;
+
+    for (int ch = 0; ch < channel; ch++)
+    {
+        int chShift = ch * imSize;
+
+        printf("[\n");
+        for (int h = 0; h < height; h++)
+        {
+            int shift = h * width + chShift;
+
+            printf("[");
+            for (int w = 0; w < width; w++)
+            {
+                printf("%d", src[shift + w]);
+                if (w < width - 1)
+                {
+                    printf(", ");
+                }
+                else
+                {
+                    printf("]\n");
+                }
+            }
+        }
+        printf("]\n");
+    }
+}
 
 #endif

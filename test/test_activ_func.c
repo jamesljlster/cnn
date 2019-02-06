@@ -15,8 +15,6 @@
 #include <cuda_runtime.h>
 #endif
 
-void print_mat(float* src, int rows, int cols);
-
 int main(int argc, char* argv[])
 {
     int id;
@@ -178,22 +176,4 @@ int main(int argc, char* argv[])
     }
 
     return 0;
-}
-
-void print_mat(float* src, int rows, int cols)
-{
-    int i, j;
-    for (i = 0; i < rows; i++)
-    {
-        printf(" | ");
-        for (j = 0; j < cols; j++)
-        {
-            printf("%+f", src[i * cols + j]);
-            if (j < cols - 1)
-            {
-                printf("  ");
-            }
-        }
-        printf(" |\n");
-    }
 }
