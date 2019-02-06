@@ -619,11 +619,15 @@ static inline void cnn_backward_drop(union CNN_LAYER* layerRef,
         // Find layer gradient
 #ifdef CNN_WITH_CUDA
         int* maskGpu = layerRef[layerIndex].drop.maskGpu;
-        cnn_drop_grad(layerRef[layerIndex - 1].outMat.data.grad,
-                      layerRef[layerIndex].outMat.data.grad, maskGpu, size,
-                      cfgRef->layerCfg[layerIndex].drop.scale);
+        cudaMemset(layerRef[layerIndex - 1].outMat.data.grad, 0,
+                   size * sizeof(float));
+        cnn_drop_grad_gpu(layerRef[layerIndex - 1].outMat.data.grad,
+                          layerRef[layerIndex].outMat.data.grad, maskGpu, size,
+                          cfgRef->layerCfg[layerIndex].drop.scale);
 #else
         int* mask = layerRef[layerIndex].drop.mask;
+        memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
+               size * sizeof(float));
         cnn_drop_grad(layerRef[layerIndex - 1].outMat.data.grad,
                       layerRef[layerIndex].outMat.data.grad, mask, size,
                       cfgRef->layerCfg[layerIndex].drop.scale);

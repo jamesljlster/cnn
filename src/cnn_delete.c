@@ -53,7 +53,7 @@ void cnn_layer_drop_delete(struct CNN_LAYER_DROP* layerPtr)
 {
     // Free memory
     cnn_mat_delete(&layerPtr->outMat.data);
-    cnn_free_cu(layerPtr->mask);
+    cnn_free(layerPtr->mask);
 
 #ifdef CNN_WITH_CUDA
     cnn_free_cu(layerPtr->maskGpu);

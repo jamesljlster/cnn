@@ -233,10 +233,18 @@ void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
                 }
                 else
                 {
+#ifdef CNN_WITH_CUDA
+                    cudaMemcpy(layerRef[i].outMat.data.mat,
+                               layerRef[i - 1].outMat.data.mat,
+                               sizeof(float) * layerRef[i].outMat.data.rows *
+                                   layerRef[i].outMat.data.cols,
+                               cudaMemcpyDeviceToDevice);
+#else
                     memcpy(layerRef[i].outMat.data.mat,
                            layerRef[i - 1].outMat.data.mat,
                            sizeof(float) * layerRef[i].outMat.data.rows *
                                layerRef[i].outMat.data.cols);
+#endif
                 }
 
                 break;

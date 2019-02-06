@@ -1,6 +1,15 @@
 #ifndef __TEST_H__
 #define __TEST_H__
 
+#include <assert.h>
+#include <stdlib.h>
+
+#include <cnn_config.h>
+
+#ifdef CNN_WITH_CUDA
+#include <cuda_runtime.h>
+#endif
+
 #define test(func)                                                  \
     {                                                               \
         int __retVal = func;                                        \
@@ -8,7 +17,18 @@
         {                                                           \
             fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
                     __FUNCTION__, __LINE__, #func, __retVal);       \
-            return -1;                                              \
+            assert(0);                                              \
+        }                                                           \
+    }
+
+#define test_cu(func)                                               \
+    {                                                               \
+        cudaError_t ret = func;                                     \
+        if (ret != cudaSuccess)                                     \
+        {                                                           \
+            fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
+                    __FUNCTION__, __LINE__, #func, ret);            \
+            assert(0);                                              \
         }                                                           \
     }
 
@@ -20,7 +40,7 @@
             stderr,                                                         \
             "%s(), %d: Memory allocation failed with size: %d, type: %s\n", \
             __FUNCTION__, __LINE__, size, #type);                           \
-        return -1;                                                          \
+        assert(0);                                                          \
     }
 
 #define cu_alloc(ptr, size, type)                                             \
@@ -32,7 +52,7 @@
                     "%s(), %d: Cuda memory allocation failed with size: %d, " \
                     "type: %s\n",                                             \
                     __FUNCTION__, __LINE__, size, #type);                     \
-            return -1;                                                        \
+            assert(0);                                                        \
         }                                                                     \
     }
 
@@ -115,5 +135,33 @@ void print_img_int(int* src, int width, int height, int channel)
         printf("]\n");
     }
 }
+
+#ifdef CNN_WITH_CUDA
+void print_img_cu(float* src, int width, int height, int channel)
+{
+    int size = width * height * channel;
+
+    float* buf = NULL;
+    alloc(buf, size, float);
+
+    test_cu(cudaMemcpy(buf, src, size * sizeof(float), cudaMemcpyDeviceToHost));
+    print_img(buf, width, height, channel);
+
+    free(buf);
+}
+
+void print_img_int_cu(int* src, int width, int height, int channel)
+{
+    int size = width * height * channel;
+
+    int* buf = NULL;
+    alloc(buf, size, int);
+
+    test_cu(cudaMemcpy(buf, src, size * sizeof(int), cudaMemcpyDeviceToHost));
+    print_img_int(buf, width, height, channel);
+
+    free(buf);
+}
+#endif
 
 #endif
