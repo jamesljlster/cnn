@@ -74,91 +74,105 @@ void print_mat(float* src, int rows, int cols)
     }
 }
 
-void print_img(float* src, int width, int height, int channel)
+void print_img(float* src, int width, int height, int channel, int batch)
 {
     int imSize = width * height;
+    int batchSize = imSize * channel;
 
-    for (int ch = 0; ch < channel; ch++)
+    for (int b = 0; b < batch; b++)
     {
-        int chShift = ch * imSize;
+        int bShift = b * batchSize;
 
-        printf("[\n");
-        for (int h = 0; h < height; h++)
+        printf("(batch %d)\n", b);
+        for (int ch = 0; ch < channel; ch++)
         {
-            int shift = h * width + chShift;
+            int chShift = ch * imSize + bShift;
 
-            printf("[");
-            for (int w = 0; w < width; w++)
+            printf("[\n");
+            for (int h = 0; h < height; h++)
             {
-                printf("%g", src[shift + w]);
-                if (w < width - 1)
+                int shift = h * width + chShift;
+
+                printf("[");
+                for (int w = 0; w < width; w++)
                 {
-                    printf(", ");
-                }
-                else
-                {
-                    printf("]\n");
+                    printf("%g", src[shift + w]);
+                    if (w < width - 1)
+                    {
+                        printf(", ");
+                    }
+                    else
+                    {
+                        printf("]\n");
+                    }
                 }
             }
+            printf("]\n");
         }
-        printf("]\n");
     }
 }
 
-void print_img_int(int* src, int width, int height, int channel)
+void print_img_int(int* src, int width, int height, int channel, int batch)
 {
     int imSize = width * height;
+    int batchSize = imSize * channel;
 
-    for (int ch = 0; ch < channel; ch++)
+    for (int b = 0; b < batch; b++)
     {
-        int chShift = ch * imSize;
+        int bShift = b * batchSize;
 
-        printf("[\n");
-        for (int h = 0; h < height; h++)
+        printf("(batch %d)\n", b);
+        for (int ch = 0; ch < channel; ch++)
         {
-            int shift = h * width + chShift;
+            int chShift = ch * imSize + bShift;
 
-            printf("[");
-            for (int w = 0; w < width; w++)
+            printf("[\n");
+            for (int h = 0; h < height; h++)
             {
-                printf("%d", src[shift + w]);
-                if (w < width - 1)
+                int shift = h * width + chShift;
+
+                printf("[");
+                for (int w = 0; w < width; w++)
                 {
-                    printf(", ");
-                }
-                else
-                {
-                    printf("]\n");
+                    printf("%d", src[shift + w]);
+                    if (w < width - 1)
+                    {
+                        printf(", ");
+                    }
+                    else
+                    {
+                        printf("]\n");
+                    }
                 }
             }
+            printf("]\n");
         }
-        printf("]\n");
     }
 }
 
 #ifdef CNN_WITH_CUDA
-void print_img_cu(float* src, int width, int height, int channel)
+void print_img_cu(float* src, int width, int height, int channel, int batch)
 {
-    int size = width * height * channel;
+    int size = width * height * channel * batch;
 
     float* buf = NULL;
     alloc(buf, size, float);
 
     test_cu(cudaMemcpy(buf, src, size * sizeof(float), cudaMemcpyDeviceToHost));
-    print_img(buf, width, height, channel);
+    print_img(buf, width, height, channel, batch);
 
     free(buf);
 }
 
-void print_img_int_cu(int* src, int width, int height, int channel)
+void print_img_int_cu(int* src, int width, int height, int channel, int batch)
 {
-    int size = width * height * channel;
+    int size = width * height * channel * batch;
 
     int* buf = NULL;
     alloc(buf, size, int);
 
     test_cu(cudaMemcpy(buf, src, size * sizeof(int), cudaMemcpyDeviceToHost));
-    print_img_int(buf, width, height, channel);
+    print_img_int(buf, width, height, channel, batch);
 
     free(buf);
 }

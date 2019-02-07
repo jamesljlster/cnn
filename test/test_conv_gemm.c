@@ -132,23 +132,23 @@ int main()
 
     // Print information
     printf("src:\n");
-    print_img(src, IMG_WIDTH, IMG_HEIGHT, CH_IN);
+    print_img(src, IMG_WIDTH, IMG_HEIGHT, CH_IN, 1);
     printf("\n");
 
     printf("kernel:\n");
-    print_img(kernel, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT);
+    print_img(kernel, KERNEL_SIZE, KERNEL_SIZE * CH_IN, CH_OUT, 1);
     printf("\n");
 
     printf("bias:\n");
     print_img(bias,
               (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1), 1,
-              CH_OUT);
+              CH_OUT, 1);
     printf("\n");
 
     printf("desire:\n");
     print_img(desire,
               (IMG_WIDTH - KERNEL_SIZE + 1) * (IMG_WIDTH - KERNEL_SIZE + 1), 1,
-              CH_OUT);
+              CH_OUT, 1);
     printf("\n");
 
     // Allocate cnn layer
@@ -187,7 +187,7 @@ int main()
 
     printf("Convolution output:\n");
     print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel);
+              layer[2].outMat.height, layer[2].outMat.channel, 1);
     printf("\n");
 
     printf("***** Forward #2 *****\n");
@@ -195,7 +195,7 @@ int main()
 
     printf("Convolution output:\n");
     print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel);
+              layer[2].outMat.height, layer[2].outMat.channel, 1);
     printf("\n");
 
     // BP
@@ -225,17 +225,17 @@ int main()
 
     printf("Convolution layer gradient:\n");
     print_img(layer[2].outMat.data.grad, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel);
+              layer[2].outMat.height, layer[2].outMat.channel, 1);
     printf("\n");
 
     printf("Previous layer gradient:\n");
     print_img(layer[1].outMat.data.grad, layer[1].outMat.width,
-              layer[1].outMat.height, layer[1].outMat.channel);
+              layer[1].outMat.height, layer[1].outMat.channel, 1);
     printf("\n");
 
     printf("Kernel gradient:\n");
     print_img(layer[2].conv.kernel.grad, KERNEL_SIZE, KERNEL_SIZE * CH_IN,
-              CH_OUT);
+              CH_OUT, 1);
     printf("\n");
 
     return 0;

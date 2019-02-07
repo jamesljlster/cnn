@@ -10,6 +10,7 @@
 #include "test.h"
 
 #define SIZE 3
+#define BATCH 2
 
 int main(int argc, char* argv[])
 {
@@ -17,8 +18,14 @@ int main(int argc, char* argv[])
     int size;
     union CNN_LAYER layer[3];
 
-    float src[SIZE] = {-1, 0, 1};
-    float gradIn[SIZE] = {-1, 0, 1};
+    float src[SIZE * BATCH] = {
+        -1, 0, 1,  // batch 1
+        -1, 1, 2   // batch 2
+    };
+    float gradIn[SIZE * BATCH] = {
+        -1, 0, 1,  // batch 1
+        -1, 1, 2   // batch 2
+    };
 
     cnn_config_t cfg = NULL;
 
@@ -36,6 +43,7 @@ int main(int argc, char* argv[])
     test(cnn_init());
 
     test(cnn_config_create(&cfg));
+    test(cnn_config_set_batch_size(cfg, BATCH));
     test(cnn_config_set_input_size(cfg, SIZE, 1, 1));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
@@ -43,11 +51,11 @@ int main(int argc, char* argv[])
 
     // Print information
     printf("src:\n");
-    print_img(src, SIZE, 1, 1);
+    print_img(src, SIZE, 1, 1, cfg->batch);
     printf("\n");
 
     printf("gradIn:\n");
-    print_img(gradIn, SIZE, 1, 1);
+    print_img(gradIn, SIZE, 1, 1, cfg->batch);
     printf("\n");
 
     // Allocate cnn layer
@@ -62,7 +70,8 @@ int main(int argc, char* argv[])
     size =
         sizeof(float) * layer[1].outMat.data.rows * layer[1].outMat.data.cols;
 #ifdef CNN_WITH_CUDA
-    cudaMemcpy(layer[1].outMat.data.mat, src, size, cudaMemcpyHostToDevice);
+    test_cu(cudaMemcpy(layer[1].outMat.data.mat, src, size,
+                       cudaMemcpyHostToDevice));
 #else
     memcpy(layer[1].outMat.data.mat, src, size);
 #endif
@@ -70,7 +79,8 @@ int main(int argc, char* argv[])
     size =
         sizeof(float) * layer[2].outMat.data.rows * layer[2].outMat.data.cols;
 #ifdef CNN_WITH_CUDA
-    cudaMemcpy(layer[2].outMat.data.grad, gradIn, size, cudaMemcpyHostToDevice);
+    test_cu(cudaMemcpy(layer[2].outMat.data.grad, gradIn, size,
+                       cudaMemcpyHostToDevice));
 #else
     memcpy(layer[2].outMat.data.grad, gradIn, size);
 #endif
@@ -82,10 +92,10 @@ int main(int argc, char* argv[])
     printf("Activation output:\n");
 #ifdef CNN_WITH_CUDA
     print_img_cu(layer[2].outMat.data.mat, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel);
+                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #else
     print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel);
+              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #endif
     printf("\n");
 
@@ -95,10 +105,10 @@ int main(int argc, char* argv[])
     printf("Activation output:\n");
 #ifdef CNN_WITH_CUDA
     print_img_cu(layer[2].outMat.data.mat, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel);
+                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #else
     print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel);
+              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #endif
     printf("\n");
 
@@ -109,20 +119,20 @@ int main(int argc, char* argv[])
     printf("Activation layer gradient:\n");
 #ifdef CNN_WITH_CUDA
     print_img_cu(layer[2].outMat.data.grad, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel);
+                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #else
     print_img(layer[2].outMat.data.grad, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel);
+              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #endif
     printf("\n");
 
     printf("Previous layer gradient:\n");
 #ifdef CNN_WITH_CUDA
     print_img_cu(layer[1].outMat.data.grad, layer[1].outMat.width,
-                 layer[1].outMat.height, layer[1].outMat.channel);
+                 layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
 #else
     print_img(layer[1].outMat.data.grad, layer[1].outMat.width,
-              layer[1].outMat.height, layer[1].outMat.channel);
+              layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
 #endif
     printf("\n");
 
@@ -132,20 +142,20 @@ int main(int argc, char* argv[])
     printf("Activation layer gradient:\n");
 #ifdef CNN_WITH_CUDA
     print_img_cu(layer[2].outMat.data.grad, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel);
+                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #else
     print_img(layer[2].outMat.data.grad, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel);
+              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #endif
     printf("\n");
 
     printf("Previous layer gradient:\n");
 #ifdef CNN_WITH_CUDA
     print_img_cu(layer[1].outMat.data.grad, layer[1].outMat.width,
-                 layer[1].outMat.height, layer[1].outMat.channel);
+                 layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
 #else
     print_img(layer[1].outMat.data.grad, layer[1].outMat.width,
-              layer[1].outMat.height, layer[1].outMat.channel);
+              layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
 #endif
     printf("\n");
 
