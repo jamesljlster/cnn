@@ -198,6 +198,13 @@ int main()
     cnn_config_t cfg = NULL;
     cnn_t cnn = NULL;
 
+    ret = cnn_init();
+    if (ret < 0)
+    {
+        printf("cnn_init() failed with error: %d\n", ret);
+        return -1;
+    }
+
     ret = cnn_config_create(&cfg);
     if (ret < 0)
     {
@@ -242,6 +249,8 @@ int main()
     // Cleanup
     cnn_delete(cnn);
     cnn_config_delete(cfg);
+
+    cnn_deinit();
 
     return 0;
 }

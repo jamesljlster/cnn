@@ -119,8 +119,6 @@ void cnn_rand_network(cnn_t cnn)
     float* tmpVec = NULL;
 #endif
 
-    srand(time(NULL));
-
     // Get reference
     cfgRef = &cnn->cfg;
 

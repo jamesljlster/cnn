@@ -22,11 +22,15 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    test(cnn_init());
+
     while (1)
     {
         test(cnn_import(&cnn, argv[1]));
         cnn_delete(cnn);
     }
+
+    cnn_deinit();
 
     return 0;
 }

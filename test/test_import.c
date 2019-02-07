@@ -22,8 +22,12 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    test(cnn_init());
+
     test(cnn_import(&cnn, argv[1]));
     test(cnn_export(cnn, EXPORT_PATH));
+
+    cnn_deinit();
 
     return 0;
 }

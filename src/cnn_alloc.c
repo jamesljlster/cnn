@@ -5,6 +5,7 @@
 #include "cnn.h"
 #include "cnn_builtin_math.h"
 #include "cnn_calc.h"
+#include "cnn_init.h"
 #include "cnn_private.h"
 
 int cnn_network_alloc(struct CNN* cnn)
@@ -14,6 +15,13 @@ int cnn_network_alloc(struct CNN* cnn)
     int tmpWidth, tmpHeight, tmpChannel;
 
     struct CNN_CONFIG* cfg;
+
+    // Check initialize status
+    if (!cnnInit.inited)
+    {
+        ret = CNN_NOT_INITIALIZED;
+        goto RET;
+    }
 
     // Set reference
     cfg = &cnn->cfg;
