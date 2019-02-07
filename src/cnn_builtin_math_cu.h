@@ -17,6 +17,8 @@ extern "C"
     void cnn_exp_gpu(float* dst, float* src, int len);
     void cnn_div_gpu(float* dst, float* src, int len, float divider);
     void cnn_fmaxf_gpu(float* dst, float* src, int len, float num);
+    void cnn_elemwise_product_gpu(float* dst, float* src1, float* src2,
+                                  int len);
 
     CNN_SCALAR_ACTIV_DEF(relu);
     CNN_SCALAR_ACTIV_DEF(swish);

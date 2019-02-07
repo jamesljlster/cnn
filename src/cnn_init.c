@@ -9,9 +9,61 @@
 
 #ifdef CNN_WITH_CUDA
 #include <assert.h>
+#include <cuda_runtime.h>
 #endif
 
 #define CNN_M_PI 3.14159265359
+
+struct CNN_INIT cnnInit = {0};
+
+int cnn_init()
+{
+    int ret = CNN_NO_ERROR;
+
+#ifdef CNN_WITH_CUDA
+    cudaError_t cuRet;
+#endif
+
+    // Checking
+    if (cnnInit.inited)
+    {
+        goto RET;
+    }
+
+    // Initial random seed
+    cnnInit.randSeed = time(NULL);
+    srand(cnnInit.randSeed);
+
+#ifdef CNN_WITH_CUDA
+    // Initial cublas
+    cuRet = cublasCreate(&cnnInit.blasHandle);
+    if (cuRet != cudaSuccess)
+    {
+        ret = CNN_CUDA_RUNTIME_ERROR;
+        goto RET;
+    }
+#endif
+
+    // Assign value
+    cnnInit.inited = 1;
+
+RET:
+    return ret;
+}
+
+void cnn_deinit()
+{
+    if (cnnInit.inited)
+    {
+#ifdef CNN_WITH_CUDA
+        // Destroy cublas
+        cublasDestroy(cnnInit.blasHandle);
+#endif
+
+        // Reset memory
+        memset(&cnnInit, 0, sizeof(struct CNN_INIT));
+    }
+}
 
 float cnn_normal_distribution(struct CNN_BOX_MULLER* bmPtr, double mean,
                               double stddev)

@@ -72,6 +72,9 @@ extern "C"
 {
 #endif
 
+    int cnn_init();
+    void cnn_deinit();
+
     int cnn_config_create(cnn_config_t* cfgPtr);
     int cnn_config_clone(cnn_config_t* dstPtr, const cnn_config_t src);
     void cnn_config_delete(cnn_config_t cfg);
