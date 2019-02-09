@@ -40,6 +40,8 @@ int main()
     cnn_config_t cfg = NULL;
 
     // Create cnn
+    test(cnn_init());
+
     test(cnn_config_create(&cfg));
     test(cnn_config_set_batch_size(cfg, BATCH));
     test(cnn_config_set_input_size(cfg, SIZE_IN, 1, 1));
@@ -50,6 +52,14 @@ int main()
     // Print information
     printf("src:\n");
     print_img(src, SIZE_IN, 1, 1, cfg->batch);
+    printf("\n");
+
+    printf("weight:\n");
+    print_img(weight, SIZE_OUT, SIZE_IN, 1, 1);
+    printf("\n");
+
+    printf("bias:\n");
+    print_img(bias, SIZE_OUT, 1, 1, 1);
     printf("\n");
 
     printf("gradIn:\n");
@@ -100,60 +110,69 @@ int main()
 #endif
 
     // Forward
-    printf("***** Forward *****\n");
-    cnn_forward_fc(layer, cfg, 2);
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** Forward #%d *****\n", i + 1);
+        cnn_forward_fc(layer, cfg, 2);
 
-    printf("FC output:\n");
+        printf("FC output:\n");
 #ifdef CNN_WITH_CUDA
-    print_img_cu(layer[2].outMat.data.mat, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
+        print_img_cu(layer[2].outMat.data.mat, layer[2].outMat.width,
+                     layer[2].outMat.height, layer[2].outMat.channel,
+                     cfg->batch);
 #else
-    print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
+        print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
+                  layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #endif
-    printf("\n");
+        printf("\n");
+    }
 
     // BP
-    printf("***** BP *****\n");
-    cnn_backward_fc(layer, cfg, 2);
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** BP #%d *****\n", i + 1);
+        cnn_backward_fc(layer, cfg, 2);
 
-    printf("FC layer gradient:\n");
+        printf("FC layer gradient:\n");
 #ifdef CNN_WITH_CUDA
-    print_img_cu(layer[2].outMat.data.grad, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
+        print_img_cu(layer[2].outMat.data.grad, layer[2].outMat.width,
+                     layer[2].outMat.height, layer[2].outMat.channel,
+                     cfg->batch);
 #else
-    print_img(layer[2].outMat.data.grad, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
+        print_img(layer[2].outMat.data.grad, layer[2].outMat.width,
+                  layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
 #endif
-    printf("\n");
+        printf("\n");
 
-    printf("Weight gradient:\n");
+        printf("Weight gradient:\n");
 #ifdef CNN_WITH_CUDA
-    print_img_cu(layer[2].fc.weight.grad, layer[2].fc.weight.cols,
-                 layer[2].fc.weight.rows, 1, 1);
+        print_img_cu(layer[2].fc.weight.grad, layer[2].fc.weight.cols,
+                     layer[2].fc.weight.rows, 1, 1);
 #else
-    print_img(layer[2].fc.weight.grad, layer[2].fc.weight.cols,
-              layer[2].fc.weight.rows, 1, 1);
-#endif
-
-    printf("Bias gradient:\n");
-#ifdef CNN_WITH_CUDA
-    print_img_cu(layer[2].fc.bias.grad, layer[2].fc.bias.cols,
-                 layer[2].fc.bias.rows, 1, 1);
-#else
-    print_img(layer[2].fc.bias.grad, layer[2].fc.bias.cols,
-              layer[2].fc.bias.rows, 1, 1);
+        print_img(layer[2].fc.weight.grad, layer[2].fc.weight.cols,
+                  layer[2].fc.weight.rows, 1, 1);
 #endif
 
-    printf("Previous layer gradient:\n");
+        printf("Bias gradient:\n");
 #ifdef CNN_WITH_CUDA
-    print_img_cu(layer[1].outMat.data.grad, layer[1].outMat.width,
-                 layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
+        print_img_cu(layer[2].fc.bias.grad, layer[2].fc.bias.cols,
+                     layer[2].fc.bias.rows, 1, 1);
 #else
-    print_img(layer[1].outMat.data.grad, layer[1].outMat.width,
-              layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
+        print_img(layer[2].fc.bias.grad, layer[2].fc.bias.cols,
+                  layer[2].fc.bias.rows, 1, 1);
 #endif
-    printf("\n");
+
+        printf("Previous layer gradient:\n");
+#ifdef CNN_WITH_CUDA
+        print_img_cu(layer[1].outMat.data.grad, layer[1].outMat.width,
+                     layer[1].outMat.height, layer[1].outMat.channel,
+                     cfg->batch);
+#else
+        print_img(layer[1].outMat.data.grad, layer[1].outMat.width,
+                  layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
+#endif
+        printf("\n");
+    }
 
     return 0;
 }

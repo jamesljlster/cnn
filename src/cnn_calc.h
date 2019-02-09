@@ -337,13 +337,12 @@ static inline void cnn_forward_fc(union CNN_LAYER* layerRef,
     float alpha = 1.0;
     float beta = 0.0;
     cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
-                layerRef[layerIndex].outMat.data.cols,
-                layerRef[layerIndex - 1].outMat.data.rows,
+                layerRef[layerIndex].outMat.data.cols, cfgRef->batch,
                 layerRef[layerIndex - 1].outMat.data.cols, &alpha,
                 layerRef[layerIndex].fc.weight.mat,
                 layerRef[layerIndex].fc.weight.cols,
                 layerRef[layerIndex - 1].outMat.data.mat,
-                layerRef[layerIndex].outMat.data.cols, &beta,
+                layerRef[layerIndex - 1].outMat.data.cols, &beta,
                 layerRef[layerIndex].outMat.data.mat,
                 layerRef[layerIndex].outMat.data.cols);
 #else
@@ -360,22 +359,22 @@ static inline void cnn_forward_fc(union CNN_LAYER* layerRef,
 #endif
 
     // Add bias
-#ifdef CNN_WITH_CUDA
-    beta = 1.0;
-    cublasSaxpy(cnnInit.blasHandle,
-                layerRef[layerIndex].outMat.data.rows *
-                    layerRef[layerIndex].outMat.data.cols,
-                &alpha, layerRef[layerIndex].fc.bias.mat, 1,
-                layerRef[layerIndex].outMat.data.mat, 1);
-#else
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int dstIndex = j * layerRef[layerIndex].outMat.data.cols;
+
+#ifdef CNN_WITH_CUDA
+        beta = 1.0;
+        cublasSaxpy(cnnInit.blasHandle, layerRef[layerIndex].outMat.data.cols,
+                    &alpha, layerRef[layerIndex].fc.bias.mat, 1,
+                    layerRef[layerIndex].outMat.data.mat + dstIndex, 1);
+#else
+
         cblas_saxpy(layerRef[layerIndex].fc.bias.cols, 1.0,
                     layerRef[layerIndex].fc.bias.mat, 1,
                     &layerRef[layerIndex].outMat.data.mat[dstIndex], 1);
-    }
 #endif
+    }
 }
 
 static inline void cnn_forward_drop(union CNN_LAYER* layerRef,
@@ -604,8 +603,8 @@ static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
     float alpha = 1.0;
     float beta = 1.0;
     cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_T,
-                layerRef[layerIndex].fc.weight.rows,
-                layerRef[layerIndex].fc.weight.cols, cfgRef->batch, &alpha,
+                layerRef[layerIndex].fc.weight.cols,
+                layerRef[layerIndex].fc.weight.rows, cfgRef->batch, &alpha,
                 layerRef[layerIndex].outMat.data.grad,
                 layerRef[layerIndex].outMat.data.cols,
                 layerRef[layerIndex - 1].outMat.data.mat,
@@ -625,21 +624,20 @@ static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
 #endif
 
     // Sum bias gradient matrix
-#ifdef CNN_WITH_CUDA
-    cublasSaxpy(
-        cnnInit.blasHandle,
-        layerRef[layerIndex].fc.bias.rows * layerRef[layerIndex].fc.bias.cols,
-        &alpha, layerRef[layerIndex].outMat.data.grad, 1,
-        layerRef[layerIndex].fc.bias.grad, 1);
-#else
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int srcShift = j * layerRef[layerIndex].outMat.data.cols;
+
+#ifdef CNN_WITH_CUDA
+        cublasSaxpy(cnnInit.blasHandle, layerRef[layerIndex].fc.bias.cols,
+                    &alpha, layerRef[layerIndex].outMat.data.grad + srcShift, 1,
+                    layerRef[layerIndex].fc.bias.grad, 1);
+#else
         cblas_saxpy(layerRef[layerIndex].fc.bias.cols, 1.0,
                     &layerRef[layerIndex].outMat.data.grad[srcShift], 1,
                     layerRef[layerIndex].fc.bias.grad, 1);
-    }
 #endif
+    }
 
     // Find layer gradient
     if (layerIndex > 1)
