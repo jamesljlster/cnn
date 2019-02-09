@@ -9,20 +9,28 @@
 
 #include "test.h"
 
-#define SIZE 10
+#define SIZE 5
+#define BATCH 2
 
 int main()
 {
     int size;
     union CNN_LAYER layer[3];
 
-    float src[SIZE] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
-    float gradIn[SIZE] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+    float src[SIZE * BATCH] = {
+        0.1, 0.2, 0.3, 0.4, 0.5,  // batch 1
+        0.6, 0.7, 0.8, 0.9, 1.0   // batch 2
+    };
+    float gradIn[SIZE * BATCH] = {
+        0.1, 0.2, 0.3, 0.4, 0.5,  // batch 1
+        0.6, 0.7, 0.8, 0.9, 1.0   // batch 2
+    };
 
     cnn_config_t cfg = NULL;
 
     // Create cnn
     test(cnn_config_create(&cfg));
+    test(cnn_config_set_batch_size(cfg, BATCH));
     test(cnn_config_set_input_size(cfg, SIZE, 1, 1));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
