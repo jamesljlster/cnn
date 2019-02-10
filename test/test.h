@@ -21,17 +21,6 @@
         }                                                           \
     }
 
-#define test_cu(func)                                               \
-    {                                                               \
-        cudaError_t ret = func;                                     \
-        if (ret != cudaSuccess)                                     \
-        {                                                           \
-            fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
-                    __FUNCTION__, __LINE__, #func, ret);            \
-            assert(0);                                              \
-        }                                                           \
-    }
-
 #define alloc(ptr, size, type)                                              \
     ptr = calloc(size, sizeof(type));                                       \
     if (ptr == NULL)                                                        \
@@ -41,6 +30,18 @@
             "%s(), %d: Memory allocation failed with size: %d, type: %s\n", \
             __FUNCTION__, __LINE__, size, #type);                           \
         assert(0);                                                          \
+    }
+
+#ifdef CNN_WITH_CUDA
+#define test_cu(func)                                               \
+    {                                                               \
+        cudaError_t ret = func;                                     \
+        if (ret != cudaSuccess)                                     \
+        {                                                           \
+            fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
+                    __FUNCTION__, __LINE__, #func, ret);            \
+            assert(0);                                              \
+        }                                                           \
     }
 
 #define cu_alloc(ptr, size, type)                                             \
@@ -55,6 +56,7 @@
             assert(0);                                                        \
         }                                                                     \
     }
+#endif
 
 void print_mat(float* src, int rows, int cols)
 {
@@ -176,6 +178,28 @@ void print_img_int_cu(int* src, int width, int height, int channel, int batch)
 
     free(buf);
 }
+#endif
+
+void (*print_img_net)(float*, int, int, int, int) =
+#ifdef CNN_WITH_CUDA
+    print_img_cu;
+#else
+    print_img;
+#endif
+
+#ifdef CNN_WITH_CUDA
+#define memcpy_net(dst, src, size)                                            \
+    {                                                                         \
+        cudaError_t ret = cudaMemcpy(dst, src, size, cudaMemcpyHostToDevice); \
+        if (ret != cudaSuccess)                                               \
+        {                                                                     \
+            fprintf(stderr, "%s(), %d: cudaMemcpy failed with error: %d\n",   \
+                    __FUNCTION__, __LINE__, ret);                             \
+            assert(0);                                                        \
+        }                                                                     \
+    }
+#else
+#define memcpy_net(dst, src, size) memcpy(dst, src, size)
 #endif
 
 #endif

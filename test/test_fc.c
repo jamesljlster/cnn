@@ -77,37 +77,17 @@ int main()
     // Copy memory
     size =
         sizeof(float) * layer[1].outMat.data.rows * layer[1].outMat.data.cols;
-#ifdef CNN_WITH_CUDA
-    test_cu(cudaMemcpy(layer[1].outMat.data.mat, src, size,
-                       cudaMemcpyHostToDevice));
-#else
-    memcpy(layer[1].outMat.data.mat, src, size);
-#endif
+    memcpy_net(layer[1].outMat.data.mat, src, size);
 
     size =
         sizeof(float) * layer[2].outMat.data.rows * layer[2].outMat.data.cols;
-#ifdef CNN_WITH_CUDA
-    test_cu(cudaMemcpy(layer[2].outMat.data.grad, gradIn, size,
-                       cudaMemcpyHostToDevice));
-#else
-    memcpy(layer[2].outMat.data.grad, gradIn, size);
-#endif
+    memcpy_net(layer[2].outMat.data.grad, gradIn, size);
 
     size = sizeof(float) * layer[2].fc.weight.rows * layer[2].fc.weight.cols;
-#ifdef CNN_WITH_CUDA
-    test_cu(cudaMemcpy(layer[2].fc.weight.mat, weight, size,
-                       cudaMemcpyHostToDevice));
-#else
-    memcpy(layer[2].fc.weight.mat, weight, size);
-#endif
+    memcpy_net(layer[2].fc.weight.mat, weight, size);
 
     size = sizeof(float) * layer[2].fc.bias.rows * layer[2].fc.bias.cols;
-#ifdef CNN_WITH_CUDA
-    test_cu(
-        cudaMemcpy(layer[2].fc.bias.mat, bias, size, cudaMemcpyHostToDevice));
-#else
-    memcpy(layer[2].fc.bias.mat, bias, size);
-#endif
+    memcpy_net(layer[2].fc.bias.mat, bias, size);
 
     // Forward
     for (int i = 0; i < 2; i++)
@@ -116,14 +96,9 @@ int main()
         cnn_forward_fc(layer, cfg, 2);
 
         printf("FC output:\n");
-#ifdef CNN_WITH_CUDA
-        print_img_cu(layer[2].outMat.data.mat, layer[2].outMat.width,
-                     layer[2].outMat.height, layer[2].outMat.channel,
-                     cfg->batch);
-#else
-        print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
-                  layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#endif
+        print_img_net(layer[2].outMat.data.mat, layer[2].outMat.width,
+                      layer[2].outMat.height, layer[2].outMat.channel,
+                      cfg->batch);
         printf("\n");
     }
 
@@ -134,43 +109,25 @@ int main()
         cnn_backward_fc(layer, cfg, 2);
 
         printf("FC layer gradient:\n");
-#ifdef CNN_WITH_CUDA
-        print_img_cu(layer[2].outMat.data.grad, layer[2].outMat.width,
-                     layer[2].outMat.height, layer[2].outMat.channel,
-                     cfg->batch);
-#else
-        print_img(layer[2].outMat.data.grad, layer[2].outMat.width,
-                  layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#endif
+        print_img_net(layer[2].outMat.data.grad, layer[2].outMat.width,
+                      layer[2].outMat.height, layer[2].outMat.channel,
+                      cfg->batch);
         printf("\n");
 
         printf("Weight gradient:\n");
-#ifdef CNN_WITH_CUDA
-        print_img_cu(layer[2].fc.weight.grad, layer[2].fc.weight.cols,
-                     layer[2].fc.weight.rows, 1, 1);
-#else
-        print_img(layer[2].fc.weight.grad, layer[2].fc.weight.cols,
-                  layer[2].fc.weight.rows, 1, 1);
-#endif
+        print_img_net(layer[2].fc.weight.grad, layer[2].fc.weight.cols,
+                      layer[2].fc.weight.rows, 1, 1);
+        printf("\n");
 
         printf("Bias gradient:\n");
-#ifdef CNN_WITH_CUDA
-        print_img_cu(layer[2].fc.bias.grad, layer[2].fc.bias.cols,
-                     layer[2].fc.bias.rows, 1, 1);
-#else
-        print_img(layer[2].fc.bias.grad, layer[2].fc.bias.cols,
-                  layer[2].fc.bias.rows, 1, 1);
-#endif
+        print_img_net(layer[2].fc.bias.grad, layer[2].fc.bias.cols,
+                      layer[2].fc.bias.rows, 1, 1);
+        printf("\n");
 
         printf("Previous layer gradient:\n");
-#ifdef CNN_WITH_CUDA
-        print_img_cu(layer[1].outMat.data.grad, layer[1].outMat.width,
-                     layer[1].outMat.height, layer[1].outMat.channel,
-                     cfg->batch);
-#else
-        print_img(layer[1].outMat.data.grad, layer[1].outMat.width,
-                  layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
-#endif
+        print_img_net(layer[1].outMat.data.grad, layer[1].outMat.width,
+                      layer[1].outMat.height, layer[1].outMat.channel,
+                      cfg->batch);
         printf("\n");
     }
 

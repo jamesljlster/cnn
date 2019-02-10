@@ -29,6 +29,8 @@ int main()
     cnn_config_t cfg = NULL;
 
     // Create cnn
+    test(cnn_init());
+
     test(cnn_config_create(&cfg));
     test(cnn_config_set_batch_size(cfg, BATCH));
     test(cnn_config_set_input_size(cfg, SIZE, 1, 1));
@@ -56,93 +58,43 @@ int main()
     // Copy memory
     size =
         sizeof(float) * layer[1].outMat.data.rows * layer[1].outMat.data.cols;
-#ifdef CNN_WITH_CUDA
-    cudaMemcpy(layer[1].outMat.data.mat, src, size, cudaMemcpyHostToDevice);
-#else
-    memcpy(layer[1].outMat.data.mat, src, size);
-#endif
+    memcpy_net(layer[1].outMat.data.mat, src, size);
 
     size =
         sizeof(float) * layer[2].outMat.data.rows * layer[2].outMat.data.cols;
-#ifdef CNN_WITH_CUDA
-    cudaMemcpy(layer[2].outMat.data.grad, gradIn, size, cudaMemcpyHostToDevice);
-#else
-    memcpy(layer[2].outMat.data.grad, gradIn, size);
-#endif
+    memcpy_net(layer[2].outMat.data.grad, gradIn, size);
 
     // Forward
-    printf("***** Forward *****\n");
-    cnn_forward_drop(layer, cfg, 2);
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** Forward #%d *****\n", i + 1);
+        cnn_forward_drop(layer, cfg, 2);
 
-    printf("Dropout output:\n");
-#ifdef CNN_WITH_CUDA
-    print_img_cu(layer[2].outMat.data.mat, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#else
-    print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#endif
-    printf("\n");
-
-    printf("***** Forward #2 *****\n");
-    cnn_forward_drop(layer, cfg, 2);
-
-    printf("Dropout output:\n");
-#ifdef CNN_WITH_CUDA
-    print_img_cu(layer[2].outMat.data.mat, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#else
-    print_img(layer[2].outMat.data.mat, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#endif
-    printf("\n");
+        printf("Dropout output:\n");
+        print_img_net(layer[2].outMat.data.mat, layer[2].outMat.width,
+                      layer[2].outMat.height, layer[2].outMat.channel,
+                      cfg->batch);
+        printf("\n");
+    }
 
     // BP
-    printf("***** BP *****\n");
-    cnn_backward_drop(layer, cfg, 2);
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** BP #%d *****\n", i + 1);
+        cnn_backward_drop(layer, cfg, 2);
 
-    printf("Dropout layer gradient:\n");
-#ifdef CNN_WITH_CUDA
-    print_img_cu(layer[2].outMat.data.grad, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#else
-    print_img(layer[2].outMat.data.grad, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#endif
-    printf("\n");
+        printf("Dropout layer gradient:\n");
+        print_img_net(layer[2].outMat.data.grad, layer[2].outMat.width,
+                      layer[2].outMat.height, layer[2].outMat.channel,
+                      cfg->batch);
+        printf("\n");
 
-    printf("Previous layer gradient:\n");
-#ifdef CNN_WITH_CUDA
-    print_img_cu(layer[1].outMat.data.grad, layer[1].outMat.width,
-                 layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
-#else
-    print_img(layer[1].outMat.data.grad, layer[1].outMat.width,
-              layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
-#endif
-    printf("\n");
-
-    printf("***** BP #2 *****\n");
-    cnn_backward_drop(layer, cfg, 2);
-
-    printf("Dropout layer gradient:\n");
-#ifdef CNN_WITH_CUDA
-    print_img_cu(layer[2].outMat.data.grad, layer[2].outMat.width,
-                 layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#else
-    print_img(layer[2].outMat.data.grad, layer[2].outMat.width,
-              layer[2].outMat.height, layer[2].outMat.channel, cfg->batch);
-#endif
-    printf("\n");
-
-    printf("Previous layer gradient:\n");
-#ifdef CNN_WITH_CUDA
-    print_img_cu(layer[1].outMat.data.grad, layer[1].outMat.width,
-                 layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
-#else
-    print_img(layer[1].outMat.data.grad, layer[1].outMat.width,
-              layer[1].outMat.height, layer[1].outMat.channel, cfg->batch);
-#endif
-    printf("\n");
+        printf("Previous layer gradient:\n");
+        print_img_net(layer[1].outMat.data.grad, layer[1].outMat.width,
+                      layer[1].outMat.height, layer[1].outMat.channel,
+                      cfg->batch);
+        printf("\n");
+    }
 
     return 0;
 }
