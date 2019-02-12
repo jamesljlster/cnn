@@ -6,6 +6,9 @@ extern "C"
 {
 #endif
 
+    void cnn_map_gpu(float* dst, float* src, int* map, int len);
+    void cnn_map_inv_gpu(float* dst, float* src, int* map, int len);
+
     void cnn_drop_gpu(float* dst, float* src, int* mask, int size, float scale);
     void cnn_drop_grad_gpu(float* gradDst, float* gradSrc, int* mask, int size,
                            float scale);
