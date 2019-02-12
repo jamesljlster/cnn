@@ -534,18 +534,33 @@ static inline void cnn_forward_pool(union CNN_LAYER* layerRef,
                                     struct CNN_CONFIG* cfgRef, int layerIndex)
 {
     // Clear outputs
-    memset(layerRef[layerIndex].outMat.data.mat, 0,
-           sizeof(float) * layerRef[layerIndex].outMat.data.rows *
-               layerRef[layerIndex].outMat.data.cols);
+#ifdef CNN_WITH_CUDA
+    cudaMemset
+#else
+    memset
+#endif
+        (layerRef[layerIndex].outMat.data.mat, 0,
+         sizeof(float) * layerRef[layerIndex].outMat.data.rows *
+             layerRef[layerIndex].outMat.data.cols);
 
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
         int dstShift = j * layerRef[layerIndex].outMat.data.cols;
 
-        float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
-        float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
+        float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
+        float* dstPtr = layerRef[layerIndex].outMat.data.mat + dstShift;
 
+#ifdef CNN_WITH_CUDA
+        cnn_pool_2d_max_gpu(dstPtr,
+                            layerRef[layerIndex].pool.indexMat + dstShift,
+                            layerRef[layerIndex].outMat.width,
+                            layerRef[layerIndex].outMat.height,
+                            cfgRef->layerCfg[layerIndex].pool.size, srcPtr,
+                            layerRef[layerIndex - 1].outMat.width,
+                            layerRef[layerIndex - 1].outMat.height,
+                            layerRef[layerIndex].outMat.channel);
+#else
         cnn_pool_2d_max(dstPtr, &layerRef[layerIndex].pool.indexMat[dstShift],
                         layerRef[layerIndex].outMat.height,
                         layerRef[layerIndex].outMat.width, srcPtr,
@@ -553,6 +568,7 @@ static inline void cnn_forward_pool(union CNN_LAYER* layerRef,
                         layerRef[layerIndex - 1].outMat.width,
                         cfgRef->layerCfg[layerIndex].pool.size,
                         layerRef[layerIndex].outMat.channel);
+#endif
     }
 }
 
@@ -934,24 +950,38 @@ static inline void cnn_backward_pool(union CNN_LAYER* layerRef,
     if (layerIndex > 1)
     {
         // Zero layer gradient
-        memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
-               sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
-                   layerRef[layerIndex - 1].outMat.data.cols);
+#ifdef CNN_WITH_CUDA
+        cudaMemset
+#else
+        memset
+#endif
+            (layerRef[layerIndex - 1].outMat.data.grad, 0,
+             sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
+                 layerRef[layerIndex - 1].outMat.data.cols);
 
         for (int j = 0; j < cfgRef->batch; j++)
         {
             srcShift = j * layerRef[layerIndex].outMat.data.cols;
             dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
 
-            srcPtr = &layerRef[layerIndex].outMat.data.grad[srcShift];
+            srcPtr = layerRef[layerIndex].outMat.data.grad + srcShift;
 
             // Find layer gradient
+#ifdef CNN_WITH_CUDA
+            cnn_pool_2d_max_grad_gpu(
+                layerRef[layerIndex - 1].outMat.data.grad + dstShift,
+                layerRef[layerIndex].pool.indexMat + srcShift, srcPtr,
+                layerRef[layerIndex].outMat.width *
+                    layerRef[layerIndex].outMat.height *
+                    layerRef[layerIndex].outMat.channel);
+#else
             cnn_pool_2d_max_grad(
                 &layerRef[layerIndex - 1].outMat.data.grad[dstShift],
                 &layerRef[layerIndex].pool.indexMat[srcShift], srcPtr,
                 layerRef[layerIndex].outMat.height,
                 layerRef[layerIndex].outMat.width,
                 layerRef[layerIndex].outMat.channel);
+#endif
         }
     }
 }
