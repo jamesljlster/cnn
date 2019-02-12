@@ -187,6 +187,13 @@ void (*print_img_net)(float*, int, int, int, int) =
     print_img;
 #endif
 
+void (*print_img_int_net)(int*, int, int, int, int) =
+#ifdef CNN_WITH_CUDA
+    print_img_int_cu;
+#else
+    print_img_int;
+#endif
+
 void print_img_msg(const char* msg, float* src, int width, int height,
                    int channel, int batch)
 {
@@ -200,6 +207,22 @@ void print_img_net_msg(const char* msg, float* src, int width, int height,
 {
     printf("%s\n", msg);
     print_img_net(src, width, height, channel, batch);
+    printf("\n");
+}
+
+void print_img_int_msg(const char* msg, int* src, int width, int height,
+                       int channel, int batch)
+{
+    printf("%s\n", msg);
+    print_img_int(src, width, height, channel, batch);
+    printf("\n");
+}
+
+void print_img_int_net_msg(const char* msg, int* src, int width, int height,
+                           int channel, int batch)
+{
+    printf("%s\n", msg);
+    print_img_int_net(src, width, height, channel, batch);
     printf("\n");
 }
 
