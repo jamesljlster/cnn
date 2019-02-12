@@ -33,6 +33,9 @@ extern "C"
 
     void cnn_smax_grad_gpu(float* dst, float* cache, int len);
 
+    void cnn_map_gpu(float* dst, float* src, int* map, int len);
+    void cnn_map_inv_gpu(float* dst, float* src, int* map, int len);
+
 #ifdef __cplusplus
 }
 #endif

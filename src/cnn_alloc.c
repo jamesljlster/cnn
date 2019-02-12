@@ -467,8 +467,8 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
                 tmpVec[i] = -1;
             }
 
-            cnn_conv_unroll_2d_valid(tmpVec, outHeight, outWidth, cfgPtr->size,
-                                     inHeight, inWidth, inChannel);
+            cnn_conv_unroll_2d_same(tmpVec, outHeight, outWidth, cfgPtr->size,
+                                    inHeight, inWidth, inChannel);
 #else
             for (int i = 0; i < outWidth * outHeight * kCols; i++)
             {
