@@ -229,6 +229,30 @@ extern "C"
         cnn_exp_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len);
     }
 
+    __global__ void cnn_mul_kernel(float* dst, float* src, int len,
+                                   float multipiler)
+    {
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
+        if (index >= len)
+        {
+            return;
+        }
+
+        dst[index] = src[index] * multipiler;
+    }
+
+    void cnn_mul_gpu(float* dst, float* src, int len, float multipiler)
+    {
+        int blocks = len / CNN_THREAD_PER_BLOCK;
+        if (len % CNN_THREAD_PER_BLOCK)
+        {
+            blocks += 1;
+        }
+
+        cnn_mul_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len,
+                                                         multipiler);
+    }
+
     __global__ void cnn_div_kernel(float* dst, float* src, int len,
                                    float divider)
     {

@@ -193,6 +193,11 @@ struct CNN_LAYER_BN
     float* stddev;
     struct CNN_MAT srcShift;
     struct CNN_MAT srcNorm;
+
+#ifdef CNN_WITH_CUDA
+    // Buffer
+    float* buf;
+#endif
 };
 
 union CNN_LAYER {

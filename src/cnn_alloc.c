@@ -535,10 +535,14 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     cnn_run(cnn_mat_alloc(&layerPtr->srcShift, outRows, outCols, 0), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->srcNorm, outRows, outCols, 1), ret, ERR);
 
-#ifdef CNN_WITH_CUDA
-    cnn_alloc_cu(layerPtr->stddev, inChannel, float, ret, ERR);
-#else
+    //#ifdef CNN_WITH_CUDA
+    //    cnn_alloc_cu(layerPtr->stddev, inChannel, float, ret, ERR);
+    //#else
     cnn_alloc(layerPtr->stddev, inChannel, float, ret, ERR);
+    //#endif
+
+#ifdef CNN_WITH_CUDA
+    cnn_alloc_cu(layerPtr->buf, inWidth * inHeight, float, ret, ERR);
 #endif
 
 #ifdef CNN_WITH_CUDA

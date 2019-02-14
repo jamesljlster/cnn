@@ -130,10 +130,14 @@ void cnn_layer_bn_delete(struct CNN_LAYER_BN* layerPtr)
     cnn_mat_delete(&layerPtr->srcShift);
     cnn_mat_delete(&layerPtr->srcNorm);
 
-#ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->stddev);
-#else
+    //#ifdef CNN_WITH_CUDA
+    //    cnn_free_cu(layerPtr->stddev);
+    //#else
     cnn_free(layerPtr->stddev);
+    //#endif
+
+#ifdef CNN_WITH_CUDA
+    cnn_free_cu(layerPtr->buf);
 #endif
 
     // Zero memory

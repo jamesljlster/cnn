@@ -591,13 +591,25 @@ static inline void cnn_forward_bn(union CNN_LAYER* layerRef,
         {
             int chShift = dataShift + ch * chSize;
 
-            float* src = &layerRef[layerIndex - 1].outMat.data.mat[chShift];
-            float* srcShift = &layerRef[layerIndex].bn.srcShift.mat[chShift];
-            float* srcNorm = &layerRef[layerIndex].bn.srcNorm.mat[chShift];
-            float* out = &layerRef[layerIndex].outMat.data.mat[chShift];
+            float* src = layerRef[layerIndex - 1].outMat.data.mat + chShift;
+            float* srcShift = layerRef[layerIndex].bn.srcShift.mat + chShift;
+            float* srcNorm = layerRef[layerIndex].bn.srcNorm.mat + chShift;
+            float* out = layerRef[layerIndex].outMat.data.mat + chShift;
 
+#ifdef CNN_WITH_CUDA
+            float* buf = layerRef[layerIndex].bn.buf;
+            float blasAlpha = 1.0;
+            float blasBeta = 0.0;
+
+            float gamma, beta;
+            cudaMemcpy(&gamma, layerRef[layerIndex].bn.bnVar.mat + ch * 2 + 0,
+                       sizeof(float), cudaMemcpyDeviceToHost);
+            cudaMemcpy(&beta, layerRef[layerIndex].bn.bnVar.mat + ch * 2 + 1,
+                       sizeof(float), cudaMemcpyDeviceToHost);
+#else
             float gamma = layerRef[layerIndex].bn.bnVar.mat[ch * 2 + 0];
             float beta = layerRef[layerIndex].bn.bnVar.mat[ch * 2 + 1];
+#endif
 
             float mean = 0;
             float var = 0;
@@ -605,39 +617,63 @@ static inline void cnn_forward_bn(union CNN_LAYER* layerRef,
             float fLen = (float)chSize;
 
             // Find mean
+#ifdef CNN_WITH_CUDA
+            cnn_sum_gpu(&mean, src, chSize, buf);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 mean += src[__i];
             }
+#endif
 
             mean /= fLen;
 
             // Find shifted source vector
+#ifdef CNN_WITH_CUDA
+            cnn_add_gpu(srcShift, src, chSize, -mean);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 srcShift[__i] = src[__i] - mean;
             }
+#endif
 
             // Find variance, stddev
+#ifdef CNN_WITH_CUDA
+            cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N, 1, 1,
+                        chSize, &blasAlpha, srcShift, chSize, srcShift, chSize,
+                        &blasBeta, buf, chSize);
+            cudaMemcpy(&var, buf, sizeof(float), cudaMemcpyDeviceToHost);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 var += srcShift[__i] * srcShift[__i];
             }
+#endif
 
             var /= fLen;
             stddev = sqrt(var + 1e-8);
 
             // Find normalized source
+#ifdef CNN_WITH_CUDA
+            cnn_div_gpu(srcNorm, srcShift, chSize, stddev);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 srcNorm[__i] = srcShift[__i] / stddev;
             }
+#endif
 
             // Scale and shift
+#ifdef CNN_WITH_CUDA
+            cnn_mul_gpu(out, srcNorm, chSize, gamma);
+            cnn_add_gpu(out, out, chSize, beta);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 out[__i] = gamma * srcNorm[__i] + beta;
             }
+#endif
 
             // Assign cache
             stddevCache[ch] = stddev;
