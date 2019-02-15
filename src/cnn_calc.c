@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "cnn_calc.h"
+#include "cnn_init.h"
 #include "cnn_private.h"
 
 inline void cnn_restrict(float* mat, int size, float limit)
@@ -13,6 +14,29 @@ inline void cnn_restrict(float* mat, int size, float limit)
     {
         mat[__i] = fminf(mat[__i], limit);
     }
+}
+
+void cnn_mat_update(struct CNN_MAT* matPtr, float lRate, float limit)
+{
+    int size = matPtr->rows * matPtr->cols;
+
+    // Limit gradient and update weight
+#ifdef CNN_WITH_CUDA
+    cnn_fminf_gpu(matPtr->grad, matPtr->grad, size, limit);
+    cublasSaxpy(cnnInit.blasHandle, size, &lRate, matPtr->grad, 1, matPtr->mat,
+                1);
+#else
+    cnn_restrict(matPtr->grad, size, limit);
+    cblas_saxpy(size, lRate, matPtr->grad, 1, matPtr->mat, 1);
+#endif
+
+    // Clear gradient
+#ifdef CNN_WITH_CUDA
+    cudaMemset
+#else
+    memset
+#endif
+        (matPtr->grad, 0, size * sizeof(float));
 }
 
 void cnn_update(cnn_t cnn, float lRate, float gradLimit)
@@ -29,105 +53,41 @@ void cnn_update(cnn_t cnn, float lRate, float gradLimit)
     for (i = cfgRef->layers - 1; i > 0; i--)
     {
         // Clear layer gradient
-        memset(layerRef[i].outMat.data.grad, 0,
-               sizeof(float) * layerRef[i].outMat.data.rows *
-                   layerRef[i].outMat.data.cols);
+#ifdef CNN_WITH_CUDA
+        cudaMemset
+#else
+        memset
+#endif
+            (layerRef[i].outMat.data.grad, 0,
+             sizeof(float) * layerRef[i].outMat.data.rows *
+                 layerRef[i].outMat.data.cols);
 
         switch (cfgRef->layerCfg[i].type)
         {
             // Fully connected
             case CNN_LAYER_FC:
-                // Limit gradient
-                cnn_restrict(
-                    layerRef[i].fc.weight.grad,
-                    layerRef[i].fc.weight.rows * layerRef[i].fc.weight.cols,
-                    gradLimit);
-                cnn_restrict(layerRef[i].fc.bias.grad, layerRef[i].fc.bias.cols,
-                             gradLimit);
-
-                // Update weight
-                cblas_saxpy(
-                    layerRef[i].fc.weight.rows * layerRef[i].fc.weight.cols,
-                    lRate, layerRef[i].fc.weight.grad, 1,
-                    layerRef[i].fc.weight.mat, 1);
-
-                // Update bias
-                cblas_saxpy(layerRef[i].fc.bias.cols, lRate,
-                            layerRef[i].fc.bias.grad, 1,
-                            layerRef[i].fc.bias.mat, 1);
-
-                // Clear gradient
-                memset(layerRef[i].fc.weight.grad, 0,
-                       sizeof(float) * layerRef[i].fc.weight.rows *
-                           layerRef[i].fc.weight.cols);
-                memset(layerRef[i].fc.bias.grad, 0,
-                       sizeof(float) * layerRef[i].fc.bias.rows *
-                           layerRef[i].fc.bias.cols);
-
+                cnn_mat_update(&layerRef[i].fc.weight, lRate, gradLimit);
+                cnn_mat_update(&layerRef[i].fc.bias, lRate, gradLimit);
                 break;
 
             // Convolution
             case CNN_LAYER_CONV:
-                // Limit gradient
-                cnn_restrict(
-                    layerRef[i].conv.kernel.grad,
-                    layerRef[i].conv.kernel.rows * layerRef[i].conv.kernel.cols,
-                    gradLimit);
+                cnn_mat_update(&layerRef[i].conv.kernel, lRate, gradLimit);
 
 #if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
-                cnn_restrict(layerRef[i].conv.bias.grad,
-                             layerRef[i].conv.bias.cols, gradLimit);
+                cnn_mat_update(&layerRef[i].conv.bias, lRate, gradLimit);
 #endif
-
-                // Update kernel
-                cblas_saxpy(
-                    layerRef[i].conv.kernel.cols * layerRef[i].conv.kernel.rows,
-                    lRate, layerRef[i].conv.kernel.grad, 1,
-                    layerRef[i].conv.kernel.mat, 1);
-
-                // Update bias
-#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
-                cblas_saxpy(layerRef[i].conv.bias.cols, lRate,
-                            layerRef[i].conv.bias.grad, 1,
-                            layerRef[i].conv.bias.mat, 1);
-#endif
-
-                // Clear gradient
-                memset(layerRef[i].conv.kernel.grad, 0,
-                       sizeof(float) * layerRef[i].conv.kernel.rows *
-                           layerRef[i].conv.kernel.cols);
-
-#if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
-                memset(layerRef[i].conv.bias.grad, 0,
-                       sizeof(float) * layerRef[i].conv.bias.rows *
-                           layerRef[i].conv.bias.cols);
-#endif
-
                 break;
 
             // Batch normalization
             case CNN_LAYER_BN:
-                // Limit gradient
-                cnn_restrict(
-                    layerRef[i].bn.bnVar.grad,
-                    layerRef[i].bn.bnVar.rows * layerRef[i].bn.bnVar.cols,
-                    gradLimit);
-
-                // Update variables
-                cblas_saxpy(
-                    layerRef[i].bn.bnVar.cols * layerRef[i].bn.bnVar.rows,
-                    lRate, layerRef[i].bn.bnVar.grad, 1,
-                    layerRef[i].bn.bnVar.mat, 1);
-
-                // Clear gradient
-                memset(layerRef[i].bn.bnVar.grad, 0,
-                       sizeof(float) * layerRef[i].bn.bnVar.rows *
-                           layerRef[i].bn.bnVar.cols);
+                cnn_mat_update(&layerRef[i].bn.bnVar, lRate, gradLimit);
+                break;
         }
     }
 }
 
-void cnn_backward(cnn_t cnn, float* errGrad)
+static inline void cnn_backward_kernel(cnn_t cnn, float* errGrad)
 {
     int i;
 
@@ -137,11 +97,6 @@ void cnn_backward(cnn_t cnn, float* errGrad)
     // Set reference
     layerRef = cnn->layerList;
     cfgRef = &cnn->cfg;
-
-    // Copy gradient vector
-    memcpy(layerRef[cfgRef->layers - 1].outMat.data.grad, errGrad,
-           sizeof(float) * layerRef[cfgRef->layers - 1].outMat.data.rows *
-               layerRef[cfgRef->layers - 1].outMat.data.cols);
 
     // Backpropagation
     for (i = cfgRef->layers - 1; i > 0; i--)
@@ -184,7 +139,57 @@ void cnn_backward(cnn_t cnn, float* errGrad)
     }
 }
 
-void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
+void cnn_backward(cnn_t cnn, float* errGrad)
+{
+    int size;
+
+    struct CNN_CONFIG* cfgRef;
+    union CNN_LAYER* layerRef;
+
+    // Set reference
+    layerRef = cnn->layerList;
+    cfgRef = &cnn->cfg;
+
+    // Copy gradient vector
+    size = sizeof(float) * layerRef[cfgRef->layers - 1].outMat.data.rows *
+           layerRef[cfgRef->layers - 1].outMat.data.cols;
+
+#ifdef CNN_WITH_CUDA
+    cudaMemcpy(layerRef[cfgRef->layers - 1].outMat.data.grad, errGrad, size,
+               cudaMemcpyHostToDevice);
+#else
+    memcpy(layerRef[cfgRef->layers - 1].outMat.data.grad, errGrad, size);
+#endif
+
+    // Backpropagation
+    cnn_backward_kernel(cnn, errGrad);
+}
+
+#ifdef CNN_WITH_CUDA
+void cnn_backward_gpu(cnn_t cnn, float* errGrad)
+{
+    int size;
+
+    struct CNN_CONFIG* cfgRef;
+    union CNN_LAYER* layerRef;
+
+    // Set reference
+    layerRef = cnn->layerList;
+    cfgRef = &cnn->cfg;
+
+    // Copy gradient vector
+    size = sizeof(float) * layerRef[cfgRef->layers - 1].outMat.data.rows *
+           layerRef[cfgRef->layers - 1].outMat.data.cols;
+    cudaMemcpy(layerRef[cfgRef->layers - 1].outMat.data.grad, errGrad, size,
+               cudaMemcpyDeviceToDevice);
+
+    // Backpropagation
+    cnn_backward_kernel(cnn, errGrad);
+}
+#endif
+
+static inline void cnn_forward_kernel(cnn_t cnn, float* inputMat,
+                                      float* outputMat)
 {
     int i;
 
@@ -194,11 +199,6 @@ void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
     // Set reference
     layerRef = cnn->layerList;
     cfgRef = &cnn->cfg;
-
-    // Copy input
-    memcpy(layerRef[0].outMat.data.mat, inputMat,
-           sizeof(float) * layerRef[0].outMat.data.rows *
-               layerRef[0].outMat.data.cols);
 
     // Forward computation
     for (i = 1; i < cfgRef->layers; i++)
@@ -258,12 +258,84 @@ void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
                 assert(!"Invalid layer type");
         }
     }
+}
+
+void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat)
+{
+    int size;
+
+    struct CNN_CONFIG* cfgRef;
+    union CNN_LAYER* layerRef;
+
+    // Set reference
+    layerRef = cnn->layerList;
+    cfgRef = &cnn->cfg;
+
+    // Copy input
+    size = sizeof(float) * layerRef[0].outMat.data.rows *
+           layerRef[0].outMat.data.cols;
+#ifdef CNN_WITH_CUDA
+    cudaMemcpy(layerRef[0].outMat.data.mat, inputMat, size,
+               cudaMemcpyHostToDevice);
+#else
+    memcpy(layerRef[0].outMat.data.mat, inputMat, size);
+#endif
+
+    // Forward computation
+    cnn_forward_kernel(cnn, inputMat, outputMat);
 
     // Copy output
     if (outputMat != NULL)
     {
-        memcpy(outputMat, layerRef[cfgRef->layers - 1].outMat.data.mat,
-               sizeof(float) * layerRef[cfgRef->layers - 1].outMat.data.rows *
-                   layerRef[cfgRef->layers - 1].outMat.data.cols);
+        size = sizeof(float) * layerRef[cfgRef->layers - 1].outMat.data.rows *
+               layerRef[cfgRef->layers - 1].outMat.data.cols;
+#ifdef CNN_WITH_CUDA
+        cudaMemcpy(outputMat, layerRef[cfgRef->layers - 1].outMat.data.mat,
+                   size, cudaMemcpyDeviceToHost);
+#else
+        memcpy(outputMat, layerRef[cfgRef->layers - 1].outMat.data.mat, size);
+#endif
+    }
+#ifdef CNN_WITH_CUDA
+    else
+    {
+        cudaDeviceSynchronize();
+    }
+#endif
+}
+
+#ifdef CNN_WITH_CUDA
+void cnn_forward_gpu(cnn_t cnn, float* inputMat, float* outputMat)
+{
+    int size;
+
+    struct CNN_CONFIG* cfgRef;
+    union CNN_LAYER* layerRef;
+
+    // Set reference
+    layerRef = cnn->layerList;
+    cfgRef = &cnn->cfg;
+
+    // Copy input
+    size = sizeof(float) * layerRef[0].outMat.data.rows *
+           layerRef[0].outMat.data.cols;
+    cudaMemcpy(layerRef[0].outMat.data.mat, inputMat, size,
+               cudaMemcpyDeviceToDevice);
+
+    // Forward computation
+    cnn_forward_kernel(cnn, inputMat, outputMat);
+
+    // Copy output
+    if (outputMat != NULL)
+    {
+        size = sizeof(float) * layerRef[cfgRef->layers - 1].outMat.data.rows *
+               layerRef[cfgRef->layers - 1].outMat.data.cols;
+        cudaMemcpy(outputMat, layerRef[cfgRef->layers - 1].outMat.data.mat,
+                   size, cudaMemcpyDeviceToDevice);
+    }
+    else
+    {
+        cudaDeviceSynchronize();
     }
 }
+#endif

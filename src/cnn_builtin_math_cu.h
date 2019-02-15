@@ -18,6 +18,7 @@ extern "C"
     void cnn_mul_gpu(float* dst, float* src, int len, float multipiler);
     void cnn_div_gpu(float* dst, float* src, int len, float divider);
     void cnn_fmaxf_gpu(float* dst, float* src, int len, float num);
+    void cnn_fminf_gpu(float* dst, float* src, int len, float num);
     void cnn_elemwise_add_gpu(float* dst, float* src1, float* src2, int len);
     void cnn_elemwise_product_gpu(float* dst, float* src1, float* src2,
                                   int len);

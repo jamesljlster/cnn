@@ -277,6 +277,28 @@ extern "C"
                                                          divider);
     }
 
+    __global__ void cnn_fminf_kernel(float* dst, float* src, int len, float num)
+    {
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
+        if (index >= len)
+        {
+            return;
+        }
+
+        dst[index] = fminf(src[index], num);
+    }
+
+    void cnn_fminf_gpu(float* dst, float* src, int len, float num)
+    {
+        int blocks = len / CNN_THREAD_PER_BLOCK;
+        if (len % CNN_THREAD_PER_BLOCK)
+        {
+            blocks += 1;
+        }
+
+        cnn_fminf_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len, num);
+    }
+
     __global__ void cnn_fmaxf_kernel(float* dst, float* src, int len, float num)
     {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
