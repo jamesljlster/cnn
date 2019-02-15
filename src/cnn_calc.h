@@ -580,12 +580,11 @@ static inline void cnn_forward_bn(union CNN_LAYER* layerRef,
     int chSize =
         layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
 
-    float* stddevCache = layerRef[layerIndex].bn.stddev;
-
     // Batch normalization forward
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int dataShift = j * layerRef[layerIndex].outMat.data.cols;
+        float* stddevCache = layerRef[layerIndex].bn.stddev + j * channels;
 
         for (int ch = 0; ch < channels; ch++)
         {
@@ -1030,12 +1029,11 @@ static inline void cnn_backward_bn(union CNN_LAYER* layerRef,
     int chSize =
         layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
 
-    float* stddevCache = layerRef[layerIndex].bn.stddev;
-
     // Batch normalization backward
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int dataShift = j * layerRef[layerIndex].outMat.data.cols;
+        float* stddevCache = layerRef[layerIndex].bn.stddev + j * channels;
 
         for (int ch = 0; ch < channels; ch++)
         {

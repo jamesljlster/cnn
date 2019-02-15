@@ -538,7 +538,7 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     //#ifdef CNN_WITH_CUDA
     //    cnn_alloc_cu(layerPtr->stddev, inChannel, float, ret, ERR);
     //#else
-    cnn_alloc(layerPtr->stddev, inChannel, float, ret, ERR);
+    cnn_alloc(layerPtr->stddev, inChannel * batch, float, ret, ERR);
     //#endif
 
 #ifdef CNN_WITH_CUDA
