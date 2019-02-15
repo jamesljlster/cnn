@@ -50,21 +50,10 @@ int main()
     test(cnn_config_append_full_connect(cfg, SIZE_OUT));
 
     // Print information
-    printf("src:\n");
-    print_img(src, SIZE_IN, 1, 1, cfg->batch);
-    printf("\n");
-
-    printf("weight:\n");
-    print_img(weight, SIZE_OUT, SIZE_IN, 1, 1);
-    printf("\n");
-
-    printf("bias:\n");
-    print_img(bias, SIZE_OUT, 1, 1, 1);
-    printf("\n");
-
-    printf("gradIn:\n");
-    print_img(gradIn, SIZE_OUT, 1, 1, cfg->batch);
-    printf("\n");
+    print_img_msg("src:", src, SIZE_IN, 1, 1, cfg->batch);
+    print_img_msg("weight:", weight, SIZE_OUT, SIZE_IN, 1, 1);
+    print_img_msg("bias:", bias, SIZE_OUT, 1, 1, 1);
+    print_img_msg("gradIn:", gradIn, SIZE_OUT, 1, 1, cfg->batch);
 
     // Allocate cnn layer
     test(cnn_layer_activ_alloc(
@@ -95,11 +84,9 @@ int main()
         printf("***** Forward #%d *****\n", i + 1);
         cnn_forward_fc(layer, cfg, 2);
 
-        printf("FC output:\n");
-        print_img_net(layer[2].outMat.data.mat, layer[2].outMat.width,
-                      layer[2].outMat.height, layer[2].outMat.channel,
-                      cfg->batch);
-        printf("\n");
+        print_img_net_msg("FC output:", layer[2].outMat.data.mat,
+                          layer[2].outMat.width, layer[2].outMat.height,
+                          layer[2].outMat.channel, cfg->batch);
     }
 
     // BP
@@ -108,27 +95,17 @@ int main()
         printf("***** BP #%d *****\n", i + 1);
         cnn_backward_fc(layer, cfg, 2);
 
-        printf("FC layer gradient:\n");
-        print_img_net(layer[2].outMat.data.grad, layer[2].outMat.width,
-                      layer[2].outMat.height, layer[2].outMat.channel,
-                      cfg->batch);
-        printf("\n");
-
-        printf("Weight gradient:\n");
-        print_img_net(layer[2].fc.weight.grad, layer[2].fc.weight.cols,
-                      layer[2].fc.weight.rows, 1, 1);
-        printf("\n");
-
-        printf("Bias gradient:\n");
-        print_img_net(layer[2].fc.bias.grad, layer[2].fc.bias.cols,
-                      layer[2].fc.bias.rows, 1, 1);
-        printf("\n");
-
-        printf("Previous layer gradient:\n");
-        print_img_net(layer[1].outMat.data.grad, layer[1].outMat.width,
-                      layer[1].outMat.height, layer[1].outMat.channel,
-                      cfg->batch);
-        printf("\n");
+        print_img_net_msg("FC layer gradient:", layer[2].outMat.data.grad,
+                          layer[2].outMat.width, layer[2].outMat.height,
+                          layer[2].outMat.channel, cfg->batch);
+        print_img_net_msg("Weight gradient:", layer[2].fc.weight.grad,
+                          layer[2].fc.weight.cols, layer[2].fc.weight.rows, 1,
+                          1);
+        print_img_net_msg("Bias gradient:", layer[2].fc.bias.grad,
+                          layer[2].fc.bias.cols, layer[2].fc.bias.rows, 1, 1);
+        print_img_net_msg("Previous layer gradient:", layer[1].outMat.data.grad,
+                          layer[1].outMat.width, layer[1].outMat.height,
+                          layer[1].outMat.channel, cfg->batch);
     }
 
     return 0;

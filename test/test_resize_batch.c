@@ -5,25 +5,18 @@
 
 #include <cnn.h>
 
+#include "test.h"
+
 #define BATCH 100
 #define WIDTH 32
 #define HEIGHT 32
 #define CHANNEL 3
 #define OUTPUTS 10
 
-#define test(func)                                        \
-    ret = func;                                           \
-    if (ret < 0)                                          \
-    {                                                     \
-        printf("%s failed with error: %d\n", #func, ret); \
-        return -1;                                        \
-    }
-
 int main()
 {
     int i;
     int inCols;
-    int ret;
     float err;
 
     cnn_t cnn;

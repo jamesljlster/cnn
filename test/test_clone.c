@@ -1,19 +1,12 @@
 #include <cnn.h>
 #include <cnn_parse.h>
 
-#define EXPORT_PATH "test_clone.xml"
+#include "test.h"
 
-#define test(func)                                        \
-    ret = func;                                           \
-    if (ret < 0)                                          \
-    {                                                     \
-        printf("%s failed with error: %d\n", #func, ret); \
-        return -1;                                        \
-    }
+#define EXPORT_PATH "test_clone.xml"
 
 int main(int argc, char* argv[])
 {
-    int ret;
     cnn_t cnn;
     cnn_t cpy;
 
@@ -23,6 +16,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    test(cnn_init());
     test(cnn_import(&cnn, argv[1]));
     test(cnn_clone(&cpy, cnn));
     test(cnn_export(cpy, EXPORT_PATH));

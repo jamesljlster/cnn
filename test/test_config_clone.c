@@ -40,16 +40,11 @@ void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 int main()
 {
     int i;
-    int ret;
     cnn_config_t cfg = NULL;
     cnn_config_t cpy = NULL;
 
-    ret = cnn_config_create(&cfg);
-    if (ret < 0)
-    {
-        printf("cnn_config_create() failed with error: %d\n", ret);
-        return -1;
-    }
+    test(cnn_init());
+    test(cnn_config_create(&cfg));
 
     // Test set config
     cnn_config_set_input_size(cfg, 640, 480, 1);
@@ -63,12 +58,7 @@ int main()
     cnn_config_append_activation(cfg, CNN_SOFTMAX);
 
     // Clone cnn setting
-    ret = cnn_config_clone(&cpy, cfg);
-    if (ret < 0)
-    {
-        printf("cnn_config_clone() failed with error: %d\n", ret);
-        return -1;
-    }
+    test(cnn_config_clone(&cpy, cfg));
 
     // Check setting
     printf("=== Src CNN Config ===\n");
@@ -90,5 +80,6 @@ int main()
     // Cleanup
     cnn_config_delete(cfg);
     cnn_config_delete(cpy);
+
     return 0;
 }

@@ -39,13 +39,8 @@ int main()
     test(cnn_config_append_dropout(cfg, 0.5));
 
     // Print information
-    printf("src:\n");
-    print_img(src, SIZE, 1, 1, cfg->batch);
-    printf("\n");
-
-    printf("gradIn:\n");
-    print_img(gradIn, SIZE, 1, 1, cfg->batch);
-    printf("\n");
+    print_img_msg("src:", src, SIZE, 1, 1, cfg->batch);
+    print_img_msg("gradIn:", gradIn, SIZE, 1, 1, cfg->batch);
 
     // Allocate cnn layer
     test(cnn_layer_activ_alloc(
@@ -70,11 +65,9 @@ int main()
         printf("***** Forward #%d *****\n", i + 1);
         cnn_forward_drop(layer, cfg, 2);
 
-        printf("Dropout output:\n");
-        print_img_net(layer[2].outMat.data.mat, layer[2].outMat.width,
-                      layer[2].outMat.height, layer[2].outMat.channel,
-                      cfg->batch);
-        printf("\n");
+        print_img_net_msg("Dropout output:", layer[2].outMat.data.mat,
+                          layer[2].outMat.width, layer[2].outMat.height,
+                          layer[2].outMat.channel, cfg->batch);
     }
 
     // BP
@@ -83,17 +76,13 @@ int main()
         printf("***** BP #%d *****\n", i + 1);
         cnn_backward_drop(layer, cfg, 2);
 
-        printf("Dropout layer gradient:\n");
-        print_img_net(layer[2].outMat.data.grad, layer[2].outMat.width,
-                      layer[2].outMat.height, layer[2].outMat.channel,
-                      cfg->batch);
-        printf("\n");
+        print_img_net_msg("Dropout layer gradient:", layer[2].outMat.data.grad,
+                          layer[2].outMat.width, layer[2].outMat.height,
+                          layer[2].outMat.channel, cfg->batch);
 
-        printf("Previous layer gradient:\n");
-        print_img_net(layer[1].outMat.data.grad, layer[1].outMat.width,
-                      layer[1].outMat.height, layer[1].outMat.channel,
-                      cfg->batch);
-        printf("\n");
+        print_img_net_msg("Previous layer gradient:", layer[1].outMat.data.grad,
+                          layer[1].outMat.width, layer[1].outMat.height,
+                          layer[1].outMat.channel, cfg->batch);
     }
 
     return 0;

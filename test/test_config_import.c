@@ -1,20 +1,13 @@
 #include <cnn.h>
 #include <cnn_parse.h>
 
-#define EXPORT_PATH "test_config_import.xml"
+#include "test.h"
 
-#define test(func)                                        \
-    ret = func;                                           \
-    if (ret < 0)                                          \
-    {                                                     \
-        printf("%s failed with error: %d\n", #func, ret); \
-        return -1;                                        \
-    }
+#define EXPORT_PATH "test_config_import.xml"
 
 int main(int argc, char* argv[])
 {
     int i;
-    int ret;
     cnn_config_t cfg;
 
     int layers;

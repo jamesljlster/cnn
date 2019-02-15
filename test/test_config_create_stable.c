@@ -3,19 +3,15 @@
 #include <cnn.h>
 #include <cnn_types.h>
 
+#include "test.h"
+
 int main()
 {
-    int ret;
     cnn_config_t cfg = NULL;
 
     while (1)
     {
-        ret = cnn_config_create(&cfg);
-        if (ret < 0)
-        {
-            printf("cnn_config_create() failed with error: %d\n", ret);
-            return -1;
-        }
+        test(cnn_config_create(&cfg));
 
         // Cleanup
         cnn_config_delete(cfg);
