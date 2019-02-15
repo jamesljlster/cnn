@@ -617,7 +617,8 @@ static inline void cnn_forward_bn(union CNN_LAYER* layerRef,
 
             // Find mean
 #ifdef CNN_WITH_CUDA
-            cnn_sum_gpu(&mean, src, chSize, buf);
+            cublasSaxpy(cnnInit.blasHandle, chSize, &blasAlpha, src, 1, buf, 0);
+            cudaMemcpy(&mean, buf, sizeof(float), cudaMemcpyDeviceToHost);
 #else
             for (int __i = 0; __i < chSize; __i++)
             {
@@ -1039,14 +1040,25 @@ static inline void cnn_backward_bn(union CNN_LAYER* layerRef,
         {
             int chShift = dataShift + ch * chSize;
 
-            float* srcShift = &layerRef[layerIndex].bn.srcShift.mat[chShift];
-            float* srcNorm = &layerRef[layerIndex].bn.srcNorm.mat[chShift];
-            float* normGrad = &layerRef[layerIndex].bn.srcNorm.grad[chShift];
-            float* gradIn = &layerRef[layerIndex].outMat.data.grad[chShift];
+            float* srcShift = layerRef[layerIndex].bn.srcShift.mat + chShift;
+            float* srcNorm = layerRef[layerIndex].bn.srcNorm.mat + chShift;
+            float* normGrad = layerRef[layerIndex].bn.srcNorm.grad + chShift;
+            float* gradIn = layerRef[layerIndex].outMat.data.grad + chShift;
             float* layerGrad =
-                &layerRef[layerIndex - 1].outMat.data.grad[chShift];
+                layerRef[layerIndex - 1].outMat.data.grad + chShift;
 
+#ifdef CNN_WITH_CUDA
+            float* ptr;
+            float* buf = layerRef[layerIndex].bn.buf;
+            float blasAlpha = 1.0;
+            float blasBeta = 0.0;
+
+            float gamma;
+            cudaMemcpy(&gamma, layerRef[layerIndex].bn.bnVar.mat + ch * 2,
+                       sizeof(float), cudaMemcpyDeviceToHost);
+#else
             float gamma = layerRef[layerIndex].bn.bnVar.mat[ch * 2];
+#endif
 
             float rGrad = 0;
             float bGrad = 0;
@@ -1058,50 +1070,103 @@ static inline void cnn_backward_bn(union CNN_LAYER* layerRef,
             float fLen = (float)chSize;
 
             // Find gamma, beta gradient
+#ifdef CNN_WITH_CUDA
+            cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N, 1, 1,
+                        chSize, &blasAlpha, srcNorm, chSize, gradIn, chSize,
+                        &blasBeta, buf, chSize);
+            cudaMemcpy(&rGrad, buf, sizeof(float), cudaMemcpyDeviceToHost);
+
+            cudaMemset(buf, 0, sizeof(float));
+            cublasSaxpy(cnnInit.blasHandle, chSize, &blasAlpha, gradIn, 1, buf,
+                        0);
+            cudaMemcpy(&bGrad, buf, sizeof(float), cudaMemcpyDeviceToHost);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 rGrad += srcNorm[__i] * gradIn[__i];
                 bGrad += gradIn[__i];
             }
+#endif
 
             // Find gradient for normalization
+#ifdef CNN_WITH_CUDA
+            cnn_mul_gpu(normGrad, gradIn, chSize, gamma);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 normGrad[__i] = gradIn[__i] * gamma;
             }
+#endif
 
             // Find variance gradient
+#ifdef CNN_WITH_CUDA
+            cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N, 1, 1,
+                        chSize, &blasAlpha, normGrad, chSize, srcShift, chSize,
+                        &blasBeta, buf, chSize);
+            cudaMemcpy(&varGrad, buf, sizeof(float), cudaMemcpyDeviceToHost);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 varGrad += normGrad[__i] * srcShift[__i];
             }
+#endif
 
             varGrad = varGrad * -0.5 * pow(stddev, 3);
 
             // Find mean gradient
+#ifdef CNN_WITH_CUDA
+            cudaMemset(buf, 0, sizeof(float));
+            blasAlpha = -1.0 / stddev;
+            cublasSaxpy(cnnInit.blasHandle, chSize, &blasAlpha, normGrad, 1,
+                        buf, 0);
+            cudaMemcpy(&meanGrad, buf, sizeof(float), cudaMemcpyDeviceToHost);
+
+            cudaMemset(buf, 0, sizeof(float));
+            blasAlpha = varGrad * -2.0;
+            cublasSaxpy(cnnInit.blasHandle, chSize, &blasAlpha, srcShift, 1,
+                        buf, 0);
+            cudaMemcpy(&tmp, buf, sizeof(float), cudaMemcpyDeviceToHost);
+#else
             tmp = 0;
             for (int __i = 0; __i < chSize; __i++)
             {
                 meanGrad += normGrad[__i] * -1.0 / stddev;
                 tmp += varGrad * -2.0 * srcShift[__i];
             }
+#endif
 
             meanGrad += tmp / fLen;
 
             // Find layer gradient
             if (layerIndex > 1)
             {
+#ifdef CNN_WITH_CUDA
+                cnn_div_gpu(layerGrad, normGrad, chSize, stddev);
+                cnn_mul_gpu(buf, srcShift, chSize, varGrad * 2.0);
+                cnn_add_gpu(buf, buf, chSize, meanGrad);
+                cnn_div_gpu(buf, buf, chSize, fLen);
+                cnn_elemwise_add_gpu(layerGrad, layerGrad, buf, chSize);
+#else
                 for (int __i = 0; __i < chSize; __i++)
                 {
                     layerGrad[__i] =
                         normGrad[__i] / stddev +
                         (varGrad * 2.0 * srcShift[__i] + meanGrad) / fLen;
                 }
+#endif
             }
 
             // Assign gradient
+#ifdef CNN_WITH_CUDA
+            ptr = layerRef[layerIndex].bn.bnVar.grad + ch * 2 + 0;
+            cnn_add_gpu(ptr, ptr, 1, rGrad);
+
+            ptr = layerRef[layerIndex].bn.bnVar.grad + ch * 2 + 1;
+            cnn_add_gpu(ptr, ptr, 1, bGrad);
+#else
             layerRef[layerIndex].bn.bnVar.grad[ch * 2 + 0] += rGrad;
             layerRef[layerIndex].bn.bnVar.grad[ch * 2 + 1] += bGrad;
+#endif
         }
     }
 }

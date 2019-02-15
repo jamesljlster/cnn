@@ -299,6 +299,30 @@ extern "C"
         cnn_fmaxf_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len, num);
     }
 
+    __global__ void cnn_elemwise_add_kernel(float* dst, float* src1,
+                                            float* src2, int len)
+    {
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
+        if (index >= len)
+        {
+            return;
+        }
+
+        dst[index] = src1[index] + src2[index];
+    }
+
+    void cnn_elemwise_add_gpu(float* dst, float* src1, float* src2, int len)
+    {
+        int blocks = len / CNN_THREAD_PER_BLOCK;
+        if (len % CNN_THREAD_PER_BLOCK)
+        {
+            blocks += 1;
+        }
+
+        cnn_elemwise_add_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src1,
+                                                                  src2, len);
+    }
+
     __global__ void cnn_elemwise_product_kernel(float* dst, float* src1,
                                                 float* src2, int len)
     {
