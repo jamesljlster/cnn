@@ -10,6 +10,8 @@
 #include <cnn_calc.h>
 #include <cnn_private.h>
 
+#include "test.h"
+
 #define KERNEL_SIZE 5
 
 #define BATCH 1
@@ -40,20 +42,11 @@ struct DATASET
 int make_dataset(struct DATASET* ptr, int batch, const char* binPath);
 int parse_class(float* out, int len);
 
-#define test(func)                                        \
-    ret = func;                                           \
-    if (ret < 0)                                          \
-    {                                                     \
-        printf("%s failed with error: %d\n", #func, ret); \
-        return -1;                                        \
-    }
-
 int main(int argc, char* argv[])
 {
     int iter;
     int i, j;
     int tmpIndex;
-    int ret;
     int hit, force;
     float mse, accu;
     float lRate = L_RATE;

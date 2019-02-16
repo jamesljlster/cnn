@@ -3,30 +3,19 @@
 #include <cnn.h>
 #include <cnn_types.h>
 
+#include "test.h"
+
 #define INPUT_WIDTH 32
 #define INPUT_HEIGHT 32
 #define BATCH 7
 
-#define test(func)                                        \
-    ret = func;                                           \
-    if (ret < 0)                                          \
-    {                                                     \
-        printf("%s failed with error: %d\n", #func, ret); \
-        return -1;                                        \
-    }
-
 int main()
 {
-    int ret;
     cnn_config_t cfg = NULL;
     cnn_t cnn = NULL;
 
-    ret = cnn_config_create(&cfg);
-    if (ret < 0)
-    {
-        printf("cnn_config_create() failed with error: %d\n", ret);
-        return -1;
-    }
+    test(cnn_init());
+    test(cnn_config_create(&cfg));
 
     // Set config
     test(cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT, 1));
@@ -48,18 +37,14 @@ int main()
     while (1)
     {
         // Create cnn
-        ret = cnn_create(&cnn, cfg);
-        if (ret < 0)
-        {
-            printf("cnn_create() failed with error: %d\n", ret);
-            return -1;
-        }
+        test(cnn_create(&cnn, cfg));
 
         // Cleanup
         cnn_delete(cnn);
     }
 
     cnn_config_delete(cfg);
+    cnn_deinit();
 
     return 0;
 }

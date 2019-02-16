@@ -1,5 +1,7 @@
-# Build folder
+# CMake build files
 build
+CMakeCache.txt
+CMakeFiles
 
-# Temp files
+# Temp file
 *.swp

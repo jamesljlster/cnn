@@ -2,43 +2,8 @@
 #define __CNN_PRIVATE_H__
 
 #include "cnn.h"
+#include "cnn_macro.h"
 #include "cnn_types.h"
-
-// Macros
-#ifdef DEBUG
-#include <stdio.h>
-#define cnn_free(ptr)                                                 \
-    fprintf(stderr, "%s(): free(%s), %p\n", __FUNCTION__, #ptr, ptr); \
-    free(ptr)
-#else
-#define cnn_free(ptr) free(ptr)
-#endif
-
-#define cnn_alloc(ptr, len, type, retVar, errLabel) \
-    ptr = calloc(len, sizeof(type));                \
-    if (ptr == NULL)                                \
-    {                                               \
-        ret = CNN_MEM_FAILED;                       \
-        goto errLabel;                              \
-    }
-
-#ifdef DEBUG
-#define cnn_run(func, retVal, errLabel)                                       \
-    retVal = func;                                                            \
-    if (retVal != CNN_NO_ERROR)                                               \
-    {                                                                         \
-        fprintf(stderr, "%s(), %d: %s failed with error: %d\n", __FUNCTION__, \
-                __LINE__, #func, retVal);                                     \
-        goto errLabel;                                                        \
-    }
-#else
-#define cnn_run(func, retVal, errLabel) \
-    retVal = func;                      \
-    if (retVal != CNN_NO_ERROR)         \
-    {                                   \
-        goto errLabel;                  \
-    }
-#endif
 
 #ifdef __cplusplus
 extern "C"

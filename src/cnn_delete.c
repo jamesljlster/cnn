@@ -28,8 +28,13 @@ void cnn_struct_delete(struct CNN* cnn)
 void cnn_mat_delete(struct CNN_MAT* matPtr)
 {
     // Free memory
+#ifdef CNN_WITH_CUDA
+    cnn_free_cu(matPtr->mat);
+    cnn_free_cu(matPtr->grad);
+#else
     cnn_free(matPtr->mat);
     cnn_free(matPtr->grad);
+#endif
 
     // Zero memory
     memset(matPtr, 0, sizeof(struct CNN_MAT));
@@ -49,6 +54,10 @@ void cnn_layer_drop_delete(struct CNN_LAYER_DROP* layerPtr)
     // Free memory
     cnn_mat_delete(&layerPtr->outMat.data);
     cnn_free(layerPtr->mask);
+
+#ifdef CNN_WITH_CUDA
+    cnn_free_cu(layerPtr->maskGpu);
+#endif
 
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_DROP));
@@ -88,7 +97,11 @@ void cnn_layer_conv_delete(struct CNN_LAYER_CONV* layerPtr)
 
     cnn_mat_delete(&layerPtr->unroll);
 
+#ifdef CNN_WITH_CUDA
+    cnn_free_cu(layerPtr->indexMap);
+#else
     cnn_free(layerPtr->indexMap);
+#endif
 
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_CONV));
@@ -98,7 +111,12 @@ void cnn_layer_pool_delete(struct CNN_LAYER_POOL* layerPtr)
 {
     // Free memory
     cnn_mat_delete(&layerPtr->outMat.data);
+
+#ifdef CNN_WITH_CUDA
+    cnn_free_cu(layerPtr->indexMat);
+#else
     cnn_free(layerPtr->indexMat);
+#endif
 
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_POOL));
@@ -111,7 +129,16 @@ void cnn_layer_bn_delete(struct CNN_LAYER_BN* layerPtr)
     cnn_mat_delete(&layerPtr->bnVar);
     cnn_mat_delete(&layerPtr->srcShift);
     cnn_mat_delete(&layerPtr->srcNorm);
+
+    //#ifdef CNN_WITH_CUDA
+    //    cnn_free_cu(layerPtr->stddev);
+    //#else
     cnn_free(layerPtr->stddev);
+    //#endif
+
+#ifdef CNN_WITH_CUDA
+    cnn_free_cu(layerPtr->buf);
+#endif
 
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_BN));

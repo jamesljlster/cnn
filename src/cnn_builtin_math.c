@@ -3,6 +3,12 @@
 
 #include "cnn.h"
 #include "cnn_builtin_math.h"
+#include "cnn_config.h"
+
+#ifdef CNN_WITH_CUDA
+#include <cuda_runtime.h>
+#include "cnn_builtin_math_cu.h"
+#endif
 
 CNN_ACTIV_DEF((*cnn_activ_list[])) = {
     cnn_softmax,        //
@@ -48,8 +54,25 @@ const char* cnn_activ_name[] = {
 
 CNN_ACTIV_DEF(cnn_softmax)
 {
-    int i;
     float max, sum;
+
+#ifdef CNN_WITH_CUDA
+    // Find max value
+    cnn_max_gpu(&max, src, len, buf);
+
+    // Find shifted vector
+    cnn_add_gpu(buf, src, len, -max);
+
+    // Find exponential vector
+    cnn_exp_gpu(buf, buf, len);
+
+    // Find sum
+    cnn_sum_gpu(&sum, buf, len, dst);
+
+    // Find softmax
+    cnn_div_gpu(dst, buf, len, sum);
+#else
+    int i;
 
     // Find max value
     max = src[0];
@@ -74,14 +97,18 @@ CNN_ACTIV_DEF(cnn_softmax)
     {
         dst[i] = exp(dst[i]) / sum;
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_softmax_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_smax_grad_gpu(dst, buf, len);
+#else
     int i, j;
 
     // Find softmax gradient
-    cnn_softmax(buf, src, len, NULL);
+    // cnn_softmax(buf, src, len, NULL);
     for (i = 0; i < len; i++)
     {
         for (j = 0; j < len; j++)
@@ -89,19 +116,27 @@ CNN_ACTIV_DEF(cnn_softmax_grad)
             dst[i * len + j] = buf[i] * ((float)(i == j) - buf[j]);
         }
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_relu)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_relu_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = fmaxf(src[i], 0.0f);
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_relu_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_relu_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find relu gradient
@@ -110,41 +145,64 @@ CNN_ACTIV_DEF(cnn_relu_grad)
     {
         dst[i] = (src[i] < 0.0f) ? 0 : 1;
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_swish)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_swish_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = src[i] / (1.0f + expf(-src[i]));
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_swish_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_swish_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find swish gradient
     // memset(dst, 0, len * sizeof(float));
-    cnn_swish(buf, src, len, NULL);
+    // cnn_swish(buf, src, len, NULL);
     for (i = 0; i < len; i++)
     {
-        dst[i] = buf[i] + (buf[i] / src[i]) * (1.0f - buf[i]);
+        if (src[i] == 0.0f)
+        {
+            dst[i] = 0.5;
+        }
+        else
+        {
+            dst[i] = buf[i] + (buf[i] / src[i]) * (1.0f - buf[i]);
+        }
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_sigmoid)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_sigmoid_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = 1.0 / (1.0 + exp(-src[i]));
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_sigmoid_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_sigmoid_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find sigmoid gradient
@@ -153,19 +211,27 @@ CNN_ACTIV_DEF(cnn_sigmoid_grad)
     {
         dst[i] = buf[i] * (1.0 - buf[i]);
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_tanh)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_tanh_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = 2.0 / (1.0 + exp(-2.0 * src[i])) - 1.0;
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_tanh_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_tanh_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find tanh gradient
@@ -174,19 +240,27 @@ CNN_ACTIV_DEF(cnn_tanh_grad)
     {
         dst[i] = 1.0 - buf[i] * buf[i];
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_gaussian)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_gaussian_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = exp(-pow(src[i], 2.0) * 0.5);
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_gaussian_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_gaussian_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find gaussian gradient
@@ -195,19 +269,27 @@ CNN_ACTIV_DEF(cnn_gaussian_grad)
     {
         dst[i] = -src[i] * buf[i];
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_bent_identity)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_bent_identity_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = (sqrt(pow(src[i], 2) + 1.0) - 1.0) / 2.0 + src[i];
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_bent_identity_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_bent_identity_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find bent indentity gradient
@@ -215,19 +297,27 @@ CNN_ACTIV_DEF(cnn_bent_identity_grad)
     {
         dst[i] = src[i] / (2.0 * sqrt(pow(src[i], 2.0) + 1.0)) + 1.0;
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_softplus)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_softplus_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = log1p(exp(src[i]));
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_softplus_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_softplus_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find softplus gradient
@@ -235,19 +325,27 @@ CNN_ACTIV_DEF(cnn_softplus_grad)
     {
         dst[i] = 1.0 / (1.0 + exp(-src[i]));
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_softsign)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_softsign_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = src[i] / (1.0 + fabs(src[i]));
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_softsign_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_softsign_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find softsign gradient
@@ -255,10 +353,14 @@ CNN_ACTIV_DEF(cnn_softsign_grad)
     {
         dst[i] = 1.0 / pow(1.0 + fabs(src[i]), 2.0);
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_sinc)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_sinc_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
@@ -271,10 +373,14 @@ CNN_ACTIV_DEF(cnn_sinc)
             dst[i] = sin(src[i]) / src[i];
         }
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_sinc_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_sinc_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find sinc gradient
@@ -289,19 +395,27 @@ CNN_ACTIV_DEF(cnn_sinc_grad)
             dst[i] = (cos(src[i]) / src[i]) - (sin(src[i]) / pow(src[i], 2.0));
         }
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_sinusoid)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_sin_gpu(dst, src, len);
+#else
     int i;
     for (i = 0; i < len; i++)
     {
         dst[i] = sin(src[i]);
     }
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_sinusoid_grad)
 {
+#ifdef CNN_WITH_CUDA
+    cnn_sin_grad_gpu(dst, src, buf, len);
+#else
     int i;
 
     // Find sinusoid gradient
@@ -309,6 +423,7 @@ CNN_ACTIV_DEF(cnn_sinusoid_grad)
     {
         dst[i] = cos(src[i]);
     }
+#endif
 }
 
 int cnn_get_activ_id(const char* name)

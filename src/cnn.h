@@ -16,7 +16,9 @@ enum CNN_RETVAL
     CNN_PARSE_FAILED = -6,
     CNN_INVALID_FILE = -7,
     CNN_INFO_NOT_FOUND = -8,
-    CNN_CONFLICT = -9
+    CNN_CONFLICT = -9,
+    CNN_CUDA_RUNTIME_ERROR = -10,
+    CNN_NOT_INITIALIZED = -11
 };
 
 typedef enum CNN_LAYER_TYPE
@@ -70,6 +72,9 @@ typedef struct CNN_CONFIG* cnn_config_t;
 extern "C"
 {
 #endif
+
+    int cnn_init();
+    void cnn_deinit();
 
     int cnn_config_create(cnn_config_t* cfgPtr);
     int cnn_config_clone(cnn_config_t* dstPtr, const cnn_config_t src);

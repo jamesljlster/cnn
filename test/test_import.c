@@ -1,19 +1,12 @@
 #include <cnn.h>
 #include <cnn_parse.h>
 
-#define EXPORT_PATH "test_import.xml"
+#include "test.h"
 
-#define test(func)                                        \
-    ret = func;                                           \
-    if (ret < 0)                                          \
-    {                                                     \
-        printf("%s failed with error: %d\n", #func, ret); \
-        return -1;                                        \
-    }
+#define EXPORT_PATH "test_import.xml"
 
 int main(int argc, char* argv[])
 {
-    int ret;
     cnn_t cnn;
 
     if (argc < 2)
@@ -22,8 +15,12 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    test(cnn_init());
+
     test(cnn_import(&cnn, argv[1]));
     test(cnn_export(cnn, EXPORT_PATH));
+
+    cnn_deinit();
 
     return 0;
 }

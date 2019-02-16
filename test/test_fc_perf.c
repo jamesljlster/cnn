@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <cnn.h>
 #include <cnn_calc.h>
@@ -11,9 +12,7 @@
 int main(int argc, char* argv[])
 {
     int i;
-    int kSize;
-    int chIn, chOut;
-    int imgWidth, imgHeight;
+    int sizeIn, sizeOut;
     int batch;
     int loops;
     int samples;
@@ -26,47 +25,40 @@ int main(int argc, char* argv[])
     cnn_config_t cfg = NULL;
 
     // Parse argument
-    if (argc < 9)
+    if (argc < 6)
     {
-        printf(
-            "Usage: %s <kSize> <chIn> <chOut> <imgWidth> <imgHeight> <batch> "
-            "<loops> <samples>\n",
-            argv[0]);
+        printf("Usage: %s <sizeIn> <sizeOut> <batch> <loops> <samples>\n",
+               argv[0]);
         return -1;
     }
 
     i = 1;
-    kSize = atoi(argv[i++]);
-    chIn = atoi(argv[i++]);
-    chOut = atoi(argv[i++]);
-    imgWidth = atoi(argv[i++]);
-    imgHeight = atoi(argv[i++]);
+    sizeIn = atoi(argv[i++]);
+    sizeOut = atoi(argv[i++]);
     batch = atoi(argv[i++]);
     loops = atoi(argv[i++]);
     samples = atoi(argv[i++]);
 
-    printf("kSize, chIn, chOut, imgWidth, imgHeight, batch, loops, samples\n");
-    printf("%d, %d, %d, %d, %d, %d, %d, %d\n\n", kSize, chIn, chOut, imgWidth,
-           imgHeight, batch, loops, samples);
+    printf("sizeIn, sizeOut, batch, loops, samples\n");
+    printf("%d, %d, %d, %d, %d\n\n", sizeIn, sizeOut, batch, loops, samples);
 
     // Create cnn
     test(cnn_init());
 
     test(cnn_config_create(&cfg));
     test(cnn_config_set_batch_size(cfg, batch));
-    test(cnn_config_set_input_size(cfg, imgWidth, imgHeight, chIn));
+    test(cnn_config_set_input_size(cfg, sizeIn, 1, 1));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_convolution(cfg, CNN_PAD_SAME, CNN_DIM_2D, chOut,
-                                       kSize));
+    test(cnn_config_append_full_connect(cfg, sizeOut));
 
     // Allocate cnn layer
     test(cnn_layer_activ_alloc(
         &layer[1].activ, (struct CNN_CONFIG_LAYER_ACTIV*)&cfg->layerCfg[1],
-        imgWidth, imgHeight, chIn, cfg->batch));
-    test(cnn_layer_conv_alloc(&layer[2].conv,
-                              (struct CNN_CONFIG_LAYER_CONV*)&cfg->layerCfg[2],
-                              imgWidth, imgHeight, chIn, cfg->batch));
+        sizeIn, 1, 1, cfg->batch));
+    test(cnn_layer_fc_alloc(&layer[2].fc,
+                            (struct CNN_CONFIG_LAYER_FC*)&cfg->layerCfg[2],
+                            sizeOut, 1, 1, cfg->batch));
 
     // Performance test
     printf("Forward (ms), Backward (ms)\n");
@@ -76,7 +68,7 @@ int main(int argc, char* argv[])
         timeHold = hold_time();
         for (int i = 0; i < loops; i++)
         {
-            cnn_forward_conv(layer, cfg, 2);
+            cnn_forward_fc(layer, cfg, 2);
         }
         fwCost = get_time_cost(timeHold);
 
@@ -84,7 +76,7 @@ int main(int argc, char* argv[])
         timeHold = hold_time();
         for (int i = 0; i < loops; i++)
         {
-            cnn_backward_conv(layer, cfg, 2);
+            cnn_backward_fc(layer, cfg, 2);
         }
         bpCost = get_time_cost(timeHold);
 

@@ -15,6 +15,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    test(cnn_init());
     test(cnn_config_import(&src, argv[1]));
     test(cnn_config_import(&cmp, argv[2]));
     test(cnn_config_compare(src, cmp));

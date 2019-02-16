@@ -1,8 +1,12 @@
 #include <stdio.h>
 
+#include <cnn_config.h>
+
 #include <cnn.h>
 #include <cnn_private.h>
 #include <cnn_types.h>
+
+#include "test.h"
 
 #define INPUT_WIDTH 32
 #define INPUT_HEIGHT 32
@@ -12,6 +16,32 @@
     printf("%s: %dx%d, %p, %p\n", str, matVar.rows, matVar.cols, matVar.mat, \
            matVar.grad)
 
+#ifdef CNN_WITH_CUDA
+#define test_mat(matVar)                                                      \
+    {                                                                         \
+        size_t size = matVar.rows * matVar.cols * sizeof(float);              \
+        cudaError_t cuRet = cudaMemset(matVar.mat, -1, size);                 \
+        if (cuRet != cudaSuccess)                                             \
+        {                                                                     \
+            fprintf(                                                          \
+                stderr,                                                       \
+                "%s: cudaMemset(matVar.mat, 0, %lu) failed with error: %d\n", \
+                #matVar, size, cuRet);                                        \
+        }                                                                     \
+                                                                              \
+        if (matVar.grad != NULL)                                              \
+        {                                                                     \
+            cuRet = cudaMemset(matVar.grad, -1, size);                        \
+            if (cuRet != cudaSuccess)                                         \
+            {                                                                 \
+                fprintf(stderr,                                               \
+                        "%s: cudaMemset(matVar.grad, 0, %lu) failed with "    \
+                        "error: %d\n",                                        \
+                        #matVar, size, cuRet);                                \
+            }                                                                 \
+        }                                                                     \
+    }
+#else
 #define test_mat(matVar)                                   \
     {                                                      \
         int _i;                                            \
@@ -24,14 +54,7 @@
             }                                              \
         }                                                  \
     }
-
-#define test(func)                                        \
-    ret = func;                                           \
-    if (ret < 0)                                          \
-    {                                                     \
-        printf("%s failed with error: %d\n", #func, ret); \
-        return -1;                                        \
-    }
+#endif
 
 void check_cnn_arch(cnn_t cnn)
 {
@@ -165,16 +188,11 @@ void check_cnn_arch(cnn_t cnn)
 
 int main()
 {
-    int ret;
     cnn_config_t cfg = NULL;
     cnn_t cnn = NULL;
 
-    ret = cnn_config_create(&cfg);
-    if (ret < 0)
-    {
-        printf("cnn_config_create() failed with error: %d\n", ret);
-        return -1;
-    }
+    test(cnn_init());
+    test(cnn_config_create(&cfg));
 
     // Set config
     test(cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT, 1));
@@ -194,15 +212,13 @@ int main()
     test(cnn_config_append_activation(cfg, CNN_SOFTMAX));
 
     // Create cnn
-    ret = cnn_create(&cnn, cfg);
-    if (ret < 0)
-    {
-        printf("cnn_create() failed with error: %d\n", ret);
-        return -1;
-    }
+    test(cnn_create(&cnn, cfg));
 
     // Check cnn arch
     check_cnn_arch(cnn);
+
+    cnn_zero_network(cnn);
+    cnn_rand_network(cnn);
 
     printf("Press enter to continue...");
     getchar();
@@ -210,6 +226,8 @@ int main()
     // Cleanup
     cnn_delete(cnn);
     cnn_config_delete(cfg);
+
+    cnn_deinit();
 
     return 0;
 }

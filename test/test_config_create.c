@@ -4,15 +4,9 @@
 #include <cnn_private.h>
 #include <cnn_types.h>
 
-#define CFG_PATH "test.xml"
+#include "test.h"
 
-#define test(func)                                        \
-    ret = func;                                           \
-    if (ret < 0)                                          \
-    {                                                     \
-        printf("%s failed with error: %d\n", #func, ret); \
-        return -1;                                        \
-    }
+#define CFG_PATH "test.xml"
 
 void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 {
@@ -67,15 +61,10 @@ void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
 int main()
 {
     int i;
-    int ret;
     cnn_config_t cfg = NULL;
 
-    ret = cnn_config_create(&cfg);
-    if (ret < 0)
-    {
-        printf("cnn_config_create() failed with error: %d\n", ret);
-        return -1;
-    }
+    test(cnn_init());
+    test(cnn_config_create(&cfg));
 
     // Check default setting
     printf("=== Default CNN Config ===\n");
@@ -108,13 +97,10 @@ int main()
     }
 
     // Export config
-    ret = cnn_config_export(cfg, CFG_PATH);
-    if (ret != CNN_NO_ERROR)
-    {
-        printf("cnn_config_export() failed with error: %d\n", ret);
-    }
+    test(cnn_config_export(cfg, CFG_PATH));
 
     // Cleanup
     cnn_config_delete(cfg);
+
     return 0;
 }

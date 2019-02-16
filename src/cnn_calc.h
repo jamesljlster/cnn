@@ -8,7 +8,16 @@
 
 #include "cnn.h"
 #include "cnn_builtin_math.h"
+#include "cnn_init.h"
 #include "cnn_types.h"
+
+#ifdef CNN_WITH_CUDA
+#include <cublas_v2.h>
+#include <cuda_runtime.h>
+
+#include "cnn_builtin_math_cu.h"
+#include "cnn_calc_cu.h"
+#endif
 
 static inline void cnn_drop(float* dst, float* src, int* mask, int size,
                             float scale)
@@ -324,6 +333,19 @@ static inline void cnn_forward_fc(union CNN_LAYER* layerRef,
                                   struct CNN_CONFIG* cfgRef, int layerIndex)
 {
     // Weight matrix multiplication
+#ifdef CNN_WITH_CUDA
+    float alpha = 1.0;
+    float beta = 0.0;
+    cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
+                layerRef[layerIndex].outMat.data.cols, cfgRef->batch,
+                layerRef[layerIndex - 1].outMat.data.cols, &alpha,
+                layerRef[layerIndex].fc.weight.mat,
+                layerRef[layerIndex].fc.weight.cols,
+                layerRef[layerIndex - 1].outMat.data.mat,
+                layerRef[layerIndex - 1].outMat.data.cols, &beta,
+                layerRef[layerIndex].outMat.data.mat,
+                layerRef[layerIndex].outMat.data.cols);
+#else
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                 layerRef[layerIndex - 1].outMat.data.rows,
                 layerRef[layerIndex].outMat.data.cols,
@@ -334,14 +356,24 @@ static inline void cnn_forward_fc(union CNN_LAYER* layerRef,
                 layerRef[layerIndex].fc.weight.cols, 0.0,
                 layerRef[layerIndex].outMat.data.mat,
                 layerRef[layerIndex].outMat.data.cols);
+#endif
 
     // Add bias
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int dstIndex = j * layerRef[layerIndex].outMat.data.cols;
+
+#ifdef CNN_WITH_CUDA
+        beta = 1.0;
+        cublasSaxpy(cnnInit.blasHandle, layerRef[layerIndex].outMat.data.cols,
+                    &alpha, layerRef[layerIndex].fc.bias.mat, 1,
+                    layerRef[layerIndex].outMat.data.mat + dstIndex, 1);
+#else
+
         cblas_saxpy(layerRef[layerIndex].fc.bias.cols, 1.0,
                     layerRef[layerIndex].fc.bias.mat, 1,
                     &layerRef[layerIndex].outMat.data.mat[dstIndex], 1);
+#endif
     }
 }
 
@@ -351,6 +383,11 @@ static inline void cnn_forward_drop(union CNN_LAYER* layerRef,
     int size = layerRef[layerIndex].outMat.data.rows *
                layerRef[layerIndex].outMat.data.cols;
     int* mask = layerRef[layerIndex].drop.mask;
+
+#ifdef CNN_WITH_CUDA
+    int* maskGpu = layerRef[layerIndex].drop.maskGpu;
+#endif
+
     float rate = cfgRef->layerCfg[layerIndex].drop.rate;
 
     // Generate dropout mask
@@ -366,9 +403,16 @@ static inline void cnn_forward_drop(union CNN_LAYER* layerRef,
         }
     }
 
+#ifdef CNN_WITH_CUDA
+    cudaMemcpy(maskGpu, mask, size * sizeof(int), cudaMemcpyHostToDevice);
+    cnn_drop_gpu(layerRef[layerIndex].outMat.data.mat,
+                 layerRef[layerIndex - 1].outMat.data.mat, maskGpu, size,
+                 cfgRef->layerCfg[layerIndex].drop.scale);
+#else
     cnn_drop(layerRef[layerIndex].outMat.data.mat,
              layerRef[layerIndex - 1].outMat.data.mat, mask, size,
              cfgRef->layerCfg[layerIndex].drop.scale);
+#endif
 }
 
 static inline void cnn_forward_activ(union CNN_LAYER* layerRef,
@@ -379,11 +423,12 @@ static inline void cnn_forward_activ(union CNN_LAYER* layerRef,
         int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
         int dstShift = j * layerRef[layerIndex].outMat.data.cols;
 
-        float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
-        float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
+        float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
+        float* dstPtr = layerRef[layerIndex].outMat.data.mat + dstShift;
+        float* bufPtr = layerRef[layerIndex].activ.buf.mat + dstShift;
 
         cnn_activ_list[cfgRef->layerCfg[layerIndex].activ.id](
-            dstPtr, srcPtr, layerRef[layerIndex].outMat.data.cols, NULL);
+            dstPtr, srcPtr, layerRef[layerIndex].outMat.data.cols, bufPtr);
     }
 }
 
@@ -403,9 +448,9 @@ static inline void cnn_forward_conv(union CNN_LAYER* layerRef,
     float* kernel = layerRef[layerIndex].conv.kernel.mat;
 
     // Clear outputs
-    memset(layerRef[layerIndex].outMat.data.mat, 0,
-           sizeof(float) * layerRef[layerIndex].outMat.data.rows *
-               layerRef[layerIndex].outMat.data.cols);
+    // memset(layerRef[layerIndex].outMat.data.mat, 0,
+    //       sizeof(float) * layerRef[layerIndex].outMat.data.rows *
+    //           layerRef[layerIndex].outMat.data.cols);
 
     for (int j = 0; j < cfgRef->batch; j++)
     {
@@ -413,20 +458,39 @@ static inline void cnn_forward_conv(union CNN_LAYER* layerRef,
         int dstShift = j * layerRef[layerIndex].outMat.data.cols;
         int mapShift = j * mapSize;
 
-        float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
-        float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
-        float* mapPtr = &layerRef[layerIndex].conv.unroll.mat[mapShift];
+        float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
+        float* dstPtr = layerRef[layerIndex].outMat.data.mat + dstShift;
+        float* mapPtr = layerRef[layerIndex].conv.unroll.mat + mapShift;
+
+#ifdef CNN_WITH_CUDA
+        float alpha = 1.0;
+        float beta = 0.0;
+#endif
 
         // Mapping
+#ifdef CNN_WITH_CUDA
+        cnn_map_gpu(mapPtr, srcPtr, indexMap, mapSize);
+#else
         for (int k = 0; k < mapSize; k++)
         {
-            mapPtr[k] = srcPtr[indexMap[k]];
+            int tmpIndex = indexMap[k];
+            if (tmpIndex >= 0)
+            {
+                mapPtr[k] = srcPtr[tmpIndex];
+            }
         }
+#endif
 
         // Convolution
+#ifdef CNN_WITH_CUDA
+        cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N, mapRows,
+                    chOut, mapCols, &alpha, mapPtr, mapCols, kernel, mapCols,
+                    &beta, dstPtr, mapRows);
+#else
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, chOut, mapRows,
                     mapCols, 1.0, kernel, mapCols, mapPtr, mapCols, 0.0, dstPtr,
                     mapRows);
+#endif
 
         // Add bias
 #if defined(CNN_CONV_BIAS_FILTER)
@@ -435,18 +499,33 @@ static inline void cnn_forward_conv(union CNN_LAYER* layerRef,
 #endif
         for (int ch = 0; ch < chOut; ch++)
         {
+#ifdef CNN_WITH_CUDA
+            cublasSaxpy(cnnInit.blasHandle, mapRows, &alpha,
+                        layerRef[layerIndex].conv.bias.mat + ch, 0,
+                        layerRef[layerIndex].outMat.data.mat +
+                            (dstShift + ch * mapRows),
+                        1);
+
+#else
             cblas_saxpy(
                 mapRows, 1.0, &layerRef[layerIndex].conv.bias.mat[ch], 0,
                 &layerRef[layerIndex].outMat.data.mat[dstShift + ch * mapRows],
                 1);
+#endif
         }
 #elif defined(CNN_CONV_BIAS_LAYER)
 #ifdef DEBUG
 #pragma message("cnn_forward_conv(): Enable convolution layer bias")
 #endif
+#ifdef CNN_WITH_CUDA
+        cublasSaxpy(cnnInit.blasHandle, layerRef[layerIndex].conv.bias.cols,
+                    &alpha, layerRef[layerIndex].conv.bias.mat, 1,
+                    layerRef[layerIndex].outMat.data.mat + dstShift, 1);
+#else
         cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0,
                     layerRef[layerIndex].conv.bias.mat, 1,
                     &layerRef[layerIndex].outMat.data.mat[dstShift], 1);
+#endif
 #endif
     }
 }
@@ -455,18 +534,33 @@ static inline void cnn_forward_pool(union CNN_LAYER* layerRef,
                                     struct CNN_CONFIG* cfgRef, int layerIndex)
 {
     // Clear outputs
-    memset(layerRef[layerIndex].outMat.data.mat, 0,
-           sizeof(float) * layerRef[layerIndex].outMat.data.rows *
-               layerRef[layerIndex].outMat.data.cols);
+#ifdef CNN_WITH_CUDA
+    cudaMemset
+#else
+    memset
+#endif
+        (layerRef[layerIndex].outMat.data.mat, 0,
+         sizeof(float) * layerRef[layerIndex].outMat.data.rows *
+             layerRef[layerIndex].outMat.data.cols);
 
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
         int dstShift = j * layerRef[layerIndex].outMat.data.cols;
 
-        float* srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
-        float* dstPtr = &layerRef[layerIndex].outMat.data.mat[dstShift];
+        float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
+        float* dstPtr = layerRef[layerIndex].outMat.data.mat + dstShift;
 
+#ifdef CNN_WITH_CUDA
+        cnn_pool_2d_max_gpu(dstPtr,
+                            layerRef[layerIndex].pool.indexMat + dstShift,
+                            layerRef[layerIndex].outMat.width,
+                            layerRef[layerIndex].outMat.height,
+                            cfgRef->layerCfg[layerIndex].pool.size, srcPtr,
+                            layerRef[layerIndex - 1].outMat.width,
+                            layerRef[layerIndex - 1].outMat.height,
+                            layerRef[layerIndex].outMat.channel);
+#else
         cnn_pool_2d_max(dstPtr, &layerRef[layerIndex].pool.indexMat[dstShift],
                         layerRef[layerIndex].outMat.height,
                         layerRef[layerIndex].outMat.width, srcPtr,
@@ -474,6 +568,7 @@ static inline void cnn_forward_pool(union CNN_LAYER* layerRef,
                         layerRef[layerIndex - 1].outMat.width,
                         cfgRef->layerCfg[layerIndex].pool.size,
                         layerRef[layerIndex].outMat.channel);
+#endif
     }
 }
 
@@ -485,24 +580,35 @@ static inline void cnn_forward_bn(union CNN_LAYER* layerRef,
     int chSize =
         layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
 
-    float* stddevCache = layerRef[layerIndex].bn.stddev;
-
     // Batch normalization forward
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int dataShift = j * layerRef[layerIndex].outMat.data.cols;
+        float* stddevCache = layerRef[layerIndex].bn.stddev + j * channels;
 
         for (int ch = 0; ch < channels; ch++)
         {
             int chShift = dataShift + ch * chSize;
 
-            float* src = &layerRef[layerIndex - 1].outMat.data.mat[chShift];
-            float* srcShift = &layerRef[layerIndex].bn.srcShift.mat[chShift];
-            float* srcNorm = &layerRef[layerIndex].bn.srcNorm.mat[chShift];
-            float* out = &layerRef[layerIndex].outMat.data.mat[chShift];
+            float* src = layerRef[layerIndex - 1].outMat.data.mat + chShift;
+            float* srcShift = layerRef[layerIndex].bn.srcShift.mat + chShift;
+            float* srcNorm = layerRef[layerIndex].bn.srcNorm.mat + chShift;
+            float* out = layerRef[layerIndex].outMat.data.mat + chShift;
 
+#ifdef CNN_WITH_CUDA
+            float* buf = layerRef[layerIndex].bn.buf;
+            float blasAlpha = 1.0;
+            float blasBeta = 0.0;
+
+            float gamma, beta;
+            cudaMemcpy(&gamma, layerRef[layerIndex].bn.bnVar.mat + ch * 2 + 0,
+                       sizeof(float), cudaMemcpyDeviceToHost);
+            cudaMemcpy(&beta, layerRef[layerIndex].bn.bnVar.mat + ch * 2 + 1,
+                       sizeof(float), cudaMemcpyDeviceToHost);
+#else
             float gamma = layerRef[layerIndex].bn.bnVar.mat[ch * 2 + 0];
             float beta = layerRef[layerIndex].bn.bnVar.mat[ch * 2 + 1];
+#endif
 
             float mean = 0;
             float var = 0;
@@ -510,39 +616,64 @@ static inline void cnn_forward_bn(union CNN_LAYER* layerRef,
             float fLen = (float)chSize;
 
             // Find mean
+#ifdef CNN_WITH_CUDA
+            cublasSaxpy(cnnInit.blasHandle, chSize, &blasAlpha, src, 1, buf, 0);
+            cudaMemcpy(&mean, buf, sizeof(float), cudaMemcpyDeviceToHost);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 mean += src[__i];
             }
+#endif
 
             mean /= fLen;
 
             // Find shifted source vector
+#ifdef CNN_WITH_CUDA
+            cnn_add_gpu(srcShift, src, chSize, -mean);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 srcShift[__i] = src[__i] - mean;
             }
+#endif
 
             // Find variance, stddev
+#ifdef CNN_WITH_CUDA
+            cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N, 1, 1,
+                        chSize, &blasAlpha, srcShift, chSize, srcShift, chSize,
+                        &blasBeta, buf, chSize);
+            cudaMemcpy(&var, buf, sizeof(float), cudaMemcpyDeviceToHost);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 var += srcShift[__i] * srcShift[__i];
             }
+#endif
 
             var /= fLen;
             stddev = sqrt(var + 1e-8);
 
             // Find normalized source
+#ifdef CNN_WITH_CUDA
+            cnn_div_gpu(srcNorm, srcShift, chSize, stddev);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 srcNorm[__i] = srcShift[__i] / stddev;
             }
+#endif
 
             // Scale and shift
+#ifdef CNN_WITH_CUDA
+            cnn_mul_gpu(out, srcNorm, chSize, gamma);
+            cnn_add_gpu(out, out, chSize, beta);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 out[__i] = gamma * srcNorm[__i] + beta;
             }
+#endif
 
             // Assign cache
             stddevCache[ch] = stddev;
@@ -553,9 +684,20 @@ static inline void cnn_forward_bn(union CNN_LAYER* layerRef,
 static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
                                    struct CNN_CONFIG* cfgRef, int layerIndex)
 {
-    int srcShift;
-
     // Sum weight gradient matrix
+#ifdef CNN_WITH_CUDA
+    float alpha = 1.0;
+    float beta = 1.0;
+    cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_T,
+                layerRef[layerIndex].fc.weight.cols,
+                layerRef[layerIndex].fc.weight.rows, cfgRef->batch, &alpha,
+                layerRef[layerIndex].outMat.data.grad,
+                layerRef[layerIndex].outMat.data.cols,
+                layerRef[layerIndex - 1].outMat.data.mat,
+                layerRef[layerIndex - 1].outMat.data.cols, &beta,
+                layerRef[layerIndex].fc.weight.grad,
+                layerRef[layerIndex].fc.weight.cols);
+#else
     cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
                 layerRef[layerIndex].fc.weight.rows,
                 layerRef[layerIndex].fc.weight.cols, cfgRef->batch, 1.0,
@@ -565,19 +707,39 @@ static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
                 layerRef[layerIndex].outMat.data.cols, 1.0,
                 layerRef[layerIndex].fc.weight.grad,
                 layerRef[layerIndex].fc.weight.cols);
+#endif
 
     // Sum bias gradient matrix
     for (int j = 0; j < cfgRef->batch; j++)
     {
-        srcShift = j * layerRef[layerIndex].outMat.data.cols;
+        int srcShift = j * layerRef[layerIndex].outMat.data.cols;
+
+#ifdef CNN_WITH_CUDA
+        cublasSaxpy(cnnInit.blasHandle, layerRef[layerIndex].fc.bias.cols,
+                    &alpha, layerRef[layerIndex].outMat.data.grad + srcShift, 1,
+                    layerRef[layerIndex].fc.bias.grad, 1);
+#else
         cblas_saxpy(layerRef[layerIndex].fc.bias.cols, 1.0,
                     &layerRef[layerIndex].outMat.data.grad[srcShift], 1,
                     layerRef[layerIndex].fc.bias.grad, 1);
+#endif
     }
 
     // Find layer gradient
     if (layerIndex > 1)
     {
+#ifdef CNN_WITH_CUDA
+        beta = 0.0;
+        cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N,
+                    layerRef[layerIndex].fc.weight.rows, cfgRef->batch,
+                    layerRef[layerIndex].fc.weight.cols, &alpha,
+                    layerRef[layerIndex].fc.weight.mat,
+                    layerRef[layerIndex].fc.weight.cols,
+                    layerRef[layerIndex].outMat.data.grad,
+                    layerRef[layerIndex].outMat.data.cols, &beta,
+                    layerRef[layerIndex - 1].outMat.data.grad,
+                    layerRef[layerIndex - 1].outMat.data.cols);
+#else
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
                     layerRef[layerIndex - 1].outMat.data.rows,
                     layerRef[layerIndex - 1].outMat.data.cols,
@@ -588,6 +750,7 @@ static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
                     layerRef[layerIndex].fc.weight.cols, 0.0,
                     layerRef[layerIndex - 1].outMat.data.grad,
                     layerRef[layerIndex - 1].outMat.data.cols);
+#endif
     }
 }
 
@@ -598,12 +761,23 @@ static inline void cnn_backward_drop(union CNN_LAYER* layerRef,
     {
         int size = layerRef[layerIndex].outMat.data.rows *
                    layerRef[layerIndex].outMat.data.cols;
-        int* mask = layerRef[layerIndex].drop.mask;
 
         // Find layer gradient
+#ifdef CNN_WITH_CUDA
+        int* maskGpu = layerRef[layerIndex].drop.maskGpu;
+        cudaMemset(layerRef[layerIndex - 1].outMat.data.grad, 0,
+                   size * sizeof(float));
+        cnn_drop_grad_gpu(layerRef[layerIndex - 1].outMat.data.grad,
+                          layerRef[layerIndex].outMat.data.grad, maskGpu, size,
+                          cfgRef->layerCfg[layerIndex].drop.scale);
+#else
+        int* mask = layerRef[layerIndex].drop.mask;
+        memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
+               size * sizeof(float));
         cnn_drop_grad(layerRef[layerIndex - 1].outMat.data.grad,
                       layerRef[layerIndex].outMat.data.grad, mask, size,
                       cfgRef->layerCfg[layerIndex].drop.scale);
+#endif
     }
 }
 
@@ -628,17 +802,30 @@ static inline void cnn_backward_activ(union CNN_LAYER* layerRef,
                 dstShift = srcShift;
             }
 
-            srcPtr = &layerRef[layerIndex - 1].outMat.data.mat[srcShift];
-            dstPtr = &layerRef[layerIndex].activ.gradMat.mat[dstShift];
+            srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
+            dstPtr = layerRef[layerIndex].activ.gradMat.mat + dstShift;
 
             // Find gradient matrix
             cnn_activ_grad_list[cfgRef->layerCfg[layerIndex].activ.id](
                 dstPtr, srcPtr, layerRef[layerIndex].outMat.data.cols,
-                &layerRef[layerIndex].activ.buf.mat[srcShift]);
+                layerRef[layerIndex].outMat.data.mat + srcShift);
 
             // Find layer gradient
             if (cfgRef->layerCfg[layerIndex].activ.id == CNN_SOFTMAX)
             {
+#ifdef CNN_WITH_CUDA
+                float alpha = 1.0;
+                float beta = 0.0;
+                cublasSgemm(
+                    cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
+                    layerRef[layerIndex].outMat.data.cols, 1,
+                    layerRef[layerIndex].outMat.data.cols, &alpha, dstPtr,
+                    layerRef[layerIndex].activ.gradMat.cols,
+                    layerRef[layerIndex].outMat.data.grad + srcShift,
+                    layerRef[layerIndex].outMat.data.cols, &beta,
+                    layerRef[layerIndex - 1].outMat.data.grad + srcShift,
+                    layerRef[layerIndex - 1].outMat.data.cols);
+#else
                 cblas_sgemm(
                     CblasRowMajor, CblasNoTrans, CblasNoTrans, 1,
                     layerRef[layerIndex - 1].outMat.data.cols,
@@ -648,9 +835,16 @@ static inline void cnn_backward_activ(union CNN_LAYER* layerRef,
                     layerRef[layerIndex].activ.gradMat.cols, 0.0,
                     &layerRef[layerIndex - 1].outMat.data.grad[srcShift],
                     layerRef[layerIndex - 1].outMat.data.cols);
+#endif
             }
             else
             {
+#ifdef CNN_WITH_CUDA
+                cnn_elemwise_product_gpu(
+                    layerRef[layerIndex - 1].outMat.data.grad + srcShift,
+                    dstPtr, layerRef[layerIndex].outMat.data.grad + srcShift,
+                    layerRef[layerIndex - 1].outMat.data.cols);
+#else
                 for (int k = 0; k < layerRef[layerIndex - 1].outMat.data.cols;
                      k++)
                 {
@@ -658,6 +852,7 @@ static inline void cnn_backward_activ(union CNN_LAYER* layerRef,
                         dstPtr[k] *
                         layerRef[layerIndex].outMat.data.grad[srcShift + k];
                 }
+#endif
             }
         }
     }
@@ -679,6 +874,11 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
     float* kernel = layerRef[layerIndex].conv.kernel.mat;
     float* kGrad = layerRef[layerIndex].conv.kernel.grad;
 
+#ifdef CNN_WITH_CUDA
+    float alpha = 1.0;
+    float beta = 1.0;
+#endif
+
     // Sum gradient
     for (int j = 0; j < cfgRef->batch; j++)
     {
@@ -689,9 +889,15 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
         float* mapPtr = &layerRef[layerIndex].conv.unroll.mat[mapShift];
 
         // Sum kernel gradient matrix
+#ifdef CNN_WITH_CUDA
+        cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N, mapCols,
+                    chOut, mapRows, &alpha, mapPtr, mapCols, gradPtr, mapRows,
+                    &beta, kGrad, mapCols);
+#else
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, chOut, mapCols,
                     mapRows, 1.0, gradPtr, mapRows, mapPtr, mapCols, 1.0, kGrad,
                     mapCols);
+#endif
 
         // Sum bias gradient matrix
 #if defined(CNN_CONV_BIAS_FILTER)
@@ -700,24 +906,40 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
 #endif
         for (int ch = 0; ch < chOut; ch++)
         {
+#ifdef CNN_WITH_CUDA
+            cublasSaxpy(cnnInit.blasHandle, mapRows, &alpha,
+                        gradPtr + (ch * mapRows), 1,
+                        layerRef[layerIndex].conv.bias.grad + ch, 0);
+#else
             cblas_saxpy(mapRows, 1.0, &gradPtr[ch * mapRows], 1,
                         &layerRef[layerIndex].conv.bias.grad[ch], 0);
+#endif
         }
 #elif defined(CNN_CONV_BIAS_LAYER)
 #ifdef DEBUG
 #pragma message("cnn_forward_conv(): Enable convolution layer bias")
 #endif
+#ifdef CNN_WITH_CUDA
+        cublasSaxpy(cnnInit.blasHandle, layerRef[layerIndex].conv.bias.cols,
+                    &alpha, gradPtr, 1, layerRef[layerIndex].conv.bias.grad, 1);
+#else
         cblas_saxpy(layerRef[layerIndex].conv.bias.cols, 1.0, gradPtr, 1,
                     layerRef[layerIndex].conv.bias.grad, 1);
+#endif
 #endif
     }
 
     // Find layer gradient
     if (layerIndex > 1)
     {
-        memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
-               sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
-                   layerRef[layerIndex - 1].outMat.data.cols);
+#ifdef CNN_WITH_CUDA
+        cudaMemset
+#else
+        memset
+#endif
+            (layerRef[layerIndex - 1].outMat.data.grad, 0,
+             sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
+                 layerRef[layerIndex - 1].outMat.data.cols);
 
         for (int j = 0; j < cfgRef->batch; j++)
         {
@@ -725,11 +947,19 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
             int preGradShift = j * layerRef[layerIndex - 1].outMat.data.cols;
             int mapShift = j * mapSize;
 
-            float* gradPtr = &layerRef[layerIndex].outMat.data.grad[gradShift];
+            float* gradPtr = layerRef[layerIndex].outMat.data.grad + gradShift;
             float* preGradPtr =
-                &layerRef[layerIndex - 1].outMat.data.grad[preGradShift];
-            float* mapPtr = &layerRef[layerIndex].conv.unroll.grad[mapShift];
+                layerRef[layerIndex - 1].outMat.data.grad + preGradShift;
+            float* mapPtr = layerRef[layerIndex].conv.unroll.grad + mapShift;
 
+#ifdef CNN_WITH_CUDA
+            beta = 0.0;
+            cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_T, mapCols,
+                        mapRows, chOut, &alpha, kernel, mapCols, gradPtr,
+                        mapRows, &beta, mapPtr, mapCols);
+
+            cnn_map_inv_gpu(preGradPtr, mapPtr, indexMap, mapSize);
+#else
             cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans, mapRows,
                         mapCols, chOut, 1.0, gradPtr, mapRows, kernel, mapCols,
                         0.0, mapPtr, mapCols);
@@ -742,6 +972,7 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
                     preGradPtr[tmpIndex] += mapPtr[i];
                 }
             }
+#endif
         }
     }
 }
@@ -755,24 +986,38 @@ static inline void cnn_backward_pool(union CNN_LAYER* layerRef,
     if (layerIndex > 1)
     {
         // Zero layer gradient
-        memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
-               sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
-                   layerRef[layerIndex - 1].outMat.data.cols);
+#ifdef CNN_WITH_CUDA
+        cudaMemset
+#else
+        memset
+#endif
+            (layerRef[layerIndex - 1].outMat.data.grad, 0,
+             sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
+                 layerRef[layerIndex - 1].outMat.data.cols);
 
         for (int j = 0; j < cfgRef->batch; j++)
         {
             srcShift = j * layerRef[layerIndex].outMat.data.cols;
             dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
 
-            srcPtr = &layerRef[layerIndex].outMat.data.grad[srcShift];
+            srcPtr = layerRef[layerIndex].outMat.data.grad + srcShift;
 
             // Find layer gradient
+#ifdef CNN_WITH_CUDA
+            cnn_pool_2d_max_grad_gpu(
+                layerRef[layerIndex - 1].outMat.data.grad + dstShift,
+                layerRef[layerIndex].pool.indexMat + srcShift, srcPtr,
+                layerRef[layerIndex].outMat.width *
+                    layerRef[layerIndex].outMat.height *
+                    layerRef[layerIndex].outMat.channel);
+#else
             cnn_pool_2d_max_grad(
                 &layerRef[layerIndex - 1].outMat.data.grad[dstShift],
                 &layerRef[layerIndex].pool.indexMat[srcShift], srcPtr,
                 layerRef[layerIndex].outMat.height,
                 layerRef[layerIndex].outMat.width,
                 layerRef[layerIndex].outMat.channel);
+#endif
         }
     }
 }
@@ -785,25 +1030,35 @@ static inline void cnn_backward_bn(union CNN_LAYER* layerRef,
     int chSize =
         layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
 
-    float* stddevCache = layerRef[layerIndex].bn.stddev;
-
     // Batch normalization backward
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int dataShift = j * layerRef[layerIndex].outMat.data.cols;
+        float* stddevCache = layerRef[layerIndex].bn.stddev + j * channels;
 
         for (int ch = 0; ch < channels; ch++)
         {
             int chShift = dataShift + ch * chSize;
 
-            float* srcShift = &layerRef[layerIndex].bn.srcShift.mat[chShift];
-            float* srcNorm = &layerRef[layerIndex].bn.srcNorm.mat[chShift];
-            float* normGrad = &layerRef[layerIndex].bn.srcNorm.grad[chShift];
-            float* gradIn = &layerRef[layerIndex].outMat.data.grad[chShift];
+            float* srcShift = layerRef[layerIndex].bn.srcShift.mat + chShift;
+            float* srcNorm = layerRef[layerIndex].bn.srcNorm.mat + chShift;
+            float* normGrad = layerRef[layerIndex].bn.srcNorm.grad + chShift;
+            float* gradIn = layerRef[layerIndex].outMat.data.grad + chShift;
             float* layerGrad =
-                &layerRef[layerIndex - 1].outMat.data.grad[chShift];
+                layerRef[layerIndex - 1].outMat.data.grad + chShift;
 
+#ifdef CNN_WITH_CUDA
+            float* ptr;
+            float* buf = layerRef[layerIndex].bn.buf;
+            float blasAlpha = 1.0;
+            float blasBeta = 0.0;
+
+            float gamma;
+            cudaMemcpy(&gamma, layerRef[layerIndex].bn.bnVar.mat + ch * 2,
+                       sizeof(float), cudaMemcpyDeviceToHost);
+#else
             float gamma = layerRef[layerIndex].bn.bnVar.mat[ch * 2];
+#endif
 
             float rGrad = 0;
             float bGrad = 0;
@@ -815,50 +1070,103 @@ static inline void cnn_backward_bn(union CNN_LAYER* layerRef,
             float fLen = (float)chSize;
 
             // Find gamma, beta gradient
+#ifdef CNN_WITH_CUDA
+            cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N, 1, 1,
+                        chSize, &blasAlpha, srcNorm, chSize, gradIn, chSize,
+                        &blasBeta, buf, chSize);
+            cudaMemcpy(&rGrad, buf, sizeof(float), cudaMemcpyDeviceToHost);
+
+            cudaMemset(buf, 0, sizeof(float));
+            cublasSaxpy(cnnInit.blasHandle, chSize, &blasAlpha, gradIn, 1, buf,
+                        0);
+            cudaMemcpy(&bGrad, buf, sizeof(float), cudaMemcpyDeviceToHost);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 rGrad += srcNorm[__i] * gradIn[__i];
                 bGrad += gradIn[__i];
             }
+#endif
 
             // Find gradient for normalization
+#ifdef CNN_WITH_CUDA
+            cnn_mul_gpu(normGrad, gradIn, chSize, gamma);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 normGrad[__i] = gradIn[__i] * gamma;
             }
+#endif
 
             // Find variance gradient
+#ifdef CNN_WITH_CUDA
+            cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N, 1, 1,
+                        chSize, &blasAlpha, normGrad, chSize, srcShift, chSize,
+                        &blasBeta, buf, chSize);
+            cudaMemcpy(&varGrad, buf, sizeof(float), cudaMemcpyDeviceToHost);
+#else
             for (int __i = 0; __i < chSize; __i++)
             {
                 varGrad += normGrad[__i] * srcShift[__i];
             }
+#endif
 
             varGrad = varGrad * -0.5 * pow(stddev, 3);
 
             // Find mean gradient
+#ifdef CNN_WITH_CUDA
+            cudaMemset(buf, 0, sizeof(float));
+            blasAlpha = -1.0 / stddev;
+            cublasSaxpy(cnnInit.blasHandle, chSize, &blasAlpha, normGrad, 1,
+                        buf, 0);
+            cudaMemcpy(&meanGrad, buf, sizeof(float), cudaMemcpyDeviceToHost);
+
+            cudaMemset(buf, 0, sizeof(float));
+            blasAlpha = varGrad * -2.0;
+            cublasSaxpy(cnnInit.blasHandle, chSize, &blasAlpha, srcShift, 1,
+                        buf, 0);
+            cudaMemcpy(&tmp, buf, sizeof(float), cudaMemcpyDeviceToHost);
+#else
             tmp = 0;
             for (int __i = 0; __i < chSize; __i++)
             {
                 meanGrad += normGrad[__i] * -1.0 / stddev;
                 tmp += varGrad * -2.0 * srcShift[__i];
             }
+#endif
 
             meanGrad += tmp / fLen;
 
             // Find layer gradient
             if (layerIndex > 1)
             {
+#ifdef CNN_WITH_CUDA
+                cnn_div_gpu(layerGrad, normGrad, chSize, stddev);
+                cnn_mul_gpu(buf, srcShift, chSize, varGrad * 2.0);
+                cnn_add_gpu(buf, buf, chSize, meanGrad);
+                cnn_div_gpu(buf, buf, chSize, fLen);
+                cnn_elemwise_add_gpu(layerGrad, layerGrad, buf, chSize);
+#else
                 for (int __i = 0; __i < chSize; __i++)
                 {
                     layerGrad[__i] =
                         normGrad[__i] / stddev +
                         (varGrad * 2.0 * srcShift[__i] + meanGrad) / fLen;
                 }
+#endif
             }
 
             // Assign gradient
+#ifdef CNN_WITH_CUDA
+            ptr = layerRef[layerIndex].bn.bnVar.grad + ch * 2 + 0;
+            cnn_add_gpu(ptr, ptr, 1, rGrad);
+
+            ptr = layerRef[layerIndex].bn.bnVar.grad + ch * 2 + 1;
+            cnn_add_gpu(ptr, ptr, 1, bGrad);
+#else
             layerRef[layerIndex].bn.bnVar.grad[ch * 2 + 0] += rGrad;
             layerRef[layerIndex].bn.bnVar.grad[ch * 2 + 1] += bGrad;
+#endif
         }
     }
 }
