@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <cnn_config.h>
 
@@ -240,5 +241,23 @@ void print_img_int_net_msg(const char* msg, int* src, int width, int height,
 #else
 #define memcpy_net(dst, src, size) memcpy(dst, src, size)
 #endif
+
+struct timespec hold_time()
+{
+    struct timespec tmpTime;
+
+    clock_gettime(CLOCK_MONOTONIC, &tmpTime);
+    return tmpTime;
+}
+
+float get_time_cost(struct timespec timeHold)
+{
+    struct timespec tmpTime = hold_time();
+
+    tmpTime.tv_sec -= timeHold.tv_sec;
+    tmpTime.tv_nsec -= timeHold.tv_nsec;
+
+    return tmpTime.tv_sec * 1000.0 + (double)tmpTime.tv_nsec / 1e+6;
+}
 
 #endif
