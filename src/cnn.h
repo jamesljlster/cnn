@@ -29,7 +29,8 @@ typedef enum CNN_LAYER_TYPE
     CNN_LAYER_CONV = 3,
     CNN_LAYER_POOL = 4,
     CNN_LAYER_DROP = 5,
-    CNN_LAYER_BN = 6
+    CNN_LAYER_BN = 6,
+    CNN_LAYER_TEXT = 7
 } cnn_layer_t;
 
 typedef enum CNN_POOL_TYPE

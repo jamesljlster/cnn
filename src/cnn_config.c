@@ -324,6 +324,12 @@ int cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
             outChannel = inChannel;
             break;
 
+        case CNN_LAYER_TEXT:
+            outWidth = inWidth;
+            outHeight = inHeight;
+            outChannel = layerCfg->text.filter;
+            break;
+
         default:
             assert(!"Invalid layer type");
     }

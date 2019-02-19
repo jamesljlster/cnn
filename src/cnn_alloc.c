@@ -589,3 +589,58 @@ RET:
 
     return ret;
 }
+
+int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
+                         struct CNN_CONFIG_LAYER_TEXT* cfgPtr, int inWidth,
+                         int inHeight, int inChannel, int batch)
+{
+    int ret = CNN_NO_ERROR;
+    int outRows, outCols;                 // Output matrix size
+    int outWidth, outHeight, outChannel;  // Valid texture output size
+    int wRows, wCols;                     // Weight matrix size;
+    int bRows, bCols;                     // Bias matrix size
+
+    const int wSize = 8;
+
+    // Find output image size
+    cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                          inWidth, inHeight, inChannel,
+                                          (union CNN_CONFIG_LAYER*)cfgPtr),
+            ret, RET);
+
+    // Find allocate size
+    outRows = batch;
+    outCols = outWidth * outHeight * outChannel;
+
+    wRows = cfgPtr->filter;
+    wCols = wSize * inChannel;
+
+    bRows = 1;
+    bCols = cfgPtr->filter;
+
+    // Allocate memory
+    cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
+            ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->weight, wRows, wCols, 1), ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
+
+    cnn_run(cnn_mat_alloc(&layerPtr->nbrUnroll, inWidth * inHeight * inChannel,
+                          wSize, 1),
+            ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->ctrUnroll, inWidth * inHeight * inChannel,
+                          1, 1),
+            ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->activ, inWidth * inHeight,
+                          inChannel * wSize, 1),
+            ret, ERR);
+
+    cnn_alloc(layerPtr->nbrMap, inChannel * inWidth * inHeight * wSize, int,
+              ret, ERR);
+    cnn_alloc(layerPtr->ctrMap, inChannel * inWidth * inHeight, int, ret, ERR);
+
+ERR:
+    cnn_layer_text_delete(layerPtr);
+
+RET:
+    return ret;
+}

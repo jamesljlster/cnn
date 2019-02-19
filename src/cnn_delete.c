@@ -144,6 +144,23 @@ void cnn_layer_bn_delete(struct CNN_LAYER_BN* layerPtr)
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_BN));
 }
 
+void cnn_layer_text_delete(struct CNN_LAYER_TEXT* layerPtr)
+{
+    // Free memory
+    cnn_mat_delete(&layerPtr->outMat.data);
+    cnn_mat_delete(&layerPtr->weight);
+    cnn_mat_delete(&layerPtr->bias);
+    cnn_mat_delete(&layerPtr->nbrUnroll);
+    cnn_mat_delete(&layerPtr->ctrUnroll);
+    cnn_mat_delete(&layerPtr->activ);
+
+    cnn_free(layerPtr->nbrMap);
+    cnn_free(layerPtr->ctrMap);
+
+    // Zero memory
+    memset(layerPtr, 0, sizeof(struct CNN_LAYER_TEXT));
+}
+
 void cnn_network_delete(struct CNN* cnn)
 {
     int i;
