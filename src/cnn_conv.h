@@ -27,7 +27,7 @@ static inline void cnn_conv_unroll_2d_valid(int* indexMap, int dstHeight,
 
     for (int __h = 0; __h < dstHeight; __h++)
     {
-        int __dstRowShift = __h * dstHeight;
+        int __dstRowShift = __h * dstWidth;
 
         for (int __w = 0; __w < dstWidth; __w++)
         {
@@ -69,7 +69,7 @@ static inline void cnn_conv_unroll_2d_same(int* indexMap, int dstHeight,
 
     for (int __h = 0; __h < dstHeight; __h++)
     {
-        int __dstRowShift = __h * dstHeight;
+        int __dstRowShift = __h * dstWidth;
 
         for (int __w = 0; __w < dstWidth; __w++)
         {
