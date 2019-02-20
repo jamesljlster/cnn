@@ -1,8 +1,8 @@
 #ifndef __CNN_TEXT_H__
 #define __CNN_TEXT_H__
 
-int cnn_text_get_index(int wShift, int hShift, int w, int h, int ch, int width,
-                       int height, int channel)
+static inline int cnn_text_get_index(int wShift, int hShift, int w, int h,
+                                     int ch, int width, int height, int channel)
 {
     int imSize;
     int row, col;
