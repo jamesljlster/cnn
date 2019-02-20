@@ -602,6 +602,14 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
 
     const int wSize = 8;
 
+#ifdef CNN_WITH_CUDA
+    int nbrSize;
+    int* nbrVec = NULL;
+
+    int ctrSize;
+    int* ctrVec = NULL;
+#endif
+
     // Find output image size
     cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
                                           inWidth, inHeight, inChannel,
@@ -634,13 +642,60 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
                           inChannel * wSize, 1),
             ret, ERR);
 
+#ifdef CNN_WITH_CUDA
+    cnn_alloc_cu(layerPtr->nbrMap, inChannel * inWidth * inHeight * wSize, int,
+                 ret, ERR);
+    cnn_alloc_cu(layerPtr->ctrMap, inChannel * inWidth * inHeight, int, ret,
+                 ERR);
+#else
     cnn_alloc(layerPtr->nbrMap, inChannel * inWidth * inHeight * wSize, int,
               ret, ERR);
     cnn_alloc(layerPtr->ctrMap, inChannel * inWidth * inHeight, int, ret, ERR);
+#endif
+
+    // Assign value
+    layerPtr->outMat.width = outWidth;
+    layerPtr->outMat.height = outHeight;
+    layerPtr->inChannel = inChannel;
+    layerPtr->outMat.channel = outChannel;
+
+#ifdef CNN_WITH_CUDA
+    // Cache index map size
+    nbrSize = outWidth * outHeight * wCols;
+    ctrSize = outWidth * outHeight * inChannel;
+
+    // Buffer allocation
+    cnn_alloc(nbrVec, nbrSize, int, ret, ERR);
+    cnn_alloc(ctrVec, ctrSize, int, ret, ERR);
+#endif
+
+    // Initial index mapping
+#ifdef CNN_WITH_CUDA
+    cnn_text_unroll(nbrVec, ctrVec, inWidth, inHeight, inChannel);
+
+    // Copy memory
+    cnn_run_cu(cudaMemcpy(layerPtr->nbrMap, nbrVec, nbrSize * sizeof(int),
+                          cudaMemcpyHostToDevice),
+               ret, ERR);
+    cnn_run_cu(cudaMemcpy(layerPtr->ctrMap, ctrVec, ctrSize * sizeof(int),
+                          cudaMemcpyHostToDevice),
+               ret, ERR);
+#else
+    cnn_text_unroll(layerPtr->nbrMap, layerPtr->ctrMap, inWidth, inHeight,
+                    inChannel);
+#endif
+
+    goto RET;
 
 ERR:
     cnn_layer_text_delete(layerPtr);
 
 RET:
+#ifdef CNN_WITH_CUDA
+    // Free buffer
+    cnn_free(nbrVec);
+    cnn_free(ctrVec);
+#endif
+
     return ret;
 }
