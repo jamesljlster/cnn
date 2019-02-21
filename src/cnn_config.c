@@ -99,6 +99,14 @@ int cnn_config_compare(const cnn_config_t src1, const cnn_config_t src2)
                 __cmp_mem(drop, struct CNN_CONFIG_LAYER_DROP);
                 break;
 
+            case CNN_LAYER_BN:
+                __cmp_mem(bn, struct CNN_CONFIG_LAYER_BN);
+                break;
+
+            case CNN_LAYER_TEXT:
+                __cmp_mem(text, struct CNN_CONFIG_LAYER_TEXT);
+                break;
+
             default:
                 assert(!"Invalid layer type");
         }
