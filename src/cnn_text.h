@@ -21,7 +21,7 @@ static inline int cnn_text_get_index(int wShift, int hShift, int w, int h,
     }
     if (row >= height)
     {
-        row = height;
+        row = height - 1;
     }
 
     col = w + wShift;
@@ -31,7 +31,7 @@ static inline int cnn_text_get_index(int wShift, int hShift, int w, int h,
     }
     if (col >= width)
     {
-        col = width;
+        col = width - 1;
     }
 
     // Get index
@@ -155,7 +155,7 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
             for (int col = 0; col < nbrCols; col++)
             {
                 int nbrShift = nbrBase + col;
-                diffPtr[nbrShift] = nbrPtr[nbrShift] - ctrPtr[nbrBase];
+                diffPtr[nbrShift] = nbrPtr[nbrShift] - ctrPtr[row];
             }
         }
 
