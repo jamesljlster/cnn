@@ -632,14 +632,20 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
     cnn_run(cnn_mat_alloc(&layerPtr->weight, wRows, wCols, 1), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 
-    cnn_run(cnn_mat_alloc(&layerPtr->nbrUnroll, inWidth * inHeight * inChannel,
-                          wSize, 1),
+    cnn_run(cnn_mat_alloc(&layerPtr->nbrUnroll,
+                          inWidth * inHeight * inChannel * batch, wSize, 1),
             ret, ERR);
-    cnn_run(cnn_mat_alloc(&layerPtr->ctrUnroll, inWidth * inHeight * inChannel,
-                          1, 1),
+    cnn_run(cnn_mat_alloc(&layerPtr->ctrUnroll,
+                          inWidth * inHeight * inChannel * batch, 1, 1),
+            ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->diff, inWidth * inHeight,
+                          inChannel * wSize, 1),
             ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->activ, inWidth * inHeight,
                           inChannel * wSize, 1),
+            ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->activBuf, inWidth * inHeight,
+                          inChannel * wSize, 0),
             ret, ERR);
 
 #ifdef CNN_WITH_CUDA

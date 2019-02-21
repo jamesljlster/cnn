@@ -225,7 +225,9 @@ struct CNN_LAYER_TEXT
     // Texture calculation buffer
     struct CNN_MAT nbrUnroll;
     struct CNN_MAT ctrUnroll;
+    struct CNN_MAT diff;
     struct CNN_MAT activ;
+    struct CNN_MAT activBuf;
 
     // Index mapping
     int* nbrMap;  // Neighbor mapping
