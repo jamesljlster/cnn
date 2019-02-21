@@ -644,9 +644,6 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
     cnn_run(cnn_mat_alloc(&layerPtr->activ, inWidth * inHeight * batch,
                           inChannel * wSize, 1),
             ret, ERR);
-    cnn_run(cnn_mat_alloc(&layerPtr->activBuf, inWidth * inHeight * batch,
-                          inChannel * wSize, 0),
-            ret, ERR);
 
 #ifdef CNN_WITH_CUDA
     cnn_alloc_cu(layerPtr->nbrMap, inChannel * inWidth * inHeight * wSize, int,

@@ -135,7 +135,6 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
         float* ctrPtr = layerRef[layerIndex].text.ctrUnroll.mat + ctrShift;
         float* diffPtr = layerRef[layerIndex].text.diff.mat + diffShift;
         float* activPtr = layerRef[layerIndex].text.activ.mat + activShift;
-        float* activBuf = layerRef[layerIndex].text.activBuf.mat + activShift;
 
         // Mapping
         for (int k = 0; k < nbrSize; k++)
@@ -160,7 +159,7 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
         }
 
         // Find activation
-        cnn_activ_list[activId](activPtr, diffPtr, diffSize, activBuf);
+        cnn_activ_list[activId](activPtr, diffPtr, diffSize, NULL);
 
         // Apply weight
         cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, dstImSize, chOut,

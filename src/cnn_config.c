@@ -986,8 +986,8 @@ int cnn_config_set_texture(cnn_config_t cfg, int layerIndex, int activID,
     int ret = CNN_NO_ERROR;
 
     // Checking
-    if (layerIndex <= 0 || layerIndex >= cfg->layers ||  //
-        activID < 0 || activID >= CNN_ACTIV_AMOUNT ||    //
+    if (layerIndex <= 0 || layerIndex >= cfg->layers ||           //
+        activID <= CNN_SOFTMAX || activID >= CNN_ACTIV_AMOUNT ||  //
         filter <= 0)
     {
         ret = CNN_INVALID_ARG;
