@@ -956,3 +956,74 @@ int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex, float* rInitPtr,
 RET:
     return ret;
 }
+
+int cnn_config_append_texture(cnn_config_t cfg, int activID, int filter)
+{
+    int ret = CNN_NO_ERROR;
+    int layers;
+
+    // Append texture layer
+    cnn_config_get_layers(cfg, &layers);
+    layers++;
+    cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
+    cnn_run(cnn_config_set_texture(cfg, layers - 1, activID, filter), ret, RET);
+
+RET:
+    return ret;
+}
+
+int cnn_config_set_texture(cnn_config_t cfg, int layerIndex, int activID,
+                           int filter)
+{
+    int ret = CNN_NO_ERROR;
+
+    // Checking
+    if (layerIndex <= 0 || layerIndex >= cfg->layers ||  //
+        activID < 0 || activID >= CNN_ACTIV_AMOUNT ||    //
+        filter <= 0)
+    {
+        ret = CNN_INVALID_ARG;
+        goto RET;
+    }
+
+    // Set config
+    cfg->layerCfg[layerIndex].type = CNN_LAYER_TEXT;
+    cfg->layerCfg[layerIndex].text.activId = activID;
+    cfg->layerCfg[layerIndex].text.filter = filter;
+
+RET:
+    return ret;
+}
+
+int cnn_config_get_texture(cnn_config_t cfg, int layerIndex, int* idPtr,
+                           int* filterPtr)
+{
+    int ret = CNN_NO_ERROR;
+
+    // Checking
+    if (layerIndex < 0 || layerIndex >= cfg->layers)
+    {
+        ret = CNN_INVALID_ARG;
+        goto RET;
+    }
+
+    if (cfg->layerCfg[layerIndex].type != CNN_LAYER_TEXT)
+    {
+        ret = CNN_INVALID_ARG;
+        goto RET;
+    }
+
+    // Assign value
+    if (idPtr != NULL)
+    {
+        *idPtr = cfg->layerCfg[layerIndex].text.activId;
+    }
+
+    if (filterPtr != NULL)
+    {
+        *filterPtr = cfg->layerCfg[layerIndex].text.filter;
+    }
+
+RET:
+    return ret;
+}
