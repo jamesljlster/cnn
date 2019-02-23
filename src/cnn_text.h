@@ -98,8 +98,7 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
     int dstImSize =
         layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
 
-    int nbrRows = layerRef[layerIndex].outMat.width *
-                  layerRef[layerIndex].outMat.height * chIn;
+    int nbrRows = dstImSize * chIn;
     int nbrCols = wSize;
     int nbrSize = nbrRows * nbrCols;
 
@@ -107,14 +106,12 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
     int ctrCols = 1;
     int ctrSize = ctrRows * ctrCols;
 
-    int diffRows =
-        layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
-    int diffCols = chIn * wSize;
+    int diffRows = dstImSize;
+    int diffCols = wCols;
     int diffSize = diffRows * diffCols;
 
-    int activRows =
-        layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
-    int activCols = chIn * wSize;
+    int activRows = dstImSize;
+    int activCols = wCols;
     int activSize = activRows * activCols;
 
     int* nbrMap = layerRef[layerIndex].text.nbrMap;
@@ -187,16 +184,14 @@ static inline void cnn_backward_text(union CNN_LAYER* layerRef,
     int chIn = layerRef[layerIndex].text.inChannel;
     int chOut = cfgRef->layerCfg[layerIndex].text.filter;
 
-    // int wCols = wSize * chIn;
+    int wCols = wSize * chIn;
 
     int srcSize = layerRef[layerIndex - 1].outMat.data.cols;
     int dstSize = layerRef[layerIndex].outMat.data.cols;
-    // int dstImSize =
-    //     layerRef[layerIndex].outMat.width *
-    //     layerRef[layerIndex].outMat.height;
+    int dstImSize =
+        layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
 
-    int nbrRows = layerRef[layerIndex].outMat.width *
-                  layerRef[layerIndex].outMat.height * chIn;
+    int nbrRows = dstImSize * chIn;
     int nbrCols = wSize;
     int nbrSize = nbrRows * nbrCols;
 
@@ -204,44 +199,27 @@ static inline void cnn_backward_text(union CNN_LAYER* layerRef,
     int ctrCols = 1;
     int ctrSize = ctrRows * ctrCols;
 
-    int diffRows =
-        layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
-    int diffCols = chIn * wSize;
+    int diffRows = dstImSize;
+    int diffCols = wCols;
     int diffSize = diffRows * diffCols;
 
-    int activRows =
-        layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
-    int activCols = chIn * wSize;
+    int activRows = dstImSize;
+    int activCols = wCols;
     int activSize = activRows * activCols;
 
     int* nbrMap = layerRef[layerIndex].text.nbrMap;
     int* ctrMap = layerRef[layerIndex].text.ctrMap;
     float* weight = layerRef[layerIndex].text.weight.mat;
     float* wGrad = layerRef[layerIndex].text.weight.grad;
-    // float* bias = layerRef[layerIndex].text.bias.mat;
     float* bGrad = layerRef[layerIndex].text.bias.grad;
 
     for (int j = 0; j < cfgRef->batch; j++)
     {
-        // int srcShift = j * srcSize;
         int dstShift = j * dstSize;
-        // int gradShift = j * dstSize;
-        // int nbrShift = j * nbrSize;
-        // int ctrShift = j * ctrSize;
-        // int diffShift = j * diffSize;
         int activShift = j * activSize;
 
-        // float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
-        // float* dstPtr = layerRef[layerIndex].outMat.data.mat + dstShift;
         float* gradPtr = layerRef[layerIndex].outMat.data.grad + dstShift;
-        // float* nbrPtr = layerRef[layerIndex].text.nbrUnroll.mat + nbrShift;
-        // float* nbrGrad = layerRef[layerIndex].text.nbrUnroll.grad + nbrShift;
-        // float* ctrPtr = layerRef[layerIndex].text.ctrUnroll.mat + ctrShift;
-        // float* ctrGrad = layerRef[layerIndex].text.ctrUnroll.grad + ctrShift;
-        // float* diffPtr = layerRef[layerIndex].text.diff.mat + diffShift;
-        // float* diffGrad = layerRef[layerIndex].text.diff.grad + diffShift;
         float* activPtr = layerRef[layerIndex].text.activ.mat + activShift;
-        // float* activGrad = layerRef[layerIndex].text.activ.grad + activShift;
 
         // Sum weight gradient matrix
         cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, activCols, chOut,
@@ -271,30 +249,20 @@ static inline void cnn_backward_text(union CNN_LAYER* layerRef,
         {
             int srcShift = j * srcSize;
             int dstShift = j * dstSize;
-            // int gradShift = j * dstSize;
             int nbrShift = j * nbrSize;
             int ctrShift = j * ctrSize;
             int diffShift = j * diffSize;
             int activShift = j * activSize;
 
-            // float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat +
-            // srcShift; float* dstPtr = layerRef[layerIndex].outMat.data.mat +
-            // dstShift;
             float* gradPtr = layerRef[layerIndex].outMat.data.grad + dstShift;
             float* preGradPtr =
                 layerRef[layerIndex - 1].outMat.data.grad + srcShift;
-            // float* nbrPtr = layerRef[layerIndex].text.nbrUnroll.mat +
-            // nbrShift;
             float* nbrGrad =
                 layerRef[layerIndex].text.nbrUnroll.grad + nbrShift;
-            // float* ctrPtr = layerRef[layerIndex].text.ctrUnroll.mat +
-            // ctrShift;
             float* ctrGrad =
                 layerRef[layerIndex].text.ctrUnroll.grad + ctrShift;
             float* diffPtr = layerRef[layerIndex].text.diff.mat + diffShift;
             float* diffGrad = layerRef[layerIndex].text.diff.grad + diffShift;
-            // float* activPtr = layerRef[layerIndex].text.activ.mat +
-            // activShift;
             float* activGrad =
                 layerRef[layerIndex].text.activ.grad + activShift;
 
