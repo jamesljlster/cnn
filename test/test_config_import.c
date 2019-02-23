@@ -91,6 +91,13 @@ int main(int argc, char* argv[])
                 printf("rInit: %g\n", rInit);
                 printf("bInit: %g\n", bInit);
                 break;
+
+            case CNN_LAYER_TEXT:
+                test(cnn_config_get_texture(cfg, i, &id, &filter));
+                printf("Type: Texture\n");
+                printf("ID: %d\n", id);
+                printf("filter: %d\n", filter);
+                break;
         }
 
         printf("\n");

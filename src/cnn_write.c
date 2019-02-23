@@ -423,6 +423,52 @@ RET:
     return ret;
 }
 
+int cnn_write_layer_text_xml(struct CNN_CONFIG* cfgRef,
+                             union CNN_LAYER* layerRef, int layerIndex,
+                             xmlTextWriterPtr writer)
+{
+    int ret = CNN_NO_ERROR;
+    char buf[CNN_XML_BUFLEN] = {0};
+
+    // Write layer type
+    cnn_xml_run(xmlTextWriterWriteAttribute(
+                    writer, (xmlChar*)cnn_str_list[CNN_STR_TYPE],
+                    (xmlChar*)cnn_str_list[CNN_STR_TEXT]),
+                ret, RET);
+
+    // Write activation function id
+    cnn_xml_run(
+        xmlTextWriterWriteAttribute(
+            writer, (xmlChar*)cnn_str_list[CNN_STR_ID],
+            (xmlChar*)
+                cnn_activ_name[cfgRef->layerCfg[layerIndex].text.activId]),
+        ret, RET);
+
+    // Write filter
+    cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].text.filter);
+    cnn_xml_run(
+        xmlTextWriterWriteAttribute(
+            writer, (xmlChar*)cnn_str_list[CNN_STR_FILTER], (xmlChar*)buf),
+        ret, RET);
+
+    // Write network detail
+    if (layerRef != NULL)
+    {
+        // Write weight
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.weight,
+                                  cnn_str_list[CNN_STR_WEIGHT], writer),
+                ret, RET);
+
+        // Write bias
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.bias,
+                                  cnn_str_list[CNN_STR_BIAS], writer),
+                ret, RET);
+    }
+
+RET:
+    return ret;
+}
+
 int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
                           xmlTextWriterPtr writer)
 {
@@ -487,6 +533,11 @@ int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 
             case CNN_LAYER_BN:
                 cnn_run(cnn_write_layer_bn_xml(cfgRef, layerRef, i, writer),
+                        ret, RET);
+                break;
+
+            case CNN_LAYER_TEXT:
+                cnn_run(cnn_write_layer_text_xml(cfgRef, layerRef, i, writer),
                         ret, RET);
                 break;
 

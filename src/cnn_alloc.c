@@ -93,6 +93,14 @@ int cnn_network_alloc(struct CNN* cnn)
                         ret, ERR);
                 break;
 
+            case CNN_LAYER_TEXT:
+                cnn_run(cnn_layer_text_alloc(
+                            &cnn->layerList[i].text,
+                            (struct CNN_CONFIG_LAYER_TEXT*)&cfg->layerCfg[i],
+                            tmpWidth, tmpHeight, tmpChannel, cfg->batch),
+                        ret, ERR);
+                break;
+
             default:
                 assert(!"Invalid layer type");
         }

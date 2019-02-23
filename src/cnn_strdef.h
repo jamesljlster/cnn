@@ -25,6 +25,7 @@ enum CNN_STR_LIST
     CNN_STR_POOL,       //
     CNN_STR_DROP,       //
     CNN_STR_BN,         //
+    CNN_STR_TEXT,       //
     CNN_STR_ID,         //
     CNN_STR_POOL_TYPE,  //
     CNN_STR_MAX,        //

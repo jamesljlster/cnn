@@ -242,6 +242,10 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
             tmpType = CNN_LAYER_BN;
             break;
 
+        case CNN_STR_TEXT:
+            tmpType = CNN_LAYER_TEXT;
+            break;
+
         default:
             assert(!"Invalid layer type");
     }
@@ -445,6 +449,32 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
             // Parse beta
             xStr = xmlNodeGetContent(beta->children);
             cnn_run(cnn_strtof(&cfgPtr->layerCfg[tmpIndex].bn.bInit,
+                               (const char*)xStr),
+                    ret, RET);
+            xmlFree(xStr);
+            xStr = NULL;
+
+            break;
+
+        case CNN_LAYER_TEXT:
+            if (id == NULL || filter == NULL)
+            {
+                ret = CNN_INFO_NOT_FOUND;
+                goto RET;
+            }
+
+            // Parse id
+            xStr = xmlNodeGetContent(id->children);
+            strId = cnn_get_activ_id((const char*)xStr);
+            xmlFree(xStr);
+            xStr = NULL;
+
+            assert(strId >= 0 && "Invalid activation function ID");
+            cfgPtr->layerCfg[tmpIndex].text.activId = strId;
+
+            // Parse filter
+            xStr = xmlNodeGetContent(filter->children);
+            cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].text.filter,
                                (const char*)xStr),
                     ret, RET);
             xmlFree(xStr);
@@ -790,6 +820,33 @@ int cnn_parse_network_detail_xml(struct CNN* cnn, xmlDocPtr doc)
                 }
 
                 break;
+
+            case CNN_LAYER_TEXT:
+                // Select node
+                ret = snprintf(buf, CNN_XML_BUFLEN, "/%s/%s/%s[@%s='%d']",
+                               cnn_str_list[CNN_STR_MODEL],
+                               cnn_str_list[CNN_STR_NETWORK],
+                               cnn_str_list[CNN_STR_LAYER],
+                               cnn_str_list[CNN_STR_INDEX], i);
+                assert(ret > 0 && ret < CNN_XML_BUFLEN &&
+                       "Insufficient buffer size");
+
+                obj = xmlXPathEval((xmlChar*)buf, cont);
+                if (obj == NULL)
+                {
+                    ret = CNN_MEM_FAILED;
+                    goto RET;
+                }
+
+                // Parse
+                if (!xmlXPathNodeSetIsEmpty(obj->nodesetval))
+                {
+                    cnn_run(cnn_parse_network_detail_text_xml(
+                                cnn, i, obj->nodesetval->nodeTab[0]),
+                            ret, RET);
+                }
+
+                break;
         }
 
         if (obj != NULL)
@@ -897,6 +954,41 @@ int cnn_parse_network_detail_bn_xml(struct CNN* cnn, int layerIndex,
             case CNN_STR_PARAM:
                 cnn_run(
                     cnn_parse_mat(&cnn->layerList[layerIndex].bn.bnVar, cur),
+                    ret, RET);
+                break;
+        }
+
+        cur = cur->next;
+    }
+
+RET:
+    return ret;
+}
+
+int cnn_parse_network_detail_text_xml(struct CNN* cnn, int layerIndex,
+                                      xmlNodePtr node)
+{
+    int ret = CNN_NO_ERROR;
+    int strId;
+
+    xmlNodePtr cur;
+
+    // Parsing
+    cur = node->xmlChildrenNode;
+    while (cur != NULL)
+    {
+        strId = cnn_strdef_get_id((const char*)cur->name);
+        switch (strId)
+        {
+            case CNN_STR_WEIGHT:
+                cnn_run(
+                    cnn_parse_mat(&cnn->layerList[layerIndex].text.weight, cur),
+                    ret, RET);
+                break;
+
+            case CNN_STR_BIAS:
+                cnn_run(
+                    cnn_parse_mat(&cnn->layerList[layerIndex].text.bias, cur),
                     ret, RET);
                 break;
         }

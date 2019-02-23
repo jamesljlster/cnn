@@ -25,6 +25,7 @@ const char* cnn_str_list[] = {
     "pool",           //
     "drop",           //
     "bn",             //
+    "text",           //
     "id",             //
     "pool_type",      //
     "max",            //

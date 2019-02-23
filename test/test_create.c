@@ -12,6 +12,8 @@
 #define INPUT_HEIGHT 32
 #define BATCH 7
 
+#define EXPORT_PATH "test.xml"
+
 #define print_mat_info(str, matVar)                                          \
     printf("%s: %dx%d, %p, %p\n", str, matVar.rows, matVar.cols, matVar.mat, \
            matVar.grad)
@@ -198,6 +200,7 @@ int main()
     test(cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT, 1));
     test(cnn_config_set_batch_size(cfg, BATCH));
 
+    test(cnn_config_append_texture(cfg, CNN_SIGMOID, 9));
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 3, 3));
     test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
@@ -222,6 +225,8 @@ int main()
 
     printf("Press enter to continue...");
     getchar();
+
+    test(cnn_export(cnn, EXPORT_PATH));
 
     // Cleanup
     cnn_delete(cnn);
