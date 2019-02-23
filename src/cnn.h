@@ -135,11 +135,12 @@ extern "C"
     int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex,
                                  float* rInitPtr, float* bInitPtr);
 
-    int cnn_config_append_texture(cnn_config_t cfg, int activID, int filter);
-    int cnn_config_set_texture(cnn_config_t cfg, int layerIndex, int activID,
-                               int filter);
-    int cnn_config_get_texture(cnn_config_t cfg, int layerIndex, int* idPtr,
-                               int* filterPtr);
+    int cnn_config_append_texture(cnn_config_t cfg, cnn_activ_t activID,
+                                  int filter);
+    int cnn_config_set_texture(cnn_config_t cfg, int layerIndex,
+                               cnn_activ_t activID, int filter);
+    int cnn_config_get_texture(cnn_config_t cfg, int layerIndex,
+                               cnn_activ_t* idPtr, int* filterPtr);
 
     void cnn_config_set_learning_rate(cnn_config_t cfg, float lRate);
     void cnn_config_get_learning_rate(cnn_config_t cfg, float* lRatePtr);
