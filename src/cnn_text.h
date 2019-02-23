@@ -1,6 +1,8 @@
 #ifndef __CNN_TEXT_H__
 #define __CNN_TEXT_H__
 
+#include <string.h>
+
 #include "cnn_builtin_math.h"
 #include "cnn_types.h"
 
@@ -171,6 +173,162 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
         {
             cblas_saxpy(dstImSize, 1.0, &bias[ch], 0, dstPtr + ch * dstImSize,
                         1);
+        }
+    }
+}
+
+static inline void cnn_backward_text(union CNN_LAYER* layerRef,
+                                     struct CNN_CONFIG* cfgRef, int layerIndex)
+{
+    // Cache
+    const int wSize = 8;
+    int activId = cfgRef->layerCfg[layerIndex].text.activId;
+
+    int chIn = layerRef[layerIndex].text.inChannel;
+    int chOut = cfgRef->layerCfg[layerIndex].text.filter;
+
+    // int wCols = wSize * chIn;
+
+    int srcSize = layerRef[layerIndex - 1].outMat.data.cols;
+    int dstSize = layerRef[layerIndex].outMat.data.cols;
+    // int dstImSize =
+    //     layerRef[layerIndex].outMat.width *
+    //     layerRef[layerIndex].outMat.height;
+
+    int nbrRows = layerRef[layerIndex].outMat.width *
+                  layerRef[layerIndex].outMat.height * chIn;
+    int nbrCols = wSize;
+    int nbrSize = nbrRows * nbrCols;
+
+    int ctrRows = nbrRows;
+    int ctrCols = 1;
+    int ctrSize = ctrRows * ctrCols;
+
+    int diffRows =
+        layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
+    int diffCols = chIn * wSize;
+    int diffSize = diffRows * diffCols;
+
+    int activRows =
+        layerRef[layerIndex].outMat.width * layerRef[layerIndex].outMat.height;
+    int activCols = chIn * wSize;
+    int activSize = activRows * activCols;
+
+    int* nbrMap = layerRef[layerIndex].text.nbrMap;
+    int* ctrMap = layerRef[layerIndex].text.ctrMap;
+    float* weight = layerRef[layerIndex].text.weight.mat;
+    float* wGrad = layerRef[layerIndex].text.weight.grad;
+    // float* bias = layerRef[layerIndex].text.bias.mat;
+    float* bGrad = layerRef[layerIndex].text.bias.grad;
+
+    for (int j = 0; j < cfgRef->batch; j++)
+    {
+        // int srcShift = j * srcSize;
+        int dstShift = j * dstSize;
+        // int gradShift = j * dstSize;
+        // int nbrShift = j * nbrSize;
+        // int ctrShift = j * ctrSize;
+        // int diffShift = j * diffSize;
+        int activShift = j * activSize;
+
+        // float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
+        // float* dstPtr = layerRef[layerIndex].outMat.data.mat + dstShift;
+        float* gradPtr = layerRef[layerIndex].outMat.data.grad + dstShift;
+        // float* nbrPtr = layerRef[layerIndex].text.nbrUnroll.mat + nbrShift;
+        // float* nbrGrad = layerRef[layerIndex].text.nbrUnroll.grad + nbrShift;
+        // float* ctrPtr = layerRef[layerIndex].text.ctrUnroll.mat + ctrShift;
+        // float* ctrGrad = layerRef[layerIndex].text.ctrUnroll.grad + ctrShift;
+        // float* diffPtr = layerRef[layerIndex].text.diff.mat + diffShift;
+        // float* diffGrad = layerRef[layerIndex].text.diff.grad + diffShift;
+        float* activPtr = layerRef[layerIndex].text.activ.mat + activShift;
+        // float* activGrad = layerRef[layerIndex].text.activ.grad + activShift;
+
+        // Sum weight gradient matrix
+        cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, activCols, chOut,
+                    activRows, 1.0, activPtr, activCols, gradPtr, activRows,
+                    1.0, wGrad, activCols);
+
+        // Sum bias gradient matrix
+        for (int ch = 0; ch < chOut; ch++)
+        {
+            cblas_saxpy(activRows, 1.0, gradPtr + ch * activRows, 1, bGrad + ch,
+                        0);
+        }
+    }
+
+    // Find layer gradient
+    if (layerIndex > 1)
+    {
+        // Clear gradient
+        memset(layerRef[layerIndex].text.ctrUnroll.grad, 0,
+               sizeof(float) * layerRef[layerIndex].text.ctrUnroll.rows *
+                   layerRef[layerIndex].text.ctrUnroll.cols);
+        memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
+               sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
+                   layerRef[layerIndex - 1].outMat.data.cols);
+
+        for (int j = 0; j < cfgRef->batch; j++)
+        {
+            int srcShift = j * srcSize;
+            int dstShift = j * dstSize;
+            // int gradShift = j * dstSize;
+            int nbrShift = j * nbrSize;
+            int ctrShift = j * ctrSize;
+            int diffShift = j * diffSize;
+            int activShift = j * activSize;
+
+            // float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat +
+            // srcShift; float* dstPtr = layerRef[layerIndex].outMat.data.mat +
+            // dstShift;
+            float* gradPtr = layerRef[layerIndex].outMat.data.grad + dstShift;
+            float* preGradPtr =
+                layerRef[layerIndex - 1].outMat.data.grad + srcShift;
+            // float* nbrPtr = layerRef[layerIndex].text.nbrUnroll.mat +
+            // nbrShift;
+            float* nbrGrad =
+                layerRef[layerIndex].text.nbrUnroll.grad + nbrShift;
+            // float* ctrPtr = layerRef[layerIndex].text.ctrUnroll.mat +
+            // ctrShift;
+            float* ctrGrad =
+                layerRef[layerIndex].text.ctrUnroll.grad + ctrShift;
+            float* diffPtr = layerRef[layerIndex].text.diff.mat + diffShift;
+            float* diffGrad = layerRef[layerIndex].text.diff.grad + diffShift;
+            // float* activPtr = layerRef[layerIndex].text.activ.mat +
+            // activShift;
+            float* activGrad =
+                layerRef[layerIndex].text.activ.grad + activShift;
+
+            // Sum activation gradient matrix
+            cblas_sgemm(CblasColMajor, CblasNoTrans, CblasTrans, activCols,
+                        activRows, chOut, 1.0, weight, activCols, gradPtr,
+                        activRows, 0.0, activGrad, activCols);
+
+            // Sum difference gradient matrix
+            cnn_activ_grad_list[activId](diffGrad, diffPtr, diffSize, diffPtr);
+
+            // Sum neighbor, center gradient matrix
+            for (int row = 0; row < nbrRows; row++)
+            {
+                int nbrBase = row * nbrCols;
+                for (int col = 0; col < nbrCols; col++)
+                {
+                    int nbrShift = nbrBase + col;
+                    float gradTmp = diffGrad[nbrShift] * activGrad[nbrShift];
+                    nbrGrad[nbrShift] = gradTmp;
+                    ctrGrad[row] -= gradTmp;
+                }
+            }
+
+            // Sum layer gradient matrix
+            for (int k = 0; k < nbrSize; k++)
+            {
+                preGradPtr[nbrMap[k]] += nbrGrad[k];
+            }
+
+            for (int k = 0; k < ctrSize; k++)
+            {
+                preGradPtr[ctrMap[k]] += ctrGrad[k];
+            }
         }
     }
 }

@@ -71,15 +71,15 @@ int main()
 
     float gradIn[IMG_WIDTH * IMG_HEIGHT * CH_OUT * BATCH] = {
         /* batch 1 */
-        0, 0, 0, 0,  //
-        0, 3, 1, 0,  //
-        0, 4, 2, 0,  //
-        0, 0, 0, 0,  //
+        1, 3, 2, 3,  //
+        4, 1, 3, 3,  //
+        4, 4, 1, 4,  //
+        3, 3, 1, 3,  //
 
-        0, 0, 0, 0,  //
-        0, 4, 4, 0,  //
-        0, 4, 4, 0,  //
-        0, 0, 0, 0,  //
+        3, 2, 2, 3,  //
+        4, 1, 3, 4,  //
+        3, 1, 3, 3,  //
+        1, 2, 1, 2,  //
 
         /* batch 2 */
         2, 4, 1, 1,  //
@@ -144,6 +144,24 @@ int main()
         print_img_net_msg("Texture output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
                           layer[2].outMat.channel, cfg->batch);
+    }
+
+    // BP
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** BP #%d *****\n", i + 1);
+        cnn_backward_text(layer, cfg, 2);
+
+        print_img_net_msg("Texture layer gradient:", layer[2].outMat.data.grad,
+                          layer[2].outMat.width, layer[2].outMat.height,
+                          layer[2].outMat.channel, cfg->batch);
+        print_img_net_msg("Previous layer gradient:", layer[1].outMat.data.grad,
+                          layer[1].outMat.width, layer[1].outMat.height,
+                          layer[1].outMat.channel, cfg->batch);
+        print_img_net_msg("Weight gradient:", layer[2].text.weight.grad, W_SIZE,
+                          CH_IN, CH_OUT, 1);
+        print_img_net_msg("Bias gradient:", layer[2].text.bias.grad, 1, 1,
+                          CH_OUT, 1);
     }
 
     return 0;
