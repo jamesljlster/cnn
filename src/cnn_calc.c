@@ -83,6 +83,12 @@ void cnn_update(cnn_t cnn, float lRate, float gradLimit)
             case CNN_LAYER_BN:
                 cnn_mat_update(&layerRef[i].bn.bnVar, lRate, gradLimit);
                 break;
+
+            // Texture
+            case CNN_LAYER_TEXT:
+                cnn_mat_update(&layerRef[i].text.weight, lRate, gradLimit);
+                cnn_mat_update(&layerRef[i].text.bias, lRate, gradLimit);
+                break;
         }
     }
 }
@@ -131,6 +137,11 @@ static inline void cnn_backward_kernel(cnn_t cnn, float* errGrad)
             // Batch normalization
             case CNN_LAYER_BN:
                 cnn_backward_bn(layerRef, cfgRef, i);
+                break;
+
+            // Texture
+            case CNN_LAYER_TEXT:
+                cnn_backward_text(layerRef, cfgRef, i);
                 break;
 
             default:
@@ -252,6 +263,11 @@ static inline void cnn_forward_kernel(cnn_t cnn, float* inputMat,
             // Batch normalization
             case CNN_LAYER_BN:
                 cnn_forward_bn(layerRef, cfgRef, i);
+                break;
+
+            // Texture
+            case CNN_LAYER_TEXT:
+                cnn_forward_text(layerRef, cfgRef, i);
                 break;
 
             default:
