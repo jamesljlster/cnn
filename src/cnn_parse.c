@@ -847,6 +847,12 @@ int cnn_parse_network_detail_xml(struct CNN* cnn, xmlDocPtr doc)
                 }
 
                 break;
+
+            case CNN_LAYER_INPUT:
+            case CNN_LAYER_ACTIV:
+            case CNN_LAYER_POOL:
+            case CNN_LAYER_DROP:
+                break;
         }
 
         if (obj != NULL)

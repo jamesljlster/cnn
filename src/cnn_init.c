@@ -282,6 +282,13 @@ void cnn_rand_network(cnn_t cnn)
                        size * sizeof(float));
 #endif
                 break;
+
+            case CNN_LAYER_INPUT:
+            case CNN_LAYER_ACTIV:
+            case CNN_LAYER_POOL:
+            case CNN_LAYER_DROP:
+            case CNN_LAYER_BN:
+                break;
         }
     }
 
@@ -400,6 +407,13 @@ void cnn_zero_network(cnn_t cnn)
                 memset(cnn->layerList[i].text.bias.mat, 0,
                        size * sizeof(float));
 #endif
+                break;
+
+            case CNN_LAYER_INPUT:
+            case CNN_LAYER_ACTIV:
+            case CNN_LAYER_POOL:
+            case CNN_LAYER_DROP:
+            case CNN_LAYER_BN:
                 break;
         }
     }

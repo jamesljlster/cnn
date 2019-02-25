@@ -89,6 +89,12 @@ void cnn_update(cnn_t cnn, float lRate, float gradLimit)
                 cnn_mat_update(&layerRef[i].text.weight, lRate, gradLimit);
                 cnn_mat_update(&layerRef[i].text.bias, lRate, gradLimit);
                 break;
+
+            case CNN_LAYER_INPUT:
+            case CNN_LAYER_ACTIV:
+            case CNN_LAYER_POOL:
+            case CNN_LAYER_DROP:
+                break;
         }
     }
 }

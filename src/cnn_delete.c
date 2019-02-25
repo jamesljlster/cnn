@@ -205,6 +205,10 @@ void cnn_network_delete(struct CNN* cnn)
                 case CNN_LAYER_BN:
                     cnn_layer_bn_delete(&cnn->layerList[i].bn);
                     break;
+
+                case CNN_LAYER_TEXT:
+                    cnn_layer_text_delete(&cnn->layerList[i].text);
+                    break;
             }
         }
 
