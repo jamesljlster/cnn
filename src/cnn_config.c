@@ -722,6 +722,11 @@ int cnn_config_get_convolution(cnn_config_t cfg, int layerIndex,
     }
 
     // Assign value
+    if (padPtr != NULL)
+    {
+        *padPtr = cfg->layerCfg[layerIndex].conv.pad;
+    }
+
     if (dimPtr != NULL)
     {
         *dimPtr = cfg->layerCfg[layerIndex].conv.dim;
