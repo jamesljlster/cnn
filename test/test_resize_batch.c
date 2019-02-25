@@ -28,15 +28,20 @@ int main()
     float* inBat;
     float* outBat;
 
+    test(cnn_init());
+
     test(cnn_config_create(&cfg));
     test(cnn_config_set_input_size(cfg, WIDTH, HEIGHT, CHANNEL));
 
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, CNN_DIM_2D, 1, 3));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
     test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, CNN_DIM_2D, 1, 3));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
     test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
+    test(cnn_config_append_texture(cfg, CNN_RELU, 12));
     test(cnn_config_append_full_connect(cfg, 128));
     test(cnn_config_append_dropout(cfg, 0.5));
     test(cnn_config_append_full_connect(cfg, OUTPUTS));

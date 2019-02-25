@@ -5,6 +5,19 @@
 #include "cnn.h"
 #include "cnn_private.h"
 
+void cnn_mat_clone(struct CNN_MAT* dstPtr, struct CNN_MAT* srcPtr)
+{
+    // Checking
+    assert(dstPtr->rows == srcPtr->rows && dstPtr->cols == srcPtr->cols);
+
+#ifdef CNN_WITH_CUDA
+    cudaMemcpy
+#else
+    memcpy
+#endif
+        (dstPtr->mat, srcPtr->mat, sizeof(float) * srcPtr->rows * srcPtr->cols);
+}
+
 void cnn_get_input_size(cnn_t cnn, int* wPtr, int* hPtr, int* cPtr)
 {
     // Assign value
@@ -105,6 +118,9 @@ void cnn_clone_network_detail(struct CNN* dst, const struct CNN* src)
     srcLayerList = src->layerList;
     cfgRef = &src->cfg;
 
+#define __cnn_mat_clone(mat) \
+    cnn_mat_clone(&dstLayerList[i].mat, &srcLayerList[i].mat)
+
     // Clone weight and bias
     for (i = 1; i < cfgRef->layers; i++)
     {
@@ -112,31 +128,43 @@ void cnn_clone_network_detail(struct CNN* dst, const struct CNN* src)
         {
             case CNN_LAYER_FC:
                 // Clone weight
-                memcpy(dstLayerList[i].fc.weight.mat,
-                       srcLayerList[i].fc.weight.mat,
-                       sizeof(float) * srcLayerList[i].fc.weight.rows *
-                           srcLayerList[i].fc.weight.cols);
+                __cnn_mat_clone(fc.weight);
 
                 // Clone bias
-                memcpy(dstLayerList[i].fc.bias.mat, srcLayerList[i].fc.bias.mat,
-                       sizeof(float) * srcLayerList[i].fc.bias.rows *
-                           srcLayerList[i].fc.bias.cols);
+                __cnn_mat_clone(fc.bias);
+
                 break;
 
             case CNN_LAYER_CONV:
                 // Clone kernel
-                memcpy(dstLayerList[i].conv.kernel.mat,
-                       srcLayerList[i].conv.kernel.mat,
-                       sizeof(float) * srcLayerList[i].conv.kernel.rows *
-                           srcLayerList[i].conv.kernel.cols);
+                __cnn_mat_clone(conv.kernel);
 
                 // Clone bias
 #if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
-                memcpy(dstLayerList[i].conv.bias.mat,
-                       srcLayerList[i].conv.bias.mat,
-                       sizeof(float) * srcLayerList[i].conv.bias.rows *
-                           srcLayerList[i].conv.bias.cols);
+                __cnn_mat_clone(conv.bias);
 #endif
+
+                break;
+
+            case CNN_LAYER_BN:
+                // Clone parameter
+                __cnn_mat_clone(bn.bnVar);
+
+                break;
+
+            case CNN_LAYER_TEXT:
+                // Clone weight
+                __cnn_mat_clone(text.weight);
+
+                // Clone bias
+                __cnn_mat_clone(text.bias);
+
+                break;
+
+            case CNN_LAYER_INPUT:
+            case CNN_LAYER_ACTIV:
+            case CNN_LAYER_POOL:
+            case CNN_LAYER_DROP:
                 break;
         }
     }
