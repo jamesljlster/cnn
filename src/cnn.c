@@ -15,7 +15,12 @@ void cnn_mat_clone(struct CNN_MAT* dstPtr, struct CNN_MAT* srcPtr)
 #else
     memcpy
 #endif
-        (dstPtr->mat, srcPtr->mat, sizeof(float) * srcPtr->rows * srcPtr->cols);
+        (dstPtr->mat, srcPtr->mat, sizeof(float) * srcPtr->rows * srcPtr->cols
+#ifdef CNN_WITH_CUDA
+         ,
+         cudaMemcpyDeviceToDevice
+#endif
+        );
 }
 
 void cnn_get_input_size(cnn_t cnn, int* wPtr, int* hPtr, int* cPtr)
