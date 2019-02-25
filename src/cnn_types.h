@@ -1,6 +1,7 @@
 #ifndef __CNN_TYPES_H__
 #define __CNN_TYPES_H__
 
+#include "cnn.h"
 #include "cnn_config.h"
 
 // CNN matrix type
@@ -26,21 +27,21 @@ struct CNN_SHAPE
 struct CNN_CONFIG_LAYER_INPUT
 {
     // Layer type
-    int type;
+    cnn_layer_t type;
 };
 
 struct CNN_CONFIG_LAYER_ACTIV
 {
     // Layer type
-    int type;
+    cnn_layer_t type;
 
-    int id;
+    cnn_activ_t id;
 };
 
 struct CNN_CONFIG_LAYER_FC
 {
     // Layer type
-    int type;
+    cnn_layer_t type;
 
     int size;
 };
@@ -48,10 +49,10 @@ struct CNN_CONFIG_LAYER_FC
 struct CNN_CONFIG_LAYER_CONV
 {
     // Layer type
-    int type;
+    cnn_layer_t type;
 
-    int pad;
-    int dim;
+    cnn_pad_t pad;
+    cnn_dim_t dim;
     int size;
     int filter;
 };
@@ -59,17 +60,17 @@ struct CNN_CONFIG_LAYER_CONV
 struct CNN_CONFIG_LAYER_POOL
 {
     // Layer type
-    int type;
+    cnn_layer_t type;
 
-    int poolType;
-    int dim;
+    cnn_pool_t poolType;
+    cnn_dim_t dim;
     int size;
 };
 
 struct CNN_CONFIG_LAYER_DROP
 {
     // Layer type
-    int type;
+    cnn_layer_t type;
 
     float rate;
     float scale;
@@ -78,7 +79,7 @@ struct CNN_CONFIG_LAYER_DROP
 struct CNN_CONFIG_LAYER_BN
 {
     // Layer type
-    int type;
+    cnn_layer_t type;
 
     float rInit;
     float bInit;
@@ -87,15 +88,15 @@ struct CNN_CONFIG_LAYER_BN
 struct CNN_CONFIG_LAYER_TEXT
 {
     // Layer type
-    int type;
+    cnn_layer_t type;
 
-    int activId;
+    cnn_activ_t activId;
     int filter;
 };
 
 union CNN_CONFIG_LAYER {
     // Layer type
-    int type;
+    cnn_layer_t type;
 
     struct CNN_CONFIG_LAYER_INPUT input;
     struct CNN_CONFIG_LAYER_FC fc;
