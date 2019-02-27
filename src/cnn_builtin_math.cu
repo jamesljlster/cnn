@@ -491,6 +491,13 @@ extern "C"
         dst[index] = cos(src[index]);  //
     )
 
+    CNN_SCALAR_ACTIV_IMPL(        //
+        identity,                 //
+        dst[index] = src[index];  //
+        ,                         //
+        dst[index] = 1.0;         //
+    )
+
 #ifdef __cplusplus
 }
 #endif

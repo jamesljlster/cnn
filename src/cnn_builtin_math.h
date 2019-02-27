@@ -1,7 +1,7 @@
 #ifndef __CNN_BUILTIN_MATH_H__
 #define __CNN_BUILTIN_MATH_H__
 
-#define CNN_ACTIV_AMOUNT 11
+#define CNN_ACTIV_AMOUNT 12
 
 /**
  * CNN Activation Function Define Macro
@@ -54,6 +54,9 @@ extern "C"
 
     CNN_ACTIV_DEF(cnn_sinusoid);
     CNN_ACTIV_DEF(cnn_sinusoid_grad);
+
+    CNN_ACTIV_DEF(cnn_identity);
+    CNN_ACTIV_DEF(cnn_identity_grad);
 
     int cnn_get_activ_id(const char* name);
 

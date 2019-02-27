@@ -33,6 +33,7 @@ extern "C"
     CNN_SCALAR_ACTIV_DEF(softsign);
     CNN_SCALAR_ACTIV_DEF(sinc);
     CNN_SCALAR_ACTIV_DEF(sin);
+    CNN_SCALAR_ACTIV_DEF(identity);
 
     void cnn_smax_grad_gpu(float* dst, float* cache, int len);
 

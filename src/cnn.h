@@ -63,7 +63,8 @@ typedef enum CNN_ACTIV_TYPE
     CNN_SOFTPLUS = 7,
     CNN_SOFTSIGN = 8,
     CNN_SINC = 9,
-    CNN_SINUSOID = 10
+    CNN_SINUSOID = 10,
+    CNN_IDENTITY = 11
 } cnn_activ_t;
 
 typedef struct CNN* cnn_t;

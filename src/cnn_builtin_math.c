@@ -21,7 +21,8 @@ CNN_ACTIV_DEF((*cnn_activ_list[])) = {
     cnn_softplus,       //
     cnn_softsign,       //
     cnn_sinc,           //
-    cnn_sinusoid        //
+    cnn_sinusoid,       //
+    cnn_identity        //
 };
 
 CNN_ACTIV_DEF((*cnn_activ_grad_list[])) = {
@@ -35,7 +36,8 @@ CNN_ACTIV_DEF((*cnn_activ_grad_list[])) = {
     cnn_softplus_grad,       //
     cnn_softsign_grad,       //
     cnn_sinc_grad,           //
-    cnn_sinusoid_grad        //
+    cnn_sinusoid_grad,       //
+    cnn_identity_grad        //
 };
 
 const char* cnn_activ_name[] = {
@@ -49,7 +51,8 @@ const char* cnn_activ_name[] = {
     "SoftPlus",            //
     "SoftSign",            //
     "Sinc",                //
-    "Sinusoid"             //
+    "Sinusoid",            //
+    "Identity"             //
 };
 
 CNN_ACTIV_DEF(cnn_softmax)
@@ -422,6 +425,34 @@ CNN_ACTIV_DEF(cnn_sinusoid_grad)
     for (i = 0; i < len; i++)
     {
         dst[i] = cos(src[i]);
+    }
+#endif
+}
+
+CNN_ACTIV_DEF(cnn_identity)
+{
+#ifdef CNN_WITH_CUDA
+    cnn_identity_gpu(dst, src, len);
+#else
+    int i;
+    for (i = 0; i < len; i++)
+    {
+        dst[i] = src[i];
+    }
+#endif
+}
+
+CNN_ACTIV_DEF(cnn_identity_grad)
+{
+#ifdef CNN_WITH_CUDA
+    cnn_identity_grad_gpu(dst, src, buf, len);
+#else
+    int i;
+
+    // Find identity gradient
+    for (i = 0; i < len; i++)
+    {
+        dst[i] = 1.0;
     }
 #endif
 }
