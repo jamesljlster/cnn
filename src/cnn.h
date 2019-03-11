@@ -137,11 +137,12 @@ extern "C"
                                  float* rInitPtr, float* bInitPtr);
 
     int cnn_config_append_texture(cnn_config_t cfg, cnn_activ_t activID,
-                                  int filter);
+                                  int filter, float aInit);
     int cnn_config_set_texture(cnn_config_t cfg, int layerIndex,
-                               cnn_activ_t activID, int filter);
+                               cnn_activ_t activID, int filter, float aInit);
     int cnn_config_get_texture(cnn_config_t cfg, int layerIndex,
-                               cnn_activ_t* idPtr, int* filterPtr);
+                               cnn_activ_t* idPtr, int* filterPtr,
+                               float* aInitPtr);
 
     void cnn_config_set_learning_rate(cnn_config_t cfg, float lRate);
     void cnn_config_get_learning_rate(cnn_config_t cfg, float* lRatePtr);

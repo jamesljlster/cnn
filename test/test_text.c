@@ -103,7 +103,7 @@ int main()
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_texture(cfg, CNN_RELU, CH_OUT));
+    test(cnn_config_append_texture(cfg, CNN_RELU, CH_OUT, 2.7183));
 
     // Print information
     print_img_msg("src:", src, IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch);

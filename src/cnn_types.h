@@ -92,6 +92,7 @@ struct CNN_CONFIG_LAYER_TEXT
 
     cnn_activ_t activId;
     int filter;
+    float aInit;
 };
 
 union CNN_CONFIG_LAYER {
@@ -219,6 +220,7 @@ struct CNN_LAYER_TEXT
     // Texture weights
     struct CNN_MAT weight;
     struct CNN_MAT bias;
+    struct CNN_MAT alpha;
 
     // Channel
     int inChannel;

@@ -970,7 +970,8 @@ RET:
     return ret;
 }
 
-int cnn_config_append_texture(cnn_config_t cfg, cnn_activ_t activID, int filter)
+int cnn_config_append_texture(cnn_config_t cfg, cnn_activ_t activID, int filter,
+                              float aInit)
 {
     int ret = CNN_NO_ERROR;
     int layers;
@@ -979,14 +980,15 @@ int cnn_config_append_texture(cnn_config_t cfg, cnn_activ_t activID, int filter)
     cnn_config_get_layers(cfg, &layers);
     layers++;
     cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
-    cnn_run(cnn_config_set_texture(cfg, layers - 1, activID, filter), ret, RET);
+    cnn_run(cnn_config_set_texture(cfg, layers - 1, activID, filter, aInit),
+            ret, RET);
 
 RET:
     return ret;
 }
 
 int cnn_config_set_texture(cnn_config_t cfg, int layerIndex,
-                           cnn_activ_t activID, int filter)
+                           cnn_activ_t activID, int filter, float aInit)
 {
     int ret = CNN_NO_ERROR;
 
@@ -1003,13 +1005,14 @@ int cnn_config_set_texture(cnn_config_t cfg, int layerIndex,
     cfg->layerCfg[layerIndex].type = CNN_LAYER_TEXT;
     cfg->layerCfg[layerIndex].text.activId = activID;
     cfg->layerCfg[layerIndex].text.filter = filter;
+    cfg->layerCfg[layerIndex].text.aInit = aInit;
 
 RET:
     return ret;
 }
 
 int cnn_config_get_texture(cnn_config_t cfg, int layerIndex, cnn_activ_t* idPtr,
-                           int* filterPtr)
+                           int* filterPtr, float* aInitPtr)
 {
     int ret = CNN_NO_ERROR;
 
@@ -1035,6 +1038,11 @@ int cnn_config_get_texture(cnn_config_t cfg, int layerIndex, cnn_activ_t* idPtr,
     if (filterPtr != NULL)
     {
         *filterPtr = cfg->layerCfg[layerIndex].text.filter;
+    }
+
+    if (aInitPtr != NULL)
+    {
+        *aInitPtr = cfg->layerCfg[layerIndex].text.aInit;
     }
 
 RET:

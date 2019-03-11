@@ -80,7 +80,7 @@ int main()
     // Test set config
     test(cnn_config_set_input_size(cfg, 640, 480, 1));
 
-    test(cnn_config_append_texture(cfg, CNN_SIGMOID, 9));
+    test(cnn_config_append_texture(cfg, CNN_SIGMOID, 9, 2.7183));
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 1, 1, 3));
     test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
