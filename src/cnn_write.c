@@ -472,7 +472,7 @@ int cnn_write_layer_text_xml(struct CNN_CONFIG* cfgRef,
                 ret, RET);
 
         // Write alpha
-        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.bias,
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.alpha,
                                   cnn_str_list[CNN_STR_ALPHA], writer),
                 ret, RET);
     }
