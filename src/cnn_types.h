@@ -117,8 +117,6 @@ struct CNN_CONFIG
 
     int batch;
 
-    float lRate;
-
     int layers;
     union CNN_CONFIG_LAYER* layerCfg;
 };

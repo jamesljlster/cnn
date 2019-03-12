@@ -144,9 +144,6 @@ extern "C"
                                cnn_activ_t* idPtr, int* filterPtr,
                                float* aInitPtr);
 
-    void cnn_config_set_learning_rate(cnn_config_t cfg, float lRate);
-    void cnn_config_get_learning_rate(cnn_config_t cfg, float* lRatePtr);
-
     int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath);
     int cnn_config_export(cnn_config_t cfg, const char* fPath);
 
@@ -167,11 +164,8 @@ extern "C"
     void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat);
     void cnn_backward(cnn_t cnn, float* errGrad);
     void cnn_update(cnn_t cnn, float lRate, float gradLimit);
-    int cnn_training(cnn_t cnn, float* inputMat, float* desireMat,
+    int cnn_training(cnn_t cnn, float lRate, float* inputMat, float* desireMat,
                      float* outputMat, float* errMat, float gradLimit);
-    int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat,
-                            float* desireMat, float* outputMat, float* errMat,
-                            float gradLimit);
 
     void cnn_rand_network(cnn_t cnn);
     void cnn_zero_network(cnn_t cnn);

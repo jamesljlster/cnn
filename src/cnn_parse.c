@@ -511,13 +511,12 @@ int cnn_parse_config_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
     xmlNodePtr cur;
     xmlNodePtr input;  // Must exist
-    xmlNodePtr lRate, batch;
+    xmlNodePtr batch;
 
     xmlChar* xStr = NULL;
 
     // Find node
     input = NULL;
-    lRate = NULL;
     batch = NULL;
     cur = node->xmlChildrenNode;
     while (cur != NULL)
@@ -532,10 +531,6 @@ int cnn_parse_config_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
             case CNN_STR_BATCH:
                 batch = cur;
-                break;
-
-            case CNN_STR_LRATE:
-                lRate = cur;
                 break;
         }
 
@@ -556,15 +551,6 @@ int cnn_parse_config_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
     {
         xStr = xmlNodeGetContent(batch);
         cnn_run(cnn_strtoi(&cfgPtr->batch, (const char*)xStr), ret, RET);
-        xmlFree(xStr);
-        xStr = NULL;
-    }
-
-    // Parse learning rate
-    if (lRate != NULL)
-    {
-        xStr = xmlNodeGetContent(lRate);
-        cnn_run(cnn_strtof(&cfgPtr->lRate, (const char*)xStr), ret, RET);
         xmlFree(xStr);
         xStr = NULL;
     }

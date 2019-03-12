@@ -229,19 +229,6 @@ void cnn_config_delete(cnn_config_t cfg)
     }
 }
 
-void cnn_config_set_learning_rate(cnn_config_t cfg, float lRate)
-{
-    cfg->lRate = lRate;
-}
-
-void cnn_config_get_learning_rate(cnn_config_t cfg, float* lRatePtr)
-{
-    if (lRatePtr != NULL)
-    {
-        *lRatePtr = cfg->lRate;
-    }
-}
-
 int cnn_config_set_input_size(cnn_config_t cfg, int width, int height,
                               int channel)
 {

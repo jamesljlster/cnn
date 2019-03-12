@@ -14,7 +14,6 @@ enum CNN_STR_LIST
     CNN_STR_SIZE,       //
     CNN_STR_CHANNEL,    //
     CNN_STR_BATCH,      //
-    CNN_STR_LRATE,      //
     CNN_STR_VALUE,      //
     CNN_STR_INPUT,      //
     CNN_STR_WIDTH,      //

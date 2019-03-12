@@ -4,16 +4,8 @@
 #include "cnn.h"
 #include "cnn_private.h"
 
-int cnn_training(cnn_t cnn, float* inputMat, float* desireMat, float* outputMat,
-                 float* errMat, float gradLimit)
-{
-    return cnn_training_custom(cnn, cnn->cfg.lRate, inputMat, desireMat,
-                               outputMat, errMat, gradLimit);
-}
-
-int cnn_training_custom(cnn_t cnn, float lRate, float* inputMat,
-                        float* desireMat, float* outputMat, float* errMat,
-                        float gradLimit)
+int cnn_training(cnn_t cnn, float lRate, float* inputMat, float* desireMat,
+                 float* outputMat, float* errMat, float gradLimit)
 {
     int i;
     int outSize;

@@ -60,13 +60,6 @@ int cnn_write_config_xml(struct CNN_CONFIG* cfgRef, xmlTextWriterPtr writer)
                                   (xmlChar*)buf),
         ret, RET);
 
-    // Write learning rate
-    cnn_ftostr(buf, CNN_XML_BUFLEN, cfgRef->lRate);
-    cnn_xml_run(
-        xmlTextWriterWriteElement(writer, (xmlChar*)cnn_str_list[CNN_STR_LRATE],
-                                  (xmlChar*)buf),
-        ret, RET);
-
     // End config node
     cnn_xml_run(xmlTextWriterEndElement(writer), ret, RET);
 
