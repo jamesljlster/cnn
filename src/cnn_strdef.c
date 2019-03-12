@@ -42,7 +42,8 @@ const char* cnn_str_list[] = {
     "same",           //
     "gamma",          //
     "beta",           //
-    "param"           //
+    "param",          //
+    "alpha"           //
 };
 
 int cnn_strdef_get_id(const char* str)

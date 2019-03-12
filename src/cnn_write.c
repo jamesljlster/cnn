@@ -451,6 +451,13 @@ int cnn_write_layer_text_xml(struct CNN_CONFIG* cfgRef,
             writer, (xmlChar*)cnn_str_list[CNN_STR_FILTER], (xmlChar*)buf),
         ret, RET);
 
+    // Write alpha
+    cnn_ftostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].text.aInit);
+    cnn_xml_run(
+        xmlTextWriterWriteAttribute(
+            writer, (xmlChar*)cnn_str_list[CNN_STR_ALPHA], (xmlChar*)buf),
+        ret, RET);
+
     // Write network detail
     if (layerRef != NULL)
     {
@@ -462,6 +469,11 @@ int cnn_write_layer_text_xml(struct CNN_CONFIG* cfgRef,
         // Write bias
         cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.bias,
                                   cnn_str_list[CNN_STR_BIAS], writer),
+                ret, RET);
+
+        // Write alpha
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.bias,
+                                  cnn_str_list[CNN_STR_ALPHA], writer),
                 ret, RET);
     }
 

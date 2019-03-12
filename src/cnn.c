@@ -164,6 +164,9 @@ void cnn_clone_network_detail(struct CNN* dst, const struct CNN* src)
                 // Clone bias
                 __cnn_mat_clone(text.bias);
 
+                // Clone alpha
+                __cnn_mat_clone(text.alpha);
+
                 break;
 
             case CNN_LAYER_INPUT:

@@ -43,6 +43,7 @@ enum CNN_STR_LIST
     CNN_STR_GAMMA,      //
     CNN_STR_BETA,       //
     CNN_STR_PARAM,      //
+    CNN_STR_ALPHA,      //
 
     CNN_STR_AMOUNT
 };

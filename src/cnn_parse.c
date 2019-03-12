@@ -136,7 +136,8 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
     xmlAttrPtr attrCur;
     xmlAttrPtr index = NULL, type = NULL;
     xmlAttrPtr pad = NULL, dim = NULL, size = NULL, poolType = NULL, id = NULL,
-               rate = NULL, filter = NULL, gamma = NULL, beta = NULL;
+               rate = NULL, filter = NULL, gamma = NULL, beta = NULL,
+               alpha = NULL;
 
     xmlChar* xStr = NULL;
 
@@ -190,6 +191,10 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
             case CNN_STR_BETA:
                 beta = attrCur;
+                break;
+
+            case CNN_STR_ALPHA:
+                alpha = attrCur;
                 break;
         }
 
@@ -457,7 +462,7 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
             break;
 
         case CNN_LAYER_TEXT:
-            if (id == NULL || filter == NULL)
+            if (id == NULL || filter == NULL || alpha == NULL)
             {
                 ret = CNN_INFO_NOT_FOUND;
                 goto RET;
@@ -475,6 +480,14 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
             // Parse filter
             xStr = xmlNodeGetContent(filter->children);
             cnn_run(cnn_strtoi(&cfgPtr->layerCfg[tmpIndex].text.filter,
+                               (const char*)xStr),
+                    ret, RET);
+            xmlFree(xStr);
+            xStr = NULL;
+
+            // Parse alpha
+            xStr = xmlNodeGetContent(alpha->children);
+            cnn_run(cnn_strtof(&cfgPtr->layerCfg[tmpIndex].text.aInit,
                                (const char*)xStr),
                     ret, RET);
             xmlFree(xStr);
@@ -995,6 +1008,12 @@ int cnn_parse_network_detail_text_xml(struct CNN* cnn, int layerIndex,
             case CNN_STR_BIAS:
                 cnn_run(
                     cnn_parse_mat(&cnn->layerList[layerIndex].text.bias, cur),
+                    ret, RET);
+                break;
+
+            case CNN_STR_ALPHA:
+                cnn_run(
+                    cnn_parse_mat(&cnn->layerList[layerIndex].text.alpha, cur),
                     ret, RET);
                 break;
         }
