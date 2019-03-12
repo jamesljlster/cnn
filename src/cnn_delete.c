@@ -150,9 +150,12 @@ void cnn_layer_text_delete(struct CNN_LAYER_TEXT* layerPtr)
     cnn_mat_delete(&layerPtr->outMat.data);
     cnn_mat_delete(&layerPtr->weight);
     cnn_mat_delete(&layerPtr->bias);
+    cnn_mat_delete(&layerPtr->alpha);
+
     cnn_mat_delete(&layerPtr->nbrUnroll);
     cnn_mat_delete(&layerPtr->ctrUnroll);
     cnn_mat_delete(&layerPtr->diff);
+    cnn_mat_delete(&layerPtr->scale);
     cnn_mat_delete(&layerPtr->activ);
 
 #ifdef CNN_WITH_CUDA

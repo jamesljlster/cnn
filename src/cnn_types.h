@@ -229,6 +229,7 @@ struct CNN_LAYER_TEXT
     struct CNN_MAT nbrUnroll;
     struct CNN_MAT ctrUnroll;
     struct CNN_MAT diff;
+    struct CNN_MAT scale;
     struct CNN_MAT activ;
 
     // Index mapping

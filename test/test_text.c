@@ -16,6 +16,8 @@
 #define IMG_HEIGHT 4
 #define BATCH 2
 
+#define ALPHA 1.0
+
 int main()
 {
     int size;
@@ -103,7 +105,7 @@ int main()
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_texture(cfg, CNN_RELU, CH_OUT, 2.7183));
+    test(cnn_config_append_texture(cfg, CNN_RELU, CH_OUT, ALPHA));
 
     // Print information
     print_img_msg("src:", src, IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch);
@@ -162,6 +164,8 @@ int main()
                           CH_IN, CH_OUT, 1);
         print_img_net_msg("Bias gradient:", layer[2].text.bias.grad, 1, 1,
                           CH_OUT, 1);
+        print_img_net_msg("Alpha gradient:", layer[2].text.alpha.grad, 1, 1,
+                          CH_IN, 1);
     }
 
     return 0;

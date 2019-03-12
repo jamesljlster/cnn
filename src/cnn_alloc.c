@@ -605,6 +605,7 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
     int ret = CNN_NO_ERROR;
     int outRows, outCols;                 // Output matrix size
     int outWidth, outHeight, outChannel;  // Valid texture output size
+    int aRows, aCols;                     // Alpha matrix size
     int wRows, wCols;                     // Weight matrix size;
     int bRows, bCols;                     // Bias matrix size
 
@@ -628,6 +629,9 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
     outRows = batch;
     outCols = outWidth * outHeight * outChannel;
 
+    aRows = 1;
+    aCols = inChannel;
+
     wRows = cfgPtr->filter;
     wCols = wSize * inChannel;
 
@@ -637,6 +641,8 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
     // Allocate memory
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
             ERR);
+
+    cnn_run(cnn_mat_alloc(&layerPtr->alpha, aRows, aCols, 1), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->weight, wRows, wCols, 1), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 
@@ -647,6 +653,9 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
                           inWidth * inHeight * inChannel * batch, 1, 1),
             ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->diff, inWidth * inHeight * batch,
+                          inChannel * wSize, 1),
+            ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->scale, inWidth * inHeight * batch,
                           inChannel * wSize, 1),
             ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->activ, inWidth * inHeight * batch,
@@ -669,6 +678,12 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
     layerPtr->outMat.height = outHeight;
     layerPtr->inChannel = inChannel;
     layerPtr->outMat.channel = outChannel;
+
+    // Initial alpha matrix
+    for (int i = 0; i < inChannel; i++)
+    {
+        layerPtr->alpha.mat[i] = cfgPtr->aInit;
+    }
 
 #ifdef CNN_WITH_CUDA
     // Cache index map size

@@ -124,12 +124,17 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
     int diffCols = wCols;
     int diffSize = diffRows * diffCols;
 
+    int scaleRows = dstImSize;
+    int scaleCols = wCols;
+    int scaleSize = scaleRows * scaleCols;
+
     int activRows = dstImSize;
     int activCols = wCols;
     int activSize = activRows * activCols;
 
     int* nbrMap = layerRef[layerIndex].text.nbrMap;
     int* ctrMap = layerRef[layerIndex].text.ctrMap;
+    float* alpha = layerRef[layerIndex].text.alpha.mat;
     float* weight = layerRef[layerIndex].text.weight.mat;
     float* bias = layerRef[layerIndex].text.bias.mat;
 
@@ -140,6 +145,7 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
         int nbrShift = j * nbrSize;
         int ctrShift = j * ctrSize;
         int diffShift = j * diffSize;
+        int scaleShift = j * scaleSize;
         int activShift = j * activSize;
 
         float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
@@ -147,18 +153,10 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
         float* nbrPtr = layerRef[layerIndex].text.nbrUnroll.mat + nbrShift;
         float* ctrPtr = layerRef[layerIndex].text.ctrUnroll.mat + ctrShift;
         float* diffPtr = layerRef[layerIndex].text.diff.mat + diffShift;
+        float* scalePtr = layerRef[layerIndex].text.scale.mat + scaleShift;
         float* activPtr = layerRef[layerIndex].text.activ.mat + activShift;
 
-#ifdef CNN_WITH_CUDA
-        float alpha = 1.0;
-        float beta = 0.0;
-#endif
-
         // Mapping
-#ifdef CNN_WITH_CUDA
-        cnn_text_map_gpu(nbrPtr, srcPtr, nbrMap, nbrSize);
-        cnn_text_map_gpu(ctrPtr, srcPtr, ctrMap, ctrSize);
-#else
         for (int k = 0; k < nbrSize; k++)
         {
             nbrPtr[k] = srcPtr[nbrMap[k]];
@@ -168,12 +166,8 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
         {
             ctrPtr[k] = srcPtr[ctrMap[k]];
         }
-#endif
 
         // Find diff
-#ifdef CNN_WITH_CUDA
-        cnn_text_find_diff_gpu(diffPtr, nbrPtr, ctrPtr, nbrRows, nbrCols);
-#else
         for (int row = 0; row < nbrRows; row++)
         {
             int nbrBase = row * nbrCols;
@@ -183,32 +177,35 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
                 diffPtr[nbrShift] = nbrPtr[nbrShift] - ctrPtr[row];
             }
         }
-#endif
+
+        // Find scaled diff
+        for (int row = 0; row < diffRows; row++)
+        {
+            int diffBase = row * diffCols;
+            for (int c = 0; c < chIn; c++)
+            {
+                int diffChBase = diffBase + c * wSize;
+                for (int w = 0; w < wSize; w++)
+                {
+                    int diffShift = diffChBase + w;
+                    scalePtr[diffShift] = diffPtr[diffShift] * alpha[c];
+                }
+            }
+        }
 
         // Find activation
-        cnn_activ_list[activId](activPtr, diffPtr, diffSize, NULL);
+        cnn_activ_list[activId](activPtr, scalePtr, scaleSize, NULL);
 
         // Apply weight
-#ifdef CNN_WITH_CUDA
-        cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N, dstImSize,
-                    chOut, wCols, &alpha, activPtr, wCols, weight, wCols, &beta,
-                    dstPtr, dstImSize);
-#else
         cblas_sgemm(CblasColMajor, CblasTrans, CblasNoTrans, dstImSize, chOut,
                     wCols, 1.0, activPtr, wCols, weight, wCols, 0.0, dstPtr,
                     dstImSize);
-#endif
 
         // Add bias
         for (int ch = 0; ch < chOut; ch++)
         {
-#ifdef CNN_WITH_CUDA
-            cublasSaxpy(cnnInit.blasHandle, dstImSize, &alpha, bias + ch, 0,
-                        dstPtr + ch * dstImSize, 1);
-#else
             cblas_saxpy(dstImSize, 1.0, &bias[ch], 0, dstPtr + ch * dstImSize,
                         1);
-#endif
         }
     }
 }
@@ -242,50 +239,73 @@ static inline void cnn_backward_text(union CNN_LAYER* layerRef,
     int diffCols = wCols;
     int diffSize = diffRows * diffCols;
 
+    int scaleRows = dstImSize;
+    int scaleCols = wCols;
+    int scaleSize = scaleRows * scaleCols;
+
     int activRows = dstImSize;
     int activCols = wCols;
     int activSize = activRows * activCols;
 
     int* nbrMap = layerRef[layerIndex].text.nbrMap;
     int* ctrMap = layerRef[layerIndex].text.ctrMap;
+    float* alpha = layerRef[layerIndex].text.alpha.mat;
+    float* aGrad = layerRef[layerIndex].text.alpha.grad;
     float* weight = layerRef[layerIndex].text.weight.mat;
     float* wGrad = layerRef[layerIndex].text.weight.grad;
     float* bGrad = layerRef[layerIndex].text.bias.grad;
-
-#ifdef CNN_WITH_CUDA
-    float alpha = 1.0;
-    float beta = 1.0;
-#endif
 
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int dstShift = j * dstSize;
         int activShift = j * activSize;
+        int scaleShift = j * scaleSize;
+        int diffShift = j * diffSize;
 
         float* gradPtr = layerRef[layerIndex].outMat.data.grad + dstShift;
         float* activPtr = layerRef[layerIndex].text.activ.mat + activShift;
+        float* activGrad = layerRef[layerIndex].text.activ.grad + activShift;
+        float* scalePtr = layerRef[layerIndex].text.scale.mat + scaleShift;
+        float* scaleGrad = layerRef[layerIndex].text.scale.grad + scaleShift;
+        float* diffPtr = layerRef[layerIndex].text.diff.mat + diffShift;
 
         // Sum weight gradient matrix
-#ifdef CNN_WITH_CUDA
-        cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N, activCols,
-                    chOut, activRows, &alpha, activPtr, activCols, gradPtr,
-                    activRows, &beta, wGrad, activCols);
-#else
         cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, activCols, chOut,
                     activRows, 1.0, activPtr, activCols, gradPtr, activRows,
                     1.0, wGrad, activCols);
-#endif
 
         // Sum bias gradient matrix
         for (int ch = 0; ch < chOut; ch++)
         {
-#ifdef CNN_WITH_CUDA
-            cublasSaxpy(cnnInit.blasHandle, activRows, &alpha,
-                        gradPtr + ch * activRows, 1, bGrad + ch, 0);
-#else
             cblas_saxpy(activRows, 1.0, gradPtr + ch * activRows, 1, bGrad + ch,
                         0);
-#endif
+        }
+
+        // Sum activation gradient matrix
+        cblas_sgemm(CblasColMajor, CblasNoTrans, CblasTrans, activCols,
+                    activRows, chOut, 1.0, weight, activCols, gradPtr,
+                    activRows, 0.0, activGrad, activCols);
+
+        // Find scale gradient matrix
+        cnn_activ_grad_list[activId](scaleGrad, scalePtr, scaleSize, scaleGrad);
+        for (int i = 0; i < scaleSize; i++)
+        {
+            scaleGrad[i] *= activGrad[i];
+        }
+
+        // Sum alpha gradient
+        for (int row = 0; row < diffRows; row++)
+        {
+            int diffBase = row * diffCols;
+            for (int c = 0; c < chIn; c++)
+            {
+                int diffChBase = diffBase + c * wSize;
+                for (int w = 0; w < wSize; w++)
+                {
+                    int diffShift = diffChBase + w;
+                    aGrad[c] += scaleGrad[diffShift] * diffPtr[diffShift];
+                }
+            }
         }
     }
 
@@ -293,82 +313,60 @@ static inline void cnn_backward_text(union CNN_LAYER* layerRef,
     if (layerIndex > 1)
     {
         // Clear gradient
-#ifdef CNN_WITH_CUDA
-        cudaMemset
-#else
-        memset
-#endif
-            (layerRef[layerIndex].text.ctrUnroll.grad, 0,
-             sizeof(float) * layerRef[layerIndex].text.ctrUnroll.rows *
-                 layerRef[layerIndex].text.ctrUnroll.cols);
-#ifdef CNN_WITH_CUDA
-        cudaMemset
-#else
-        memset
-#endif
-            (layerRef[layerIndex - 1].outMat.data.grad, 0,
-             sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
-                 layerRef[layerIndex - 1].outMat.data.cols);
+        memset(layerRef[layerIndex].text.ctrUnroll.grad, 0,
+               sizeof(float) * layerRef[layerIndex].text.ctrUnroll.rows *
+                   layerRef[layerIndex].text.ctrUnroll.cols);
+        memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
+               sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
+                   layerRef[layerIndex - 1].outMat.data.cols);
 
         for (int j = 0; j < cfgRef->batch; j++)
         {
             int srcShift = j * srcSize;
-            int dstShift = j * dstSize;
             int nbrShift = j * nbrSize;
             int ctrShift = j * ctrSize;
             int diffShift = j * diffSize;
-            int activShift = j * activSize;
+            int scaleShift = j * scaleSize;
 
-            float* gradPtr = layerRef[layerIndex].outMat.data.grad + dstShift;
             float* preGradPtr =
                 layerRef[layerIndex - 1].outMat.data.grad + srcShift;
             float* nbrGrad =
                 layerRef[layerIndex].text.nbrUnroll.grad + nbrShift;
             float* ctrGrad =
                 layerRef[layerIndex].text.ctrUnroll.grad + ctrShift;
-            float* diffPtr = layerRef[layerIndex].text.diff.mat + diffShift;
             float* diffGrad = layerRef[layerIndex].text.diff.grad + diffShift;
-            float* activGrad =
-                layerRef[layerIndex].text.activ.grad + activShift;
+            float* scaleGrad =
+                layerRef[layerIndex].text.scale.grad + scaleShift;
 
-            // Sum activation gradient matrix
-#ifdef CNN_WITH_CUDA
-            beta = 0.0;
-            cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_T, activCols,
-                        activRows, chOut, &alpha, weight, activCols, gradPtr,
-                        activRows, &beta, activGrad, activCols);
-#else
-            cblas_sgemm(CblasColMajor, CblasNoTrans, CblasTrans, activCols,
-                        activRows, chOut, 1.0, weight, activCols, gradPtr,
-                        activRows, 0.0, activGrad, activCols);
-#endif
-
-            // Sum difference gradient matrix
-            cnn_activ_grad_list[activId](diffGrad, diffPtr, diffSize, diffPtr);
+            // Sum diff gradient matrix
+            for (int row = 0; row < diffRows; row++)
+            {
+                int diffBase = row * diffCols;
+                for (int c = 0; c < chIn; c++)
+                {
+                    int diffChBase = diffBase + c * wSize;
+                    for (int w = 0; w < wSize; w++)
+                    {
+                        int diffShift = diffChBase + w;
+                        diffGrad[diffShift] = scaleGrad[diffShift] * alpha[c];
+                    }
+                }
+            }
 
             // Sum neighbor, center gradient matrix
-#ifdef CNN_WITH_CUDA
-            cnn_text_find_diff_grad_gpu(activGrad, diffGrad, nbrGrad, ctrGrad,
-                                        nbrRows, nbrCols);
-#else
             for (int row = 0; row < nbrRows; row++)
             {
                 int nbrBase = row * nbrCols;
                 for (int col = 0; col < nbrCols; col++)
                 {
                     int nbrShift = nbrBase + col;
-                    float gradTmp = diffGrad[nbrShift] * activGrad[nbrShift];
+                    float gradTmp = diffGrad[nbrShift];
                     nbrGrad[nbrShift] = gradTmp;
                     ctrGrad[row] -= gradTmp;
                 }
             }
-#endif
 
             // Sum layer gradient matrix
-#ifdef CNN_WITH_CUDA
-            cnn_text_map_inv_gpu(preGradPtr, nbrGrad, nbrMap, nbrSize);
-            cnn_text_map_inv_gpu(preGradPtr, ctrGrad, ctrMap, ctrSize);
-#else
             for (int k = 0; k < nbrSize; k++)
             {
                 preGradPtr[nbrMap[k]] += nbrGrad[k];
@@ -378,7 +376,6 @@ static inline void cnn_backward_text(union CNN_LAYER* layerRef,
             {
                 preGradPtr[ctrMap[k]] += ctrGrad[k];
             }
-#endif
         }
     }
 }
