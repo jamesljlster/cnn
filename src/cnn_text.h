@@ -135,6 +135,7 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
     int* nbrMap = layerRef[layerIndex].text.nbrMap;
     int* ctrMap = layerRef[layerIndex].text.ctrMap;
     float* alpha = layerRef[layerIndex].text.alpha.mat;
+    float* beta = layerRef[layerIndex].text.beta.mat;
     float* weight = layerRef[layerIndex].text.weight.mat;
     float* bias = layerRef[layerIndex].text.bias.mat;
 
@@ -188,7 +189,8 @@ static inline void cnn_forward_text(union CNN_LAYER* layerRef,
                 for (int w = 0; w < wSize; w++)
                 {
                     int diffShift = diffChBase + w;
-                    scalePtr[diffShift] = diffPtr[diffShift] * alpha[c];
+                    scalePtr[diffShift] =
+                        diffPtr[diffShift] * alpha[c] + beta[c];
                 }
             }
         }
@@ -251,6 +253,7 @@ static inline void cnn_backward_text(union CNN_LAYER* layerRef,
     int* ctrMap = layerRef[layerIndex].text.ctrMap;
     float* alpha = layerRef[layerIndex].text.alpha.mat;
     float* aGrad = layerRef[layerIndex].text.alpha.grad;
+    float* betaGrad = layerRef[layerIndex].text.beta.grad;
     float* weight = layerRef[layerIndex].text.weight.mat;
     float* wGrad = layerRef[layerIndex].text.weight.grad;
     float* bGrad = layerRef[layerIndex].text.bias.grad;
@@ -304,6 +307,7 @@ static inline void cnn_backward_text(union CNN_LAYER* layerRef,
                 {
                     int diffShift = diffChBase + w;
                     aGrad[c] += scaleGrad[diffShift] * diffPtr[diffShift];
+                    betaGrad[c] += scaleGrad[diffShift];
                 }
             }
         }

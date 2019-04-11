@@ -1002,6 +1002,12 @@ int cnn_parse_network_detail_text_xml(struct CNN* cnn, int layerIndex,
                     cnn_parse_mat(&cnn->layerList[layerIndex].text.alpha, cur),
                     ret, RET);
                 break;
+
+            case CNN_STR_BETA:
+                cnn_run(
+                    cnn_parse_mat(&cnn->layerList[layerIndex].text.beta, cur),
+                    ret, RET);
+                break;
         }
 
         cur = cur->next;
