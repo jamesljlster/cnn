@@ -468,11 +468,6 @@ int cnn_write_layer_text_xml(struct CNN_CONFIG* cfgRef,
         cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.alpha,
                                   cnn_str_list[CNN_STR_ALPHA], writer),
                 ret, RET);
-
-        // Write beta
-        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.beta,
-                                  cnn_str_list[CNN_STR_BETA], writer),
-                ret, RET);
     }
 
 RET:

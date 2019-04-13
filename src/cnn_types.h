@@ -219,7 +219,6 @@ struct CNN_LAYER_TEXT
     struct CNN_MAT weight;
     struct CNN_MAT bias;
     struct CNN_MAT alpha;
-    struct CNN_MAT beta;
 
     // Channel
     int inChannel;

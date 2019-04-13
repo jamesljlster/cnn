@@ -643,7 +643,6 @@ int cnn_layer_text_alloc(struct CNN_LAYER_TEXT* layerPtr,
             ERR);
 
     cnn_run(cnn_mat_alloc(&layerPtr->alpha, aRows, aCols, 1), ret, ERR);
-    cnn_run(cnn_mat_alloc(&layerPtr->beta, aRows, aCols, 1), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->weight, wRows, wCols, 1), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 
