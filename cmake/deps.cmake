@@ -5,29 +5,15 @@ if(${WITH_CUDA})
     include_directories(${CUDA_INCLUDE_DIRS})
 endif()
 
-# Find OpenBlas
-find_path(OpenBLAS_INCLUDE_DIR cblas.h
-    "/usr/include"
-    "/usr/local/include"
-    "/opt/OpenBLAS/include"
-    )
-
-find_library(OpenBLAS_LIB openblas
-    "/usr/lib"
-    "/usr/local/lib"
-    "/opt/OpenBLAS/lib"
-    )
-
-if(NOT OpenBLAS_INCLUDE_DIR OR NOT OpenBLAS_LIB)
-    message(FATAL "Failed to find OpenBlas")
-endif()
+# Find CBLAS
+find_package(CBLAS REQUIRED)
 
 # Find libxml2
 find_package(LibXml2 REQUIRED)
 
 # Include directories
 include_directories(${DEPS_PATHS}
-    ${OpenBLAS_INCLUDE_DIR}
+    ${CBLAS_INCLUDE_DIRS}
     ${LIBXML2_INCLUDE_DIR}
     )
 
