@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 # Set variables
 set(PROJECT_NAME cnn_test)
 set(PROJECT_LANGUAGE C)
-set(PROJECT_DEPS cnn ${CBLAS_LIBRARIES} ${LIBXML2_LIBRARIES})
+set(PROJECT_DEPS cnn ${CBLAS_LIBS} ${LIBXML2_LIBRARIES})
 
 if(${WITH_CUDA})
     set(PROJECT_DEPS

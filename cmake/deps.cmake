@@ -6,14 +6,38 @@ if(${WITH_CUDA})
 endif()
 
 # Find CBLAS
-find_package(CBLAS REQUIRED)
+find_package(CBLAS QUIET)
+if(NOT ${CBLAS_FOUND})
+
+    # Find OpenBLAS instead
+    set(BLAS_VENDOR "OpenBLAS")
+    find_package(BLAS QUIET)
+
+    # Find cblas.h
+    find_path(CBLAS_INCDIRS cblas.h
+        "/usr/include"
+        "/usr/local/include"
+        "/opt/OpenBLAS/include"
+        )
+
+    # Check result
+    if(NOT CBLAS_INCDIRS OR NOT ${BLAS_FOUND})
+        message(FATAL "Failed to find CBLAS")
+    else()
+        set(CBLAS_LIBS ${BLAS_LIBRARIES} CACHE PATH "CBLAS library path")
+    endif()
+
+else()
+    set(CBLAS_LIBS ${CBLAS_LIBRARIES})
+    set(CBLAS_INCDIRS ${CBLAS_INCLUDE_DIR})
+endif()
 
 # Find libxml2
 find_package(LibXml2 REQUIRED)
 
 # Include directories
 include_directories(${DEPS_PATHS}
-    ${CBLAS_INCLUDE_DIRS}
+    ${CBLAS_INCDIRS}
     ${LIBXML2_INCLUDE_DIR}
     )
 
