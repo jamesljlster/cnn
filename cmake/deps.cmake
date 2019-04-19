@@ -28,8 +28,8 @@ if(NOT ${CBLAS_FOUND})
     endif()
 
 else()
-    set(CBLAS_LIBS ${CBLAS_LIBRARIES})
-    set(CBLAS_INCDIRS ${CBLAS_INCLUDE_DIR})
+    set(CBLAS_LIBS ${CBLAS_LIBRARIES} CACHE PATH "CBLAS library path")
+    set(CBLAS_INCDIRS ${CBLAS_INCLUDE_DIRS} CACHE PATH "CBLAS header path")
 endif()
 
 # Find libxml2
