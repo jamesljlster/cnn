@@ -1,148 +1,179 @@
+#include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <math.h>
 
 #include <cnn.h>
 #include <cnn_builtin_math.h>
+#include <cnn_config.h>
 
-void print_mat(float* src, int rows, int cols);
+#include <debug.h>
+#include "test.h"
+
+#ifdef CNN_WITH_CUDA
+#include <cuda_runtime.h>
+#endif
 
 int main(int argc, char* argv[])
 {
-	int id;
-	int i, j;
-	int len;
+    int id;
+    int i, j;
+    int len;
 
-	float* src = NULL;
-	float* dst = NULL;
-	float* buf = NULL;
-	float* deri = NULL;
-	float* grad = NULL;
+    float* src = NULL;
+    float* dst = NULL;
+    float* buf = NULL;
+    float* deri = NULL;
+    float* grad = NULL;
 
-	float err;
-	float dx = pow(10, -4);
+#ifdef CNN_WITH_CUDA
+    float* cuSrc = NULL;
+    float* cuDst = NULL;
+    float* cuBuf = NULL;
+    float* cuDeri = NULL;
+    float* cuGrad = NULL;
+#endif
 
-	// Check dx
-	assert(dx != 0.0f);
+    float err;
+    float dx = pow(10, -4);
 
-	// Check argument
-	if(argc <= 1)
-	{
-		printf("Assign arguments with real numbers to run the program\n");
-		return -1;
-	}
+    // Check dx
+    assert(dx != 0.0f);
 
-	// Memory allocation
-	len = argc - 1;
-	src = calloc(len, sizeof(float));
-	dst = calloc(len, sizeof(float));
-	buf = calloc(len, sizeof(float));
-	deri = calloc(len * len, sizeof(float));
-	grad = calloc(len * len, sizeof(float));
-	if(src == NULL || dst == NULL || buf == NULL || deri == NULL || grad == NULL)
-	{
-		printf("Memory allocation failed!\n");
-		return -1;
-	}
+    // Check argument
+    if (argc <= 1)
+    {
+        printf("Assign arguments with real numbers to run the program\n");
+        return -1;
+    }
 
-	// Test activation functions
-	for(id = 0; id < CNN_ACTIV_AMOUNT; id++)
-	{
-		// Parse argument
-		for(i = 0; i < len; i++)
-		{
-			src[i] = atof(argv[i + 1]);
-		}
+    // Memory allocation
+    len = argc - 1;
 
-		// Find grad
-		memset(grad, 0, len * len * sizeof(float));
-		cnn_activ_list[id](dst, src, len, NULL);
-		if(id == CNN_SOFTMAX)
-		{
-			for(i = 0; i < len; i++)
-			{
-				for(j = 0; j < len; j++)
-				{
-					src[j] = atof(argv[j + 1]);
-					if(i == j)
-					{
-						src[j] += dx;
-					}
-				}
+    alloc(src, len, float);
+    alloc(dst, len, float);
+    alloc(buf, len, float);
+    alloc(deri, len * len, float);
+    alloc(grad, len * len, float);
 
-				cnn_activ_list[id](buf, src, len, NULL);
+#ifdef CNN_WITH_CUDA
+    cu_alloc(cuSrc, len, float);
+    cu_alloc(cuDst, len, float);
+    cu_alloc(cuBuf, len, float);
+    cu_alloc(cuDeri, len * len, float);
+    cu_alloc(cuGrad, len * len, float);
+#endif
 
-				for(j = 0; j < len; j++)
-				{
-					grad[i * len + j] = (buf[j] - dst[j]) / dx;
-				}
-			}
-		}
-		else
-		{
-			for(i = 0; i < len; i++)
-			{
-				for(j = 0; j < len; j++)
-				{
-					src[j] = atof(argv[j + 1]);
-					if(i == j)
-					{
-						src[j] += dx;
-					}
-				}
+    // Test activation functions
+    for (id = 0; id < CNN_ACTIV_AMOUNT; id++)
+    {
+        // Parse argument
+        for (i = 0; i < len; i++)
+        {
+            src[i] = atof(argv[i + 1]);
+        }
 
-				cnn_activ_list[id](buf, src, len, NULL);
+        // Find grad
+        memset(grad, 0, len * len * sizeof(float));
+#ifdef CNN_WITH_CUDA
+        cudaMemcpy(cuSrc, src, len * sizeof(float), cudaMemcpyHostToDevice);
+        cnn_activ_list[id](cuDst, cuSrc, len, cuBuf);
+        cudaMemcpy(dst, cuDst, len * sizeof(float), cudaMemcpyDeviceToHost);
+#else
+        cnn_activ_list[id](dst, src, len, NULL);
+#endif
+        if (id == CNN_SOFTMAX)
+        {
+            for (i = 0; i < len; i++)
+            {
+                for (j = 0; j < len; j++)
+                {
+                    src[j] = atof(argv[j + 1]);
+                    if (i == j)
+                    {
+                        src[j] += dx;
+                    }
+                }
 
-				grad[i] = (buf[i] - dst[i]) / dx;
-			}
-		}
+#ifdef CNN_WITH_CUDA
+                cudaMemcpy(cuSrc, src, len * sizeof(float),
+                           cudaMemcpyHostToDevice);
+                cnn_activ_list[id](cuBuf, cuSrc, len, cuDeri);
+                cudaMemcpy(buf, cuBuf, len * sizeof(float),
+                           cudaMemcpyDeviceToHost);
+#else
+                cnn_activ_list[id](buf, src, len, NULL);
+#endif
 
-		// Find derivative
-		for(i = 0; i < len; i++)
-		{
-			src[i] = atof(argv[i + 1]);
-		}
+                for (j = 0; j < len; j++)
+                {
+                    grad[i * len + j] = (buf[j] - dst[j]) / dx;
+                }
+            }
+        }
+        else
+        {
+            for (i = 0; i < len; i++)
+            {
+                for (j = 0; j < len; j++)
+                {
+                    src[j] = atof(argv[j + 1]);
+                    if (i == j)
+                    {
+                        src[j] += dx;
+                    }
+                }
 
-		memset(deri, 0, len * len * sizeof(float));
-		cnn_activ_grad_list[id](deri, src, len, buf);
+#ifdef CNN_WITH_CUDA
+                cudaMemcpy(cuSrc, src, len * sizeof(float),
+                           cudaMemcpyHostToDevice);
+                cnn_activ_list[id](cuBuf, cuSrc, len, cuDeri);
+                cudaMemcpy(buf, cuBuf, len * sizeof(float),
+                           cudaMemcpyDeviceToHost);
+#else
+                cnn_activ_list[id](buf, src, len, NULL);
+#endif
 
-		// Find error
-		err = 0;
-		for(i = 0; i < len * len; i++)
-		{
-			err += fabs(grad[i] - deri[i]);
-		}
+                grad[i] = (buf[i] - dst[i]) / dx;
+            }
+        }
 
-		printf("=== Test %s derivative ===\n", cnn_activ_name[id]);
-		printf("deri:\n");
-		print_mat(deri, len, len);
-		printf("\n");
-		printf("grad:\n");
-		print_mat(grad, len, len);
-		printf("\n");
-		printf("Sum of error: %lf\n", err);
-		printf("\n");
-	}
+        // Find derivative
+        for (i = 0; i < len; i++)
+        {
+            src[i] = atof(argv[i + 1]);
+        }
 
-	return 0;
-}
+        memset(deri, 0, len * len * sizeof(float));
 
-void print_mat(float* src, int rows, int cols)
-{
-	int i, j;
-	for(i = 0; i < rows; i++)
-	{
-		printf(" | ");
-		for(j = 0; j < cols; j++)
-		{
-			printf("%+f", src[i * cols + j]);
-			if(j < cols - 1)
-			{
-				printf("  ");
-			}
-		}
-		printf(" |\n");
-	}
+#ifdef CNN_WITH_CUDA
+        cudaMemset(cuDeri, 0, len * len * sizeof(float));
+        cudaMemcpy(cuSrc, src, len * sizeof(float), cudaMemcpyHostToDevice);
+        cnn_activ_grad_list[id](cuDeri, cuSrc, len, cuDst);
+        cudaMemcpy(deri, cuDeri, len * len * sizeof(float),
+                   cudaMemcpyDeviceToHost);
+#else
+        cnn_activ_grad_list[id](deri, src, len, dst);
+#endif
+
+        // Find error
+        err = 0;
+        for (i = 0; i < len * len; i++)
+        {
+            err += fabs(grad[i] - deri[i]);
+        }
+
+        printf("=== Test %s derivative ===\n", cnn_activ_name[id]);
+        printf("deri:\n");
+        print_mat(deri, len, len);
+        printf("\n");
+        printf("grad:\n");
+        print_mat(grad, len, len);
+        printf("\n");
+        printf("Sum of error: %lf\n", err);
+        printf("\n");
+    }
+
+    return 0;
 }

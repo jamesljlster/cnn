@@ -1,125 +1,95 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include <cnn.h>
-#include <cnn_private.h>
 #include <cnn_calc.h>
+#include <cnn_private.h>
 
 #include "test.h"
 
-#define WIDTH 64
-#define HEIGHT 64
-#define CH_IN 3
-#define ITER 10000
-
 int main(int argc, char* argv[])
 {
-	int i;
+    int i;
+    int kSize;
+    int chIn, chOut;
+    int imgWidth, imgHeight;
+    int batch;
+    int loops;
+    int samples;
 
-	cnn_config_t cfg = NULL;
-	cnn_t cnn = NULL;
+    struct timespec timeHold;
+    float fwCost, bpCost;
 
-#ifdef _MSC_VER
-	clock_t timeHold, tmpTime;
-#else
-	struct timespec timeHold, tmpTime;
-#endif
-	float timeCost;
+    union CNN_LAYER layer[3];
 
-	int kSize;
-	int fSize;
-	int width = WIDTH;
-	int height = HEIGHT;
-	int chIn = CH_IN;
-	int iter = ITER;
+    cnn_config_t cfg = NULL;
 
-	int wOut;
-	int hOut;
-	int chOut;
+    // Parse argument
+    if (argc < 9)
+    {
+        printf(
+            "Usage: %s <kSize> <chIn> <chOut> <imgWidth> <imgHeight> <batch> "
+            "<loops> <samples>\n",
+            argv[0]);
+        return -1;
+    }
 
-	float* in = NULL;
-	float* out = NULL;
+    i = 1;
+    kSize = atoi(argv[i++]);
+    chIn = atoi(argv[i++]);
+    chOut = atoi(argv[i++]);
+    imgWidth = atoi(argv[i++]);
+    imgHeight = atoi(argv[i++]);
+    batch = atoi(argv[i++]);
+    loops = atoi(argv[i++]);
+    samples = atoi(argv[i++]);
 
-	// Checking arguments
-	if(argc < 3)
-	{
-		printf("Usage: test_conv_perf <kernel_size> <filter_size> "
-				"<input_width=%d> <input_height=%d> <input_channel=%d> "
-				"<iteration=%d>\n", WIDTH, HEIGHT, CH_IN, ITER);
-		return -1;
-	}
+    printf("kSize, chIn, chOut, imgWidth, imgHeight, batch, loops, samples\n");
+    printf("%d, %d, %d, %d, %d, %d, %d, %d\n\n", kSize, chIn, chOut, imgWidth,
+           imgHeight, batch, loops, samples);
 
-	// Parse arguments
-	kSize = atoi(argv[1]);
-	fSize = atoi(argv[2]);
+    // Create cnn
+    test(cnn_init());
 
-	if(argc > 3)
-	{
-		width = atoi(argv[3]);
-	}
+    test(cnn_config_create(&cfg));
+    test(cnn_config_set_batch_size(cfg, batch));
+    test(cnn_config_set_input_size(cfg, imgWidth, imgHeight, chIn));
 
-	if(argc > 4)
-	{
-		height = atoi(argv[4]);
-	}
+    test(cnn_config_append_activation(cfg, CNN_RELU));
+    test(cnn_config_append_convolution(cfg, CNN_PAD_SAME, CNN_DIM_2D, chOut,
+                                       kSize));
 
-	if(argc > 5)
-	{
-		chIn = atoi(argv[5]);
-	}
+    // Allocate cnn layer
+    test(cnn_layer_activ_alloc(
+        &layer[1].activ, (struct CNN_CONFIG_LAYER_ACTIV*)&cfg->layerCfg[1],
+        imgWidth, imgHeight, chIn, cfg->batch));
+    test(cnn_layer_conv_alloc(&layer[2].conv,
+                              (struct CNN_CONFIG_LAYER_CONV*)&cfg->layerCfg[2],
+                              imgWidth, imgHeight, chIn, cfg->batch));
 
-	if(argc > 6)
-	{
-		iter = atoi(argv[6]);
-	}
+    // Performance test
+    printf("Forward (ms), Backward (ms)\n");
+    for (int s = 0; s < samples; s++)
+    {
+        // Forward
+        timeHold = hold_time();
+        for (int i = 0; i < loops; i++)
+        {
+            cnn_forward_conv(layer, cfg, 2);
+        }
+        fwCost = get_time_cost(timeHold);
 
-	printf("Using:\n");
-	printf("kernel_size: %d\n", kSize);
-	printf("filter_size: %d\n", fSize);
-	printf("input_width: %d\n", width);
-	printf("input_height: %d\n", height);
-	printf("input_channel: %d\n", chIn);
-	printf("iter: %d\n", iter);
-	printf("\n");
+        // BP
+        timeHold = hold_time();
+        for (int i = 0; i < loops; i++)
+        {
+            cnn_backward_conv(layer, cfg, 2);
+        }
+        bpCost = get_time_cost(timeHold);
 
-	// Set config
-	test(cnn_config_create(&cfg));
-	test(cnn_config_set_input_size(cfg, width, height, chIn));
+        printf("%g, %g\n", fwCost, bpCost);
+    }
 
-	test(cnn_config_append_activation(cfg, CNN_RELU));
-	test(cnn_config_append_convolution(cfg, 2, fSize, kSize));
-
-	// Create cnn
-	test(cnn_create(&cnn, cfg));
-	cnn_get_output_size(cnn, &wOut, &hOut, &chOut);
-	alloc(in, width * height * chIn, float);
-	alloc(out, wOut * hOut * chOut, float);
-
-	// Hold current time
-#ifdef _MSC_VER
-	timeHold = clock();
-#else
-	clock_gettime(CLOCK_MONOTONIC, &timeHold);
-#endif
-
-	// forward and backward
-	for(i = 0; i < iter; i++)
-	{
-		cnn_forward(cnn, in, out);
-		cnn_backward(cnn, out);
-	}
-
-	// Calculate time cost
-#ifdef _MSC_VER
-	tmpTime = clock();
-	timeCost = (float)(tmpTime - timeHold) * 1000.0 / (float)CLOCKS_PER_SEC;
-#else
-	clock_gettime(CLOCK_MONOTONIC, &tmpTime);
-	timeCost = (tmpTime.tv_sec - timeHold.tv_sec) * 1000 +
-		(float)(tmpTime.tv_nsec - timeHold.tv_nsec) / 1000000.0;
-#endif
-	printf("With %d iteration, time cost: %f ms\n", iter, timeCost);
-
-	return 0;
+    return 0;
 }

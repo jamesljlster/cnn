@@ -1,180 +1,260 @@
 #ifndef __CNN_TYPES_H__
 #define __CNN_TYPES_H__
 
+#include "cnn.h"
 #include "cnn_config.h"
 
 // CNN matrix type
 struct CNN_MAT
 {
-	int rows;
-	int cols;
+    int rows;
+    int cols;
 
-	float* mat;
-	float* grad;
+    float* mat;
+    float* grad;
 };
 
 // CNN shape type
 struct CNN_SHAPE
 {
-	int width;
-	int height;
-	int channel;
+    int width;
+    int height;
+    int channel;
 
-	struct CNN_MAT data;
+    struct CNN_MAT data;
+};
+
+struct CNN_CONFIG_LAYER_INPUT
+{
+    // Layer type
+    cnn_layer_t type;
 };
 
 struct CNN_CONFIG_LAYER_ACTIV
 {
-	// Layer type
-	int type;
+    // Layer type
+    cnn_layer_t type;
 
-	int id;
+    cnn_activ_t id;
 };
 
 struct CNN_CONFIG_LAYER_FC
 {
-	// Layer type
-	int type;
+    // Layer type
+    cnn_layer_t type;
 
-	int size;
+    int size;
 };
 
 struct CNN_CONFIG_LAYER_CONV
 {
-	// Layer type
-	int type;
+    // Layer type
+    cnn_layer_t type;
 
-	int dim;
-	int size;
-	int filter;
+    cnn_pad_t pad;
+    cnn_dim_t dim;
+    int size;
+    int filter;
 };
 
 struct CNN_CONFIG_LAYER_POOL
 {
-	// Layer type
-	int type;
+    // Layer type
+    cnn_layer_t type;
 
-	int poolType;
-	int dim;
-	int size;
+    cnn_pool_t poolType;
+    cnn_dim_t dim;
+    int size;
 };
 
 struct CNN_CONFIG_LAYER_DROP
 {
-	// Layer type
-	int type;
+    // Layer type
+    cnn_layer_t type;
 
-	float rate;
-	float scale;
+    float rate;
+    float scale;
 };
 
-union CNN_CONFIG_LAYER
+struct CNN_CONFIG_LAYER_BN
 {
-	// Layer type
-	int type;
+    // Layer type
+    cnn_layer_t type;
 
-	struct CNN_CONFIG_LAYER_FC fc;
-	struct CNN_CONFIG_LAYER_ACTIV activ;
-	struct CNN_CONFIG_LAYER_CONV conv;
-	struct CNN_CONFIG_LAYER_POOL pool;
-	struct CNN_CONFIG_LAYER_DROP drop;
+    float rInit;
+    float bInit;
+};
+
+struct CNN_CONFIG_LAYER_TEXT
+{
+    // Layer type
+    cnn_layer_t type;
+
+    cnn_activ_t activId;
+    int filter;
+    float aInit;
+};
+
+union CNN_CONFIG_LAYER {
+    // Layer type
+    cnn_layer_t type;
+
+    struct CNN_CONFIG_LAYER_INPUT input;
+    struct CNN_CONFIG_LAYER_FC fc;
+    struct CNN_CONFIG_LAYER_ACTIV activ;
+    struct CNN_CONFIG_LAYER_CONV conv;
+    struct CNN_CONFIG_LAYER_POOL pool;
+    struct CNN_CONFIG_LAYER_DROP drop;
+    struct CNN_CONFIG_LAYER_BN bn;
+    struct CNN_CONFIG_LAYER_TEXT text;
 };
 
 struct CNN_CONFIG
 {
-	int width;
-	int height;
-	int channel;
+    int width;
+    int height;
+    int channel;
 
-	int batch;
+    int batch;
 
-	float lRate;
+    int layers;
+    union CNN_CONFIG_LAYER* layerCfg;
+};
 
-	int layers;
-	union CNN_CONFIG_LAYER* layerCfg;
+struct CNN_LAYER_INPUT
+{
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
 };
 
 struct CNN_LAYER_ACTIV
 {
-	// Layer output matrix
-	struct CNN_SHAPE outMat;
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
 
-	// Gradient matrix
-	struct CNN_MAT gradMat;
+    // Gradient matrix
+    struct CNN_MAT gradMat;
 
-	// Calculate buffer
-	struct CNN_MAT buf;
+    // Calculate buffer
+    struct CNN_MAT buf;
 };
 
 struct CNN_LAYER_FC
 {
-	// Layer output matrix
-	struct CNN_SHAPE outMat;
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
 
-	// Weight matrix
-	struct CNN_MAT weight;
+    // Weight matrix
+    struct CNN_MAT weight;
 
-	// Bias vector
-	struct CNN_MAT bias;
+    // Bias vector
+    struct CNN_MAT bias;
 };
 
 struct CNN_LAYER_CONV
 {
-	// Layer output matrix
-	struct CNN_SHAPE outMat;
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
 
-	// Kernel matrix
-	struct CNN_MAT kernel;
+    // Kernel matrix
+    struct CNN_MAT kernel;
 
-	// Bias vector
+    // Bias vector
 #if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
-	struct CNN_MAT bias;
+    struct CNN_MAT bias;
 #endif
 
-	// Channel
-	int inChannel;
+    // Channel
+    int inChannel;
 
-	// Convolution to gemm
-	int* indexMap;
-	struct CNN_MAT unroll;
+    // Convolution to gemm
+    int* indexMap;
+    struct CNN_MAT unroll;
 };
 
 struct CNN_LAYER_POOL
 {
-	// Layer output matrix
-	struct CNN_SHAPE outMat;
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
 
-	// Pooling index
-	int* indexMat;
+    // Pooling index
+    int* indexMat;
 };
 
 struct CNN_LAYER_DROP
 {
-	// Layer output matrix
-	struct CNN_SHAPE outMat;
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
 
-	// Dropout mask
-	int* mask;
+    // Dropout mask
+    int* mask;
+    int* maskGpu;
 };
 
-union CNN_LAYER
+struct CNN_LAYER_BN
 {
-	// Layer output matrix
-	struct CNN_SHAPE outMat;
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
 
-	struct CNN_LAYER_FC fc;
-	struct CNN_LAYER_ACTIV activ;
-	struct CNN_LAYER_CONV conv;
-	struct CNN_LAYER_POOL pool;
-	struct CNN_LAYER_DROP drop;
+    // BatchNorm variables
+    struct CNN_MAT bnVar;
+
+    // Cache
+    float* stddev;
+    struct CNN_MAT srcShift;
+    struct CNN_MAT srcNorm;
+
+#ifdef CNN_WITH_CUDA
+    // Buffer
+    float* buf;
+#endif
+};
+
+struct CNN_LAYER_TEXT
+{
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
+
+    // Texture weights
+    struct CNN_MAT weight;
+    struct CNN_MAT bias;
+    struct CNN_MAT alpha;
+
+    // Channel
+    int inChannel;
+
+    // Texture calculation buffer
+    struct CNN_MAT nbrUnroll;
+    struct CNN_MAT ctrUnroll;
+    struct CNN_MAT diff;
+    struct CNN_MAT scale;
+    struct CNN_MAT activ;
+
+    // Index mapping
+    int* nbrMap;  // Neighbor mapping
+    int* ctrMap;  // Center mapping
+};
+
+union CNN_LAYER {
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
+
+    struct CNN_LAYER_INPUT input;
+    struct CNN_LAYER_FC fc;
+    struct CNN_LAYER_ACTIV activ;
+    struct CNN_LAYER_CONV conv;
+    struct CNN_LAYER_POOL pool;
+    struct CNN_LAYER_DROP drop;
+    struct CNN_LAYER_BN bn;
+    struct CNN_LAYER_TEXT text;
 };
 
 struct CNN
 {
-	struct CNN_CONFIG cfg;
-	union CNN_LAYER* layerList;
+    struct CNN_CONFIG cfg;
+    union CNN_LAYER* layerList;
 
-	int dropEnable;
+    int dropEnable;
 };
 
 #endif

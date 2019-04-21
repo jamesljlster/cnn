@@ -1,18 +1,35 @@
-# Find OpenBlas
-find_path(OpenBLAS_INCLUDE_DIR cblas.h
-	"/usr/include"
-	"/usr/local/include"
-	"/opt/OpenBLAS/include"
-	)
+# Find CUDA
+if(${WITH_CUDA})
+    set(CUDA_SEPARABLE_COMPILATION ON)
+    find_package(CUDA QUIET REQUIRED)
+    include_directories(${CUDA_INCLUDE_DIRS})
+endif()
 
-find_library(OpenBLAS_LIB openblas
-	"/usr/lib"
-	"/usr/local/lib"
-	"/opt/OpenBLAS/lib"
-	)
+# Find CBLAS
+find_package(CBLAS QUIET)
+if(NOT ${CBLAS_FOUND})
 
-if(NOT OpenBLAS_INCLUDE_DIR OR NOT OpenBLAS_LIB)
-	message(FATAL "Failed to find OpenBlas")
+    # Find OpenBLAS instead
+    set(BLAS_VENDOR "OpenBLAS")
+    find_package(BLAS QUIET)
+
+    # Find cblas.h
+    find_path(CBLAS_INCDIRS cblas.h
+        "/usr/include"
+        "/usr/local/include"
+        "/opt/OpenBLAS/include"
+        )
+
+    # Check result
+    if(NOT CBLAS_INCDIRS OR NOT ${BLAS_FOUND})
+        message(FATAL "Failed to find CBLAS")
+    else()
+        set(CBLAS_LIBS ${BLAS_LIBRARIES} CACHE PATH "CBLAS library path")
+    endif()
+
+else()
+    set(CBLAS_LIBS ${CBLAS_LIBRARIES} CACHE PATH "CBLAS library path")
+    set(CBLAS_INCDIRS ${CBLAS_INCLUDE_DIRS} CACHE PATH "CBLAS header path")
 endif()
 
 # Find libxml2
@@ -20,9 +37,9 @@ find_package(LibXml2 REQUIRED)
 
 # Include directories
 include_directories(${DEPS_PATHS}
-	${OpenBLAS_INCLUDE_DIR}
-	${LIBXML2_INCLUDE_DIR}
-	)
+    ${CBLAS_INCDIRS}
+    ${LIBXML2_INCLUDE_DIR}
+    )
 
 # Find check
 #if(BUILD_TEST)
@@ -41,5 +58,5 @@ include_directories(${DEPS_PATHS}
 
 # Add subdirectories
 foreach(DEPS_PATH ${DEPS_PATHS})
-	add_subdirectory(${DEPS_PATH})
+    add_subdirectory(${DEPS_PATH})
 endforeach()
