@@ -155,11 +155,13 @@ CNN_ACTIV_DEF(cnn_swish)
 #ifdef CNN_WITH_CUDA
     cnn_swish_gpu(dst, src, len);
 #else
-#pragma omp parallel for shared(dst, src)
+    float srcVal;
+
+#pragma omp parallel for shared(dst, src) private(srcVal)
     for (int i = 0; i < len; i++)
     {
-        float tmp = src[i];
-        dst[i] = tmp / (1.0f + expf(-tmp));
+        srcVal = src[i];
+        dst[i] = srcVal / (1.0f + expf(-srcVal));
     }
 #endif
 }
@@ -172,17 +174,19 @@ CNN_ACTIV_DEF(cnn_swish_grad)
     // Find swish gradient
     // memset(dst, 0, len * sizeof(float));
     // cnn_swish(buf, src, len, NULL);
-#pragma omp parallel for shared(dst, src, buf)
+    float srcVal, bufVal;
+
+#pragma omp parallel for shared(dst, src, buf) private(srcVal, bufVal)
     for (int i = 0; i < len; i++)
     {
-        float srcVal = src[i];
+        srcVal = src[i];
         if (srcVal == 0.0f)
         {
             dst[i] = 0.5;
         }
         else
         {
-            float bufVal = buf[i];
+            bufVal = buf[i];
             dst[i] = bufVal + (bufVal / srcVal) * (1.0f - bufVal);
         }
     }
@@ -207,13 +211,15 @@ CNN_ACTIV_DEF(cnn_sigmoid_grad)
 #ifdef CNN_WITH_CUDA
     cnn_sigmoid_grad_gpu(dst, src, buf, len);
 #else
+    float bufVal;
+
     // Find sigmoid gradient
     cnn_sigmoid(buf, src, len, NULL);
 
-#pragma omp parallel for shared(dst, buf)
+#pragma omp parallel for shared(dst, buf) private(bufVal)
     for (int i = 0; i < len; i++)
     {
-        float bufVal = buf[i];
+        bufVal = buf[i];
         dst[i] = bufVal * (1.0 - bufVal);
     }
 #endif
@@ -237,13 +243,15 @@ CNN_ACTIV_DEF(cnn_tanh_grad)
 #ifdef CNN_WITH_CUDA
     cnn_tanh_grad_gpu(dst, src, buf, len);
 #else
+    float bufVal;
+
     // Find tanh gradient
     cnn_tanh(buf, src, len, NULL);
 
-#pragma omp parallel for shared(dst, buf)
+#pragma omp parallel for shared(dst, buf) private(bufVal)
     for (int i = 0; i < len; i++)
     {
-        float bufVal = buf[i];
+        bufVal = buf[i];
         dst[i] = 1.0 - bufVal * bufVal;
     }
 #endif
@@ -283,10 +291,12 @@ CNN_ACTIV_DEF(cnn_bent_identity)
 #ifdef CNN_WITH_CUDA
     cnn_bent_identity_gpu(dst, src, len);
 #else
-#pragma omp parallel for shared(dst, src)
+    float srcVal;
+
+#pragma omp parallel for shared(dst, src) private(srcVal)
     for (int i = 0; i < len; i++)
     {
-        float srcVal = src[i];
+        srcVal = src[i];
         dst[i] = (sqrt(pow(srcVal, 2) + 1.0) - 1.0) / 2.0 + srcVal;
     }
 #endif
@@ -298,10 +308,12 @@ CNN_ACTIV_DEF(cnn_bent_identity_grad)
     cnn_bent_identity_grad_gpu(dst, src, buf, len);
 #else
     // Find bent indentity gradient
-#pragma omp parallel for shared(dst, src)
+    float srcVal;
+
+#pragma omp parallel for shared(dst, src) private(srcVal)
     for (int i = 0; i < len; i++)
     {
-        float srcVal = src[i];
+        srcVal = src[i];
         dst[i] = srcVal / (2.0 * sqrt(pow(srcVal, 2.0) + 1.0)) + 1.0;
     }
 #endif
@@ -339,10 +351,12 @@ CNN_ACTIV_DEF(cnn_softsign)
 #ifdef CNN_WITH_CUDA
     cnn_softsign_gpu(dst, src, len);
 #else
-#pragma omp parallel for shared(dst, src)
+    float srcVal;
+
+#pragma omp parallel for shared(dst, src) private(srcVal)
     for (int i = 0; i < len; i++)
     {
-        float srcVal = src[i];
+        srcVal = src[i];
         dst[i] = srcVal / (1.0 + fabs(srcVal));
     }
 #endif
@@ -367,10 +381,12 @@ CNN_ACTIV_DEF(cnn_sinc)
 #ifdef CNN_WITH_CUDA
     cnn_sinc_gpu(dst, src, len);
 #else
-#pragma omp parallel for shared(src, dst)
+    float srcVal;
+
+#pragma omp parallel for shared(src, dst) private(srcVal)
     for (int i = 0; i < len; i++)
     {
-        float srcVal = src[i];
+        srcVal = src[i];
         if (srcVal == 0.0)
         {
             dst[i] = 1.0;
@@ -389,10 +405,12 @@ CNN_ACTIV_DEF(cnn_sinc_grad)
     cnn_sinc_grad_gpu(dst, src, buf, len);
 #else
     // Find sinc gradient
-#pragma omp parallel for shared(src, dst)
+    float srcVal;
+
+#pragma omp parallel for shared(src, dst) private(srcVal)
     for (int i = 0; i < len; i++)
     {
-        float srcVal = src[i];
+        srcVal = src[i];
         if (srcVal == 0.0)
         {
             dst[i] = 0.0;
