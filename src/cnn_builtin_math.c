@@ -140,11 +140,10 @@ CNN_ACTIV_DEF(cnn_relu_grad)
 #ifdef CNN_WITH_CUDA
     cnn_relu_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find relu gradient
     // memset(dst, 0, len * sizeof(float));
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = (src[i] < 0.0f) ? 0 : 1;
     }
@@ -156,10 +155,11 @@ CNN_ACTIV_DEF(cnn_swish)
 #ifdef CNN_WITH_CUDA
     cnn_swish_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
-        dst[i] = src[i] / (1.0f + expf(-src[i]));
+        float tmp = src[i];
+        dst[i] = tmp / (1.0f + expf(-tmp));
     }
 #endif
 }
@@ -169,20 +169,21 @@ CNN_ACTIV_DEF(cnn_swish_grad)
 #ifdef CNN_WITH_CUDA
     cnn_swish_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find swish gradient
     // memset(dst, 0, len * sizeof(float));
     // cnn_swish(buf, src, len, NULL);
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src, buf)
+    for (int i = 0; i < len; i++)
     {
-        if (src[i] == 0.0f)
+        float srcVal = src[i];
+        if (srcVal == 0.0f)
         {
             dst[i] = 0.5;
         }
         else
         {
-            dst[i] = buf[i] + (buf[i] / src[i]) * (1.0f - buf[i]);
+            float bufVal = buf[i];
+            dst[i] = bufVal + (bufVal / srcVal) * (1.0f - bufVal);
         }
     }
 #endif
@@ -193,8 +194,8 @@ CNN_ACTIV_DEF(cnn_sigmoid)
 #ifdef CNN_WITH_CUDA
     cnn_sigmoid_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = 1.0 / (1.0 + exp(-src[i]));
     }
@@ -206,13 +207,14 @@ CNN_ACTIV_DEF(cnn_sigmoid_grad)
 #ifdef CNN_WITH_CUDA
     cnn_sigmoid_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find sigmoid gradient
     cnn_sigmoid(buf, src, len, NULL);
-    for (i = 0; i < len; i++)
+
+#pragma omp parallel for shared(dst, buf)
+    for (int i = 0; i < len; i++)
     {
-        dst[i] = buf[i] * (1.0 - buf[i]);
+        float bufVal = buf[i];
+        dst[i] = bufVal * (1.0 - bufVal);
     }
 #endif
 }
@@ -222,8 +224,8 @@ CNN_ACTIV_DEF(cnn_tanh)
 #ifdef CNN_WITH_CUDA
     cnn_tanh_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = 2.0 / (1.0 + exp(-2.0 * src[i])) - 1.0;
     }
@@ -235,13 +237,14 @@ CNN_ACTIV_DEF(cnn_tanh_grad)
 #ifdef CNN_WITH_CUDA
     cnn_tanh_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find tanh gradient
     cnn_tanh(buf, src, len, NULL);
-    for (i = 0; i < len; i++)
+
+#pragma omp parallel for shared(dst, buf)
+    for (int i = 0; i < len; i++)
     {
-        dst[i] = 1.0 - buf[i] * buf[i];
+        float bufVal = buf[i];
+        dst[i] = 1.0 - bufVal * bufVal;
     }
 #endif
 }
@@ -251,8 +254,8 @@ CNN_ACTIV_DEF(cnn_gaussian)
 #ifdef CNN_WITH_CUDA
     cnn_gaussian_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = exp(-pow(src[i], 2.0) * 0.5);
     }
@@ -264,11 +267,11 @@ CNN_ACTIV_DEF(cnn_gaussian_grad)
 #ifdef CNN_WITH_CUDA
     cnn_gaussian_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find gaussian gradient
     cnn_gaussian(buf, src, len, NULL);
-    for (i = 0; i < len; i++)
+
+#pragma omp parallel for shared(dst, src, buf)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = -src[i] * buf[i];
     }
@@ -280,10 +283,11 @@ CNN_ACTIV_DEF(cnn_bent_identity)
 #ifdef CNN_WITH_CUDA
     cnn_bent_identity_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
-        dst[i] = (sqrt(pow(src[i], 2) + 1.0) - 1.0) / 2.0 + src[i];
+        float srcVal = src[i];
+        dst[i] = (sqrt(pow(srcVal, 2) + 1.0) - 1.0) / 2.0 + srcVal;
     }
 #endif
 }
@@ -293,12 +297,12 @@ CNN_ACTIV_DEF(cnn_bent_identity_grad)
 #ifdef CNN_WITH_CUDA
     cnn_bent_identity_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find bent indentity gradient
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
-        dst[i] = src[i] / (2.0 * sqrt(pow(src[i], 2.0) + 1.0)) + 1.0;
+        float srcVal = src[i];
+        dst[i] = srcVal / (2.0 * sqrt(pow(srcVal, 2.0) + 1.0)) + 1.0;
     }
 #endif
 }
@@ -308,8 +312,8 @@ CNN_ACTIV_DEF(cnn_softplus)
 #ifdef CNN_WITH_CUDA
     cnn_softplus_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = log1p(exp(src[i]));
     }
@@ -321,10 +325,9 @@ CNN_ACTIV_DEF(cnn_softplus_grad)
 #ifdef CNN_WITH_CUDA
     cnn_softplus_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find softplus gradient
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = 1.0 / (1.0 + exp(-src[i]));
     }
@@ -336,10 +339,11 @@ CNN_ACTIV_DEF(cnn_softsign)
 #ifdef CNN_WITH_CUDA
     cnn_softsign_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
-        dst[i] = src[i] / (1.0 + fabs(src[i]));
+        float srcVal = src[i];
+        dst[i] = srcVal / (1.0 + fabs(srcVal));
     }
 #endif
 }
@@ -349,10 +353,9 @@ CNN_ACTIV_DEF(cnn_softsign_grad)
 #ifdef CNN_WITH_CUDA
     cnn_softsign_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find softsign gradient
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = 1.0 / pow(1.0 + fabs(src[i]), 2.0);
     }
@@ -364,16 +367,17 @@ CNN_ACTIV_DEF(cnn_sinc)
 #ifdef CNN_WITH_CUDA
     cnn_sinc_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(src, dst)
+    for (int i = 0; i < len; i++)
     {
-        if (src[i] == 0.0)
+        float srcVal = src[i];
+        if (srcVal == 0.0)
         {
             dst[i] = 1.0;
         }
         else
         {
-            dst[i] = sin(src[i]) / src[i];
+            dst[i] = sin(srcVal) / srcVal;
         }
     }
 #endif
@@ -384,18 +388,18 @@ CNN_ACTIV_DEF(cnn_sinc_grad)
 #ifdef CNN_WITH_CUDA
     cnn_sinc_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find sinc gradient
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(src, dst)
+    for (int i = 0; i < len; i++)
     {
-        if (src[i] == 0.0)
+        float srcVal = src[i];
+        if (srcVal == 0.0)
         {
             dst[i] = 0.0;
         }
         else
         {
-            dst[i] = (cos(src[i]) / src[i]) - (sin(src[i]) / pow(src[i], 2.0));
+            dst[i] = (cos(srcVal) / srcVal) - (sin(srcVal) / pow(srcVal, 2.0));
         }
     }
 #endif
@@ -406,8 +410,8 @@ CNN_ACTIV_DEF(cnn_sinusoid)
 #ifdef CNN_WITH_CUDA
     cnn_sin_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = sin(src[i]);
     }
@@ -419,10 +423,9 @@ CNN_ACTIV_DEF(cnn_sinusoid_grad)
 #ifdef CNN_WITH_CUDA
     cnn_sin_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find sinusoid gradient
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = cos(src[i]);
     }
@@ -434,8 +437,8 @@ CNN_ACTIV_DEF(cnn_identity)
 #ifdef CNN_WITH_CUDA
     cnn_identity_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = src[i];
     }
@@ -447,10 +450,9 @@ CNN_ACTIV_DEF(cnn_identity_grad)
 #ifdef CNN_WITH_CUDA
     cnn_identity_grad_gpu(dst, src, buf, len);
 #else
-    int i;
-
     // Find identity gradient
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = 1.0;
     }
