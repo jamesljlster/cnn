@@ -127,8 +127,8 @@ CNN_ACTIV_DEF(cnn_relu)
 #ifdef CNN_WITH_CUDA
     cnn_relu_gpu(dst, src, len);
 #else
-    int i;
-    for (i = 0; i < len; i++)
+#pragma omp parallel for shared(dst, src)
+    for (int i = 0; i < len; i++)
     {
         dst[i] = fmaxf(src[i], 0.0f);
     }
