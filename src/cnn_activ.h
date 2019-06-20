@@ -72,6 +72,7 @@ static inline void cnn_backward_activ(union CNN_LAYER* layerRef,
 #ifdef CNN_WITH_CUDA
             cnn_elemwise_product_gpu(gradOut, dstPtr, gradIn, size);
 #else
+#pragma omp parallel for shared(gradOut, dstPtr, gradIn)
             for (int k = 0; k < size; k++)
             {
                 gradOut[k] = dstPtr[k] * gradIn[k];
