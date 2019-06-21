@@ -214,7 +214,7 @@ CNN_ACTIV_DEF(cnn_sigmoid_grad)
     float bufVal;
 
     // Find sigmoid gradient
-    cnn_sigmoid(buf, src, len, NULL);
+    // cnn_sigmoid(buf, src, len, NULL);
 
 #pragma omp parallel for shared(dst, buf) private(bufVal)
     for (int i = 0; i < len; i++)
@@ -246,7 +246,7 @@ CNN_ACTIV_DEF(cnn_tanh_grad)
     float bufVal;
 
     // Find tanh gradient
-    cnn_tanh(buf, src, len, NULL);
+    // cnn_tanh(buf, src, len, NULL);
 
 #pragma omp parallel for shared(dst, buf) private(bufVal)
     for (int i = 0; i < len; i++)
@@ -276,7 +276,7 @@ CNN_ACTIV_DEF(cnn_gaussian_grad)
     cnn_gaussian_grad_gpu(dst, src, buf, len);
 #else
     // Find gaussian gradient
-    cnn_gaussian(buf, src, len, NULL);
+    // cnn_gaussian(buf, src, len, NULL);
 
 #pragma omp parallel for shared(dst, src, buf)
     for (int i = 0; i < len; i++)
