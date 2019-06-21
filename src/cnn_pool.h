@@ -21,43 +21,42 @@ static inline void cnn_pool_2d_max(float* dst, int* indexMat, int dstHeight,
 {
     int __dstImSize = dstHeight * dstWidth;
     int __srcImSize = srcHeight * srcWidth;
+    int __size = channel * __dstImSize;
 
-    for (int __ch = 0; __ch < channel; __ch++)
+#pragma omp parallel for
+    for (int __i = 0; __i < __size; __i++)
     {
+        int __ch = __i / __dstImSize;
+        int __h = (__i % __dstImSize) / dstWidth;
+        int __w = __i % dstWidth;
+
         int __dstChShift = __ch * __dstImSize;
         int __srcChShift = __ch * __srcImSize;
 
-        for (int __h = 0; __h < dstHeight; __h++)
+        float __tmp, __max;
+        int __maxIndex, __index;
+
+        __index = (__h * poolSize) * srcWidth + (__w * poolSize) + __srcChShift;
+        __max = src[__index];
+        __maxIndex = __index;
+        for (int __poolH = 0; __poolH < poolSize; __poolH++)
         {
-            for (int __w = 0; __w < dstWidth; __w++)
+            for (int __poolW = 0; __poolW < poolSize; __poolW++)
             {
-                float __tmp, __max;
-                int __maxIndex, __index;
-
-                __index = (__h * poolSize) * srcWidth + (__w * poolSize) +
-                          __srcChShift;
-                __max = src[__index];
-                __maxIndex = __index;
-                for (int __poolH = 0; __poolH < poolSize; __poolH++)
+                __index = ((__h * poolSize) + __poolH) * srcWidth +
+                          ((__w * poolSize) + __poolW) + __srcChShift;
+                __tmp = src[__index];
+                if (__tmp > __max)
                 {
-                    for (int __poolW = 0; __poolW < poolSize; __poolW++)
-                    {
-                        __index = ((__h * poolSize) + __poolH) * srcWidth +
-                                  ((__w * poolSize) + __poolW) + __srcChShift;
-                        __tmp = src[__index];
-                        if (__tmp > __max)
-                        {
-                            __max = __tmp;
-                            __maxIndex = __index;
-                        }
-                    }
+                    __max = __tmp;
+                    __maxIndex = __index;
                 }
-
-                __index = __h * dstWidth + __w + __dstChShift;
-                dst[__index] = __max;
-                indexMat[__index] = __maxIndex;
             }
         }
+
+        __index = __h * dstWidth + __w + __dstChShift;
+        dst[__index] = __max;
+        indexMat[__index] = __maxIndex;
     }
 }
 
@@ -66,9 +65,11 @@ static inline void cnn_pool_2d_max_grad(float* grad, int* indexMat,
                                         int iGradCols, int iCh)
 {
     int size = iGradRows * iGradCols * iCh;
+#pragma omp parallel for
     for (int __i = 0; __i < size; __i++)
     {
-        grad[indexMat[__i]] += iGrad[__i];
+        int __index = indexMat[__i];
+        grad[__index] += iGrad[__i];
     }
 }
 
