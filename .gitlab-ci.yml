@@ -1,0 +1,33 @@
+# Use docker image ical/source with lot's of develop library already builtin.
+image:
+  name: ical/source:latest
+
+variables:
+  GIT_DEPTH: "3"
+
+# Build task
+build:
+  stage: build
+
+  # Run build
+  script:
+    - mkdir build
+    - cd build
+    - cmake .. -DBUILD_TEST=ON
+    - make install
+
+  # Keep built binaries (expire in 1 day)
+  artifacts:
+    paths:
+      - build/
+    expire_in: 1 day
+
+# Test task
+test:
+  stage: test
+
+  # Run test
+  script:
+    - ./build/install/bin/test_link
+
+# vim: set tabstop=2 shiftwidth=2 expandtab :
