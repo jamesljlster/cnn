@@ -64,10 +64,9 @@ int main()
         2, 0, 2, 1, 0, 3, 1, 4, 4   //
     };
 
-    float bias[CH_OUT] = {0};
-    // float bias[CH_OUT] = {
-    //    1, 2  //
-    //};
+    float bias[CH_OUT] = {
+        1, 2  //
+    };
 
     float gradIn[IMG_WIDTH * IMG_HEIGHT * CH_OUT * BATCH] = {
         /* batch 1 */

@@ -109,6 +109,12 @@ int main()
         1, 2  //
     };
 
+    cudnnTensorDescriptor_t biasTen;
+    cudnn_run(cudnnCreateTensorDescriptor(&biasTen));
+    cudnn_run(cudnnSetTensor4dDescriptor(              //
+        biasTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+        1, CH_OUT, 1, 1));
+
     float gradIn[IMG_WIDTH * IMG_HEIGHT * CH_OUT * BATCH] = {
         /* batch 1 */
         0, 0, 0, 0,  //
@@ -154,23 +160,52 @@ int main()
         outN, outC, outH, outW));
 
     // cuDNN convolution algorithm
-    cudnnConvolutionFwdAlgo_t convAlgo;
+    cudnnConvolutionFwdAlgo_t convAlgoFW;
     cudnn_run(cudnnGetConvolutionForwardAlgorithm(
         cudnn,                                //
         srcTen, kernelTen, convDesc, outTen,  //
-        CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0, &convAlgo));
+        CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0, &convAlgoFW));
 
-    cnn_config_t cfg = NULL;
+    cudnnConvolutionBwdFilterAlgo_t convAlgoBWFilter;
+    cudnn_run(cudnnGetConvolutionBackwardFilterAlgorithm(
+        cudnn,                                //
+        srcTen, outTen, convDesc, kernelTen,  //
+        CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0, &convAlgoBWFilter));
+
+    cudnnConvolutionBwdDataAlgo_t convAlgoBWGrad;
+    cudnn_run(cudnnGetConvolutionBackwardDataAlgorithm(
+        cudnn,                                //
+        kernelTen, outTen, convDesc, srcTen,  //
+        CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0, &convAlgoBWGrad));
 
     // cuDNN convolution workspace
-    size_t wsSize;
+    size_t wsSizeFW;
     cudnn_run(cudnnGetConvolutionForwardWorkspaceSize(
-        cudnn, srcTen, kernelTen, convDesc, outTen, convAlgo, &wsSize));
+        cudnn, srcTen, kernelTen, convDesc, outTen, convAlgoFW, &wsSizeFW));
 
     float* wsData = NULL;
-    cuda_run(cudaMalloc((void**)&wsData, wsSize));
+    cuda_run(cudaMalloc((void**)&wsData, wsSizeFW));
+    printf("Forward workspace size: %lu\n", wsSizeFW);
 
-    printf("Workspace size: %lu\n", wsSize);
+    size_t wsSizeBWFilter;
+    cudnn_run(cudnnGetConvolutionBackwardFilterWorkspaceSize(
+        cudnn, srcTen, outTen, convDesc, kernelTen, convAlgoBWFilter,
+        &wsSizeBWFilter));
+
+    float* wsDataBWFilter = NULL;
+    cuda_run(cudaMalloc((void**)&wsDataBWFilter, wsSizeBWFilter));
+    printf("Backward filter workspace size: %lu\n", wsSizeBWFilter);
+
+    size_t wsSizeBWGrad;
+    cudnn_run(cudnnGetConvolutionBackwardDataWorkspaceSize(
+        cudnn, kernelTen, outTen, convDesc, srcTen, convAlgoBWGrad,
+        &wsSizeBWGrad));
+
+    float* wsDataBWGrad = NULL;
+    cuda_run(cudaMalloc((void**)&wsDataBWGrad, wsSizeBWGrad));
+    printf("Backward gradient workspace size: %lu\n", wsSizeBWGrad);
+
+    cnn_config_t cfg = NULL;
 
     // Create cnn
     test(cnn_init());
@@ -224,13 +259,20 @@ int main()
         // cnn_forward_conv(layer, cfg, 2);
 
         cudnn_run(
-            cudnnConvolutionForward(cudnn,                                //
-                                    &alpha,                               //
-                                    srcTen, layer[1].outMat.data.mat,     //
-                                    kernelTen, layer[2].conv.kernel.mat,  //
-                                    convDesc, convAlgo, wsData, wsSize,   //
-                                    &beta,                                //
+            cudnnConvolutionForward(cudnn,                                   //
+                                    &alpha,                                  //
+                                    srcTen, layer[1].outMat.data.mat,        //
+                                    kernelTen, layer[2].conv.kernel.mat,     //
+                                    convDesc, convAlgoFW, wsData, wsSizeFW,  //
+                                    &beta,                                   //
                                     outTen, layer[2].outMat.data.mat));
+
+        beta = 1.0;
+        cudnn_run(cudnnAddTensor(cudnn,                            //
+                                 &alpha,                           //
+                                 biasTen, layer[2].conv.bias.mat,  //
+                                 &beta,                            //
+                                 outTen, layer[2].outMat.data.mat));
 
         print_img_net_msg("Convolution output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
@@ -240,8 +282,37 @@ int main()
     // BP
     for (int i = 0; i < 2; i++)
     {
+        float alpha = 1.0;
+        float beta = 1.0;
+
         printf("***** BP #%d *****\n", i + 1);
-        cnn_backward_conv(layer, cfg, 2);
+        // cnn_backward_conv(layer, cfg, 2);
+
+        cudnn_run(cudnnConvolutionBackwardFilter(
+            cudnn,                                                       //
+            &alpha,                                                      //
+            srcTen, layer[1].outMat.data.mat,                            //
+            outTen, layer[2].outMat.data.grad,                           //
+            convDesc, convAlgoBWFilter, wsDataBWFilter, wsSizeBWFilter,  //
+            &beta,                                                       //
+            kernelTen, layer[2].conv.kernel.grad));
+
+        cudnn_run(
+            cudnnConvolutionBackwardBias(cudnn,                              //
+                                         &alpha,                             //
+                                         outTen, layer[2].outMat.data.grad,  //
+                                         &beta,                              //
+                                         biasTen, layer[2].conv.bias.grad));
+
+        beta = 0.0;
+        cudnn_run(cudnnConvolutionBackwardData(
+            cudnn,                                                 //
+            &alpha,                                                //
+            kernelTen, layer[2].conv.kernel.mat,                   //
+            outTen, layer[2].outMat.data.grad,                     //
+            convDesc, convAlgoBWGrad, wsDataBWGrad, wsSizeBWGrad,  //
+            &beta,                                                 //
+            srcTen, layer[1].outMat.data.grad));
 
         print_img_net_msg(
             "Convolution layer gradient:", layer[2].outMat.data.grad,
