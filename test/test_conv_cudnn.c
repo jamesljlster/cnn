@@ -179,31 +179,25 @@ int main()
         CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0, &convAlgoBWGrad));
 
     // cuDNN convolution workspace
-    size_t wsSizeFW;
+    size_t wsSize = 0;
+    size_t sizeTmp;
+
     cudnn_run(cudnnGetConvolutionForwardWorkspaceSize(
-        cudnn, srcTen, kernelTen, convDesc, outTen, convAlgoFW, &wsSizeFW));
+        cudnn, srcTen, kernelTen, convDesc, outTen, convAlgoFW, &sizeTmp));
+    if (sizeTmp > wsSize) wsSize = sizeTmp;
 
-    float* wsData = NULL;
-    cuda_run(cudaMalloc((void**)&wsData, wsSizeFW));
-    printf("Forward workspace size: %lu\n", wsSizeFW);
-
-    size_t wsSizeBWFilter;
     cudnn_run(cudnnGetConvolutionBackwardFilterWorkspaceSize(
         cudnn, srcTen, outTen, convDesc, kernelTen, convAlgoBWFilter,
-        &wsSizeBWFilter));
+        &sizeTmp));
+    if (sizeTmp > wsSize) wsSize = sizeTmp;
 
-    float* wsDataBWFilter = NULL;
-    cuda_run(cudaMalloc((void**)&wsDataBWFilter, wsSizeBWFilter));
-    printf("Backward filter workspace size: %lu\n", wsSizeBWFilter);
-
-    size_t wsSizeBWGrad;
     cudnn_run(cudnnGetConvolutionBackwardDataWorkspaceSize(
-        cudnn, kernelTen, outTen, convDesc, srcTen, convAlgoBWGrad,
-        &wsSizeBWGrad));
+        cudnn, kernelTen, outTen, convDesc, srcTen, convAlgoBWGrad, &sizeTmp));
+    if (sizeTmp > wsSize) wsSize = sizeTmp;
 
-    float* wsDataBWGrad = NULL;
-    cuda_run(cudaMalloc((void**)&wsDataBWGrad, wsSizeBWGrad));
-    printf("Backward gradient workspace size: %lu\n", wsSizeBWGrad);
+    float* wsData = NULL;
+    cuda_run(cudaMalloc((void**)&wsData, wsSize));
+    printf("Convolution workspace size: %lu\n", wsSize);
 
     cnn_config_t cfg = NULL;
 
@@ -259,12 +253,12 @@ int main()
         // cnn_forward_conv(layer, cfg, 2);
 
         cudnn_run(
-            cudnnConvolutionForward(cudnn,                                   //
-                                    &alpha,                                  //
-                                    srcTen, layer[1].outMat.data.mat,        //
-                                    kernelTen, layer[2].conv.kernel.mat,     //
-                                    convDesc, convAlgoFW, wsData, wsSizeFW,  //
-                                    &beta,                                   //
+            cudnnConvolutionForward(cudnn,                                 //
+                                    &alpha,                                //
+                                    srcTen, layer[1].outMat.data.mat,      //
+                                    kernelTen, layer[2].conv.kernel.mat,   //
+                                    convDesc, convAlgoFW, wsData, wsSize,  //
+                                    &beta,                                 //
                                     outTen, layer[2].outMat.data.mat));
 
         beta = 1.0;
@@ -289,12 +283,12 @@ int main()
         // cnn_backward_conv(layer, cfg, 2);
 
         cudnn_run(cudnnConvolutionBackwardFilter(
-            cudnn,                                                       //
-            &alpha,                                                      //
-            srcTen, layer[1].outMat.data.mat,                            //
-            outTen, layer[2].outMat.data.grad,                           //
-            convDesc, convAlgoBWFilter, wsDataBWFilter, wsSizeBWFilter,  //
-            &beta,                                                       //
+            cudnn,                                       //
+            &alpha,                                      //
+            srcTen, layer[1].outMat.data.mat,            //
+            outTen, layer[2].outMat.data.grad,           //
+            convDesc, convAlgoBWFilter, wsData, wsSize,  //
+            &beta,                                       //
             kernelTen, layer[2].conv.kernel.grad));
 
         cudnn_run(
@@ -306,12 +300,12 @@ int main()
 
         beta = 0.0;
         cudnn_run(cudnnConvolutionBackwardData(
-            cudnn,                                                 //
-            &alpha,                                                //
-            kernelTen, layer[2].conv.kernel.mat,                   //
-            outTen, layer[2].outMat.data.grad,                     //
-            convDesc, convAlgoBWGrad, wsDataBWGrad, wsSizeBWGrad,  //
-            &beta,                                                 //
+            cudnn,                                     //
+            &alpha,                                    //
+            kernelTen, layer[2].conv.kernel.mat,       //
+            outTen, layer[2].outMat.data.grad,         //
+            convDesc, convAlgoBWGrad, wsData, wsSize,  //
+            &beta,                                     //
             srcTen, layer[1].outMat.data.grad));
 
         print_img_net_msg(
