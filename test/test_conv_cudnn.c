@@ -2,11 +2,36 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <cuda.h>
+#include <cudnn.h>
+
 #include <cnn.h>
 #include <cnn_calc.h>
 #include <cnn_private.h>
 
 #include "test.h"
+
+#define cuda_run(func)                                              \
+    {                                                               \
+        cudaError_t __ret = func;                                   \
+        if (__ret != cudaSuccess)                                   \
+        {                                                           \
+            fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
+                    __FUNCTION__, __LINE__, #func, __ret);          \
+            return -1;                                              \
+        }                                                           \
+    }
+
+#define cudnn_run(func)                                             \
+    {                                                               \
+        cudnnStatus_t __ret = func;                                 \
+        if (__ret != CUDNN_STATUS_SUCCESS)                          \
+        {                                                           \
+            fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
+                    __FUNCTION__, __LINE__, #func, __ret);          \
+            return -1;                                              \
+        }                                                           \
+    }
 
 #define KERNEL_SIZE 3
 #define CH_IN 3
@@ -19,6 +44,10 @@ int main()
 {
     int size;
     union CNN_LAYER layer[3];
+
+    // cuDNN init
+    cudnnHandle_t cudnn;
+    cudnn_run(cudnnCreate(&cudnn));
 
     float src[IMG_WIDTH * IMG_HEIGHT * CH_IN * BATCH] = {
         /* batch 1 */
@@ -54,6 +83,12 @@ int main()
         3, 4, 4, 2   //
     };
 
+    cudnnTensorDescriptor_t srcTen;
+    cudnn_run(cudnnCreateTensorDescriptor(&srcTen));
+    cudnn_run(cudnnSetTensor4dDescriptor(             //
+        srcTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+        BATCH, CH_IN, IMG_HEIGHT, IMG_WIDTH));
+
     float kernel[CH_OUT * CH_IN * KERNEL_SIZE * KERNEL_SIZE] = {
         0, 3, 4, 0, 1, 2, 2, 4, 1,  //
         1, 3, 0, 0, 2, 0, 4, 4, 2,  //
@@ -64,10 +99,15 @@ int main()
         2, 0, 2, 1, 0, 3, 1, 4, 4   //
     };
 
-    float bias[CH_OUT] = {0};
-    // float bias[CH_OUT] = {
-    //    1, 2  //
-    //};
+    cudnnFilterDescriptor_t kernelTen;
+    cudnn_run(cudnnCreateFilterDescriptor(&kernelTen));
+    cudnn_run(cudnnSetFilter4dDescriptor(                //
+        kernelTen, CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,  //
+        CH_OUT, CH_IN, KERNEL_SIZE, KERNEL_SIZE));
+
+    float bias[CH_OUT] = {
+        1, 2  //
+    };
 
     float gradIn[IMG_WIDTH * IMG_HEIGHT * CH_OUT * BATCH] = {
         /* batch 1 */
@@ -93,7 +133,44 @@ int main()
         0, 2, 2, 3   //
     };
 
+    // cuDNN convolution descriptor
+    cudnnConvolutionDescriptor_t convDesc;
+    cudnn_run(cudnnCreateConvolutionDescriptor(&convDesc));
+    cudnn_run(cudnnSetConvolution2dDescriptor(         //
+        convDesc,                                      //
+        KERNEL_SIZE / 2, KERNEL_SIZE / 2, 1, 1, 1, 1,  //
+        CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT));
+
+    // cuDNN output tensor
+    int outN, outC, outH, outW;
+    cudnn_run(cudnnGetConvolution2dForwardOutputDim(
+        convDesc, srcTen, kernelTen, &outN, &outC, &outH, &outW));
+    printf("outN: %d, outC: %d, outH: %d, outW: %d\n", outN, outC, outH, outW);
+
+    cudnnTensorDescriptor_t outTen;
+    cudnn_run(cudnnCreateTensorDescriptor(&outTen));
+    cudnn_run(cudnnSetTensor4dDescriptor(             //
+        outTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+        outN, outC, outH, outW));
+
+    // cuDNN convolution algorithm
+    cudnnConvolutionFwdAlgo_t convAlgo;
+    cudnn_run(cudnnGetConvolutionForwardAlgorithm(
+        cudnn,                                //
+        srcTen, kernelTen, convDesc, outTen,  //
+        CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0, &convAlgo));
+
     cnn_config_t cfg = NULL;
+
+    // cuDNN convolution workspace
+    size_t wsSize;
+    cudnn_run(cudnnGetConvolutionForwardWorkspaceSize(
+        cudnn, srcTen, kernelTen, convDesc, outTen, convAlgo, &wsSize));
+
+    float* wsData = NULL;
+    cuda_run(cudaMalloc((void**)&wsData, wsSize));
+
+    printf("Workspace size: %lu\n", wsSize);
 
     // Create cnn
     test(cnn_init());
@@ -140,8 +217,20 @@ int main()
     // Forward
     for (int i = 0; i < 2; i++)
     {
+        float alpha = 1.0;
+        float beta = 0.0;
+
         printf("***** Forward #%d *****\n", i + 1);
-        cnn_forward_conv(layer, cfg, 2);
+        // cnn_forward_conv(layer, cfg, 2);
+
+        cudnn_run(
+            cudnnConvolutionForward(cudnn,                                //
+                                    &alpha,                               //
+                                    srcTen, layer[1].outMat.data.mat,     //
+                                    kernelTen, layer[2].conv.kernel.mat,  //
+                                    convDesc, convAlgo, wsData, wsSize,   //
+                                    &beta,                                //
+                                    outTen, layer[2].outMat.data.mat));
 
         print_img_net_msg("Convolution output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
