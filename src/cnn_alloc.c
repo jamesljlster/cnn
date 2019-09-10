@@ -405,7 +405,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
     // Create kernel tensor
     cnn_run_cudnn(cudnnCreateFilterDescriptor(&layerPtr->kernelTen), ret, ERR);
     cnn_run_cudnn(
-        cudnnSetFilterDescriptor(
+        cudnnSetFilter4dDescriptor(
             layerPtr->kernelTen, CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,  //
             cfgPtr->filter, inChannel, cfgPtr->size, cfgPtr->size),
         ret, ERR);
@@ -464,7 +464,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 
     // Set convolution algorithm
     cnn_run_cudnn(
-        cudnnSetConvolutionForwardAlgorithm(
+        cudnnGetConvolutionForwardAlgorithm(
             cnnInit.cudnnHandle,  //
             layerPtr->srcTen, layerPtr->kernelTen, layerPtr->convDesc,
             layerPtr->dstTen,  //

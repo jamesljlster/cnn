@@ -172,7 +172,8 @@ struct CNN_LAYER_CONV
     int inChannel;
 
 #ifdef CNN_WITH_CUDA
-    size_t wsSize;
+    size_t wsSize;  // cuDNN workspace size
+    float* wsData;  // global cuDNN workspace memory
 
     cudnnConvolutionDescriptor_t convDesc;
 

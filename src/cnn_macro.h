@@ -1,11 +1,14 @@
 #ifndef __CNN_MACRO_H__
 #define __CNN_MACRO_H__
 
+#include <assert.h>
+
 #include "cnn_config.h"
 
 // Includes
 #ifdef CNN_WITH_CUDA
 #include <cuda_runtime.h>
+#include <cudnn.h>
 #endif
 
 #ifdef DEBUG
@@ -125,7 +128,7 @@
 #define cnn_run_cudnn(func, retVal, errLabel)                       \
     {                                                               \
         cudnnStatus_t cuRet = func;                                 \
-        if (cuRet != CUDA_STATUS_SUCCESS)                           \
+        if (cuRet != CUDNN_STATUS_SUCCESS)                          \
         {                                                           \
             fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
                     __FUNCTION__, __LINE__, #func, cuRet);          \
@@ -143,5 +146,16 @@
         }                                     \
     }
 #endif
+
+#define cnn_assert_cudnn(func)                                      \
+    {                                                               \
+        cudnnStatus_t cuRet = func;                                 \
+        if (cuRet != CUDNN_STATUS_SUCCESS)                          \
+        {                                                           \
+            fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
+                    __FUNCTION__, __LINE__, #func, cuRet);          \
+            assert(0);                                              \
+        }                                                           \
+    }
 
 #endif
