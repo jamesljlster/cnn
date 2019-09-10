@@ -16,6 +16,10 @@ struct CNN_INIT
 #ifdef CNN_WITH_CUDA
     cublasHandle_t blasHandle;
     cudnnHandle_t cudnnHandle;
+
+    // cuDNN global workspace memory
+    size_t wsSize;  // cuDNN workspace size
+    float* wsData;  // global cuDNN workspace memory
 #endif
 };
 
@@ -37,6 +41,10 @@ extern "C"
     float cnn_xavier_init(struct CNN_BOX_MULLER* bmPtr, int inSize,
                           int outSize);
     float cnn_zero(void);
+
+#ifdef CNN_WITH_CUDA
+    int cnn_cudnn_ws_alloc(void);
+#endif
 
 #ifdef __cplusplus
 }

@@ -172,9 +172,6 @@ struct CNN_LAYER_CONV
     int inChannel;
 
 #ifdef CNN_WITH_CUDA
-    size_t wsSize;  // cuDNN workspace size
-    float* wsData;  // global cuDNN workspace memory
-
     cudnnConvolutionDescriptor_t convDesc;
 
     cudnnTensorDescriptor_t srcTen;
@@ -281,12 +278,6 @@ struct CNN
     union CNN_LAYER* layerList;
 
     int dropEnable;
-
-#ifdef CNN_WITH_CUDA
-    // cuDNN global workspace memory
-    size_t wsSize;
-    float* wsData;
-#endif
 };
 
 #endif

@@ -256,9 +256,9 @@ static inline void cnn_forward_conv(union CNN_LAYER* layerRef,
         &alpha,                                                      //
         layerPtr->srcTen, layerRef[layerIndex - 1].outMat.data.mat,  //
         layerPtr->kernelTen, layerPtr->kernel.mat,                   //
-        layerPtr->convDesc, layerPtr->convAlgoFW, layerPtr->wsData,
-        layerPtr->wsSize,  //
-        &beta,             //
+        layerPtr->convDesc, layerPtr->convAlgoFW, cnnInit.wsData,
+        cnnInit.wsSize,  //
+        &beta,           //
         layerPtr->dstTen, layerPtr->outMat.data.mat));
 
 #if defined(CNN_CONV_BIAS_FILTER)
@@ -385,9 +385,9 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
         &alpha,                                                      //
         layerPtr->srcTen, layerRef[layerIndex - 1].outMat.data.mat,  //
         layerPtr->dstTen, layerRef[layerIndex].outMat.data.grad,     //
-        layerPtr->convDesc, layerPtr->convAlgoBWFilter, layerPtr->wsData,
-        layerPtr->wsSize,  //
-        &beta,             //
+        layerPtr->convDesc, layerPtr->convAlgoBWFilter, cnnInit.wsData,
+        cnnInit.wsSize,  //
+        &beta,           //
         layerPtr->kernelTen, layerPtr->kernel.grad));
 
     cnn_assert_cudnn(cudnnConvolutionBackwardBias(
@@ -403,9 +403,9 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
         &alpha,                                        //
         layerPtr->kernelTen, layerPtr->kernel.mat,     //
         layerPtr->dstTen, layerPtr->outMat.data.grad,  //
-        layerPtr->convDesc, layerPtr->convAlgoBWGrad, layerPtr->wsData,
-        layerPtr->wsSize,  //
-        &beta,             //
+        layerPtr->convDesc, layerPtr->convAlgoBWGrad, cnnInit.wsData,
+        cnnInit.wsSize,  //
+        &beta,           //
         layerPtr->srcTen, layerRef[layerIndex - 1].outMat.data.grad));
 
 #else

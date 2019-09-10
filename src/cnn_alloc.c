@@ -509,7 +509,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
                   ret, ERR);
     if (sizeTmp > wsSize) wsSize = sizeTmp;
 
-    layerPtr->wsSize = wsSize;
+    cnnInit.wsSize = wsSize;
 
 #else
     // Find output image size

@@ -65,6 +65,9 @@ void cnn_deinit()
 
         // Destroy cuDNN
         cudnnDestroy(cnnInit.cudnnHandle);
+
+        // Free workspace
+        cnn_free_cu(cnnInit.wsData);
 #endif
 
         // Reset memory
@@ -435,3 +438,30 @@ RET:
     (void)ret;
 #endif
 }
+
+#ifdef CNN_WITH_CUDA
+int cnn_cudnn_ws_alloc(void)
+{
+    int ret = CNN_NO_ERROR;
+
+    // Check initialize status
+    if (!cnnInit.inited)
+    {
+        ret = CNN_NOT_INITIALIZED;
+        goto RET;
+    }
+
+    // Allocate cuDNN workspace
+    if (cnnInit.wsSize)
+    {
+        if (cudaMalloc((void**)&cnnInit.wsData, cnnInit.wsSize) != cudaSuccess)
+        {
+            ret = CNN_MEM_FAILED;
+            goto RET;
+        }
+    }
+
+RET:
+    return ret;
+}
+#endif
