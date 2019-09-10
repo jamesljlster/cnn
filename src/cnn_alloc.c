@@ -547,11 +547,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
     cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 #endif
 
-#ifdef CNN_WITH_CUDA
-    // Do nothing
-    // cnn_alloc_cu(layerPtr->indexMap, outWidth * outHeight * kCols, int, ret,
-    //             ERR);
-#else
+#ifndef CNN_WITH_CUDA
     cnn_run(cnn_mat_alloc(&layerPtr->unroll, outWidth * outHeight * batch,
                           kCols, 1),
             ret, ERR);
@@ -565,40 +561,17 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
     layerPtr->inChannel = inChannel;
     layerPtr->outMat.channel = outChannel;
 
-    //#ifdef CNN_WITH_CUDA
-    //    // Cache index map size
-    //    size = outWidth * outHeight * kCols;
-    //
-    //    // Buffer allocation
-    //    cnn_alloc(tmpVec, size, int, ret, ERR);
-    //#endif
-
+#ifndef CNN_WITH_CUDA
     // Initial index mapping
     switch (cfgPtr->pad)
     {
         case CNN_PAD_VALID:
-#ifdef CNN_WITH_CUDA
-//            cnn_conv_unroll_2d_valid(tmpVec, outHeight, outWidth,
-//            cfgPtr->size,
-//                                     inHeight, inWidth, inChannel);
-//
-#else
             cnn_conv_unroll_2d_valid(layerPtr->indexMap, outHeight, outWidth,
                                      cfgPtr->size, inHeight, inWidth,
                                      inChannel);
-#endif
             break;
 
         case CNN_PAD_SAME:
-#ifdef CNN_WITH_CUDA
-//            for (int i = 0; i < outWidth * outHeight * kCols; i++)
-//            {
-//                tmpVec[i] = -1;
-//            }
-//
-//            cnn_conv_unroll_2d_same(tmpVec, outHeight, outWidth, cfgPtr->size,
-//                                    inHeight, inWidth, inChannel);
-#else
             for (int i = 0; i < outWidth * outHeight * kCols; i++)
             {
                 layerPtr->indexMap[i] = -1;
@@ -606,18 +579,11 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 
             cnn_conv_unroll_2d_same(layerPtr->indexMap, outHeight, outWidth,
                                     cfgPtr->size, inHeight, inWidth, inChannel);
-#endif
             break;
 
         default:
             assert(!"Invalid padding type");
     }
-
-#ifdef CNN_WITH_CUDA
-//    // Copy memory
-//    cnn_run_cu(cudaMemcpy(layerPtr->indexMap, tmpVec, size * sizeof(int),
-//                          cudaMemcpyHostToDevice),
-//               ret, ERR);
 #endif
 
     goto RET;
@@ -626,11 +592,6 @@ ERR:
     cnn_layer_conv_delete(layerPtr);
 
 RET:
-#ifdef CNN_WITH_CUDA
-    // Free buffer
-    // cnn_free(tmpVec);
-#endif
-
     return ret;
 }
 
