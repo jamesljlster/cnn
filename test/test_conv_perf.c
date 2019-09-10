@@ -68,6 +68,10 @@ int main(int argc, char* argv[])
                               (struct CNN_CONFIG_LAYER_CONV*)&cfg->layerCfg[2],
                               imgWidth, imgHeight, chIn, cfg->batch));
 
+#ifdef CNN_WITH_CUDA
+    test(cnn_cudnn_ws_alloc());
+#endif
+
     // Performance test
     printf("Forward (ms), Backward (ms)\n");
     for (int s = 0; s < samples; s++)
