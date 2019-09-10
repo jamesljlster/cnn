@@ -15,6 +15,7 @@ struct CNN_INIT
 
 #ifdef CNN_WITH_CUDA
     cublasHandle_t blasHandle;
+    cudnnHandle_t cudnnHandle;
 #endif
 };
 

@@ -42,6 +42,10 @@ int cnn_init()
         ret = CNN_CUDA_RUNTIME_ERROR;
         goto RET;
     }
+
+    // Initial cuDNN
+    cnn_run_cudnn(cudnnCreate(&cnnInit.cudnnHandle), ret, RET);
+
 #endif
 
     // Assign value
@@ -58,6 +62,9 @@ void cnn_deinit()
 #ifdef CNN_WITH_CUDA
         // Destroy cublas
         cublasDestroy(cnnInit.blasHandle);
+
+        // Destroy cuDNN
+        cudnnDestroy(cnnInit.cudnnHandle);
 #endif
 
         // Reset memory

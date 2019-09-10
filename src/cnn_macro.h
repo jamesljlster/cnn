@@ -121,4 +121,27 @@
     }
 #endif
 
+#ifdef DEBUG
+#define cnn_run_cudnn(func, retVal, errLabel)                       \
+    {                                                               \
+        cudnnStatus_t cuRet = func;                                 \
+        if (cuRet != CUDA_STATUS_SUCCESS)                           \
+        {                                                           \
+            fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
+                    __FUNCTION__, __LINE__, #func, cuRet);          \
+            retVal = CNN_CUDA_RUNTIME_ERROR;                        \
+            goto errLabel;                                          \
+        }                                                           \
+    }
+#else
+#define cnn_run_cudnn(func, retVal, errLabel) \
+    {                                         \
+        if (func != CUDNN_STATUS_SUCCESS)     \
+        {                                     \
+            retVal = CNN_CUDA_RUNTIME_ERROR;  \
+            goto errLabel;                    \
+        }                                     \
+    }
+#endif
+
 #endif
