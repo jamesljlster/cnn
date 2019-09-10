@@ -42,6 +42,10 @@ int cnn_init()
         ret = CNN_CUDA_RUNTIME_ERROR;
         goto RET;
     }
+
+    // Initial cuDNN
+    cnn_run_cudnn(cudnnCreate(&cnnInit.cudnnHandle), ret, RET);
+
 #endif
 
     // Assign value
@@ -58,6 +62,12 @@ void cnn_deinit()
 #ifdef CNN_WITH_CUDA
         // Destroy cublas
         cublasDestroy(cnnInit.blasHandle);
+
+        // Destroy cuDNN
+        cudnnDestroy(cnnInit.cudnnHandle);
+
+        // Free workspace
+        cnn_free_cu(cnnInit.wsData);
 #endif
 
         // Reset memory
@@ -428,3 +438,30 @@ RET:
     (void)ret;
 #endif
 }
+
+#ifdef CNN_WITH_CUDA
+int cnn_cudnn_ws_alloc(void)
+{
+    int ret = CNN_NO_ERROR;
+
+    // Check initialize status
+    if (!cnnInit.inited)
+    {
+        ret = CNN_NOT_INITIALIZED;
+        goto RET;
+    }
+
+    // Allocate cuDNN workspace
+    if (cnnInit.wsSize)
+    {
+        if (cudaMalloc((void**)&cnnInit.wsData, cnnInit.wsSize) != cudaSuccess)
+        {
+            ret = CNN_MEM_FAILED;
+            goto RET;
+        }
+    }
+
+RET:
+    return ret;
+}
+#endif

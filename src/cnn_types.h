@@ -4,6 +4,10 @@
 #include "cnn.h"
 #include "cnn_config.h"
 
+#ifdef CNN_WITH_CUDA
+#include <cudnn.h>
+#endif
+
 // CNN matrix type
 struct CNN_MAT
 {
@@ -167,9 +171,28 @@ struct CNN_LAYER_CONV
     // Channel
     int inChannel;
 
+#ifdef CNN_WITH_CUDA
+    cudnnConvolutionDescriptor_t convDesc;
+
+    cudnnTensorDescriptor_t srcTen;
+    cudnnTensorDescriptor_t dstTen;
+    cudnnFilterDescriptor_t kernelTen;
+
+#if defined(CNN_CONV_BIAS_FILTER)
+    cudnnTensorDescriptor_t biasTen;
+#elif defined(CNN_CONV_BIAS_LAYER)
+#error Unsupported convolution bias type
+#endif
+
+    cudnnConvolutionFwdAlgo_t convAlgoFW;
+    cudnnConvolutionBwdFilterAlgo_t convAlgoBWFilter;
+    cudnnConvolutionBwdDataAlgo_t convAlgoBWGrad;
+
+#else
     // Convolution to gemm
     int* indexMap;
     struct CNN_MAT unroll;
+#endif
 };
 
 struct CNN_LAYER_POOL

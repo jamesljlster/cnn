@@ -382,7 +382,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 {
     int ret = CNN_NO_ERROR;
     int outRows, outCols;                 // Output matrix size
-    int outWidth, outHeight, outChannel;  // Valid convolution output size
+    int outWidth, outHeight, outChannel;  // Convolution output size
     int kRows, kCols;                     // Kernel matrix size
 
 #if defined(CNN_CONV_BIAS_FILTER) || defined(CNN_CONV_BIAS_LAYER)
@@ -390,15 +390,134 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 #endif
 
 #ifdef CNN_WITH_CUDA
-    int size;
-    int* tmpVec = NULL;
+    int padSize;        // Padding size
+    int outBatch;       // Convolution output batch size
+    size_t wsSize = 0;  // cuDNN workspace size
+    size_t sizeTmp;
+
+    // Create source tensor
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->srcTen), ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(
+                      layerPtr->srcTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      batch, inChannel, inHeight, inWidth),
+                  ret, ERR);
+
+    // Create kernel tensor
+    cnn_run_cudnn(cudnnCreateFilterDescriptor(&layerPtr->kernelTen), ret, ERR);
+    cnn_run_cudnn(
+        cudnnSetFilter4dDescriptor(
+            layerPtr->kernelTen, CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,  //
+            cfgPtr->filter, inChannel, cfgPtr->size, cfgPtr->size),
+        ret, ERR);
+
+    // Create bias tensor
+#if defined(CNN_CONV_BIAS_FILTER)
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->biasTen), ret, ERR);
+    cnn_run_cudnn(
+        cudnnSetTensor4dDescriptor(layerPtr->biasTen, CUDNN_TENSOR_NCHW,
+                                   CUDNN_DATA_FLOAT,  //
+                                   1, cfgPtr->filter, 1, 1),
+        ret, ERR);
+#elif defined(CNN_CONV_BIAS_LAYER)
+#error Unsupported convolution bias type
 #endif
 
+    // Create convolution descriptor
+    cnn_run_cudnn(cudnnCreateConvolutionDescriptor(&layerPtr->convDesc), ret,
+                  ERR);
+
+    switch (cfgPtr->pad)
+    {
+        case CNN_PAD_VALID:
+            padSize = 0;
+            break;
+
+        case CNN_PAD_SAME:
+            padSize = cfgPtr->size / 2;
+            break;
+
+        default:
+            assert(!"Invalid padding type");
+    }
+
+    cnn_run_cudnn(cudnnSetConvolution2dDescriptor(
+                      layerPtr->convDesc,            //
+                      padSize, padSize, 1, 1, 1, 1,  //
+                      CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT),
+                  ret, ERR);
+
+    // Create destination tensor
+    cnn_run_cudnn(cudnnGetConvolution2dForwardOutputDim(
+                      layerPtr->convDesc, layerPtr->srcTen, layerPtr->kernelTen,
+                      &outBatch, &outChannel, &outHeight, &outWidth),
+                  ret, ERR);
+    if (outBatch != batch)
+    {
+        assert(!"Batch size is not invarriant");
+    }
+
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->dstTen), ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(
+                      layerPtr->dstTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      outBatch, outChannel, outHeight, outWidth),
+                  ret, ERR);
+
+    // Set convolution algorithm
+    cnn_run_cudnn(
+        cudnnGetConvolutionForwardAlgorithm(
+            cnnInit.cudnnHandle,  //
+            layerPtr->srcTen, layerPtr->kernelTen, layerPtr->convDesc,
+            layerPtr->dstTen,  //
+            CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0, &layerPtr->convAlgoFW),
+        ret, ERR);
+
+    cnn_run_cudnn(cudnnGetConvolutionBackwardFilterAlgorithm(
+                      cnnInit.cudnnHandle,  //
+                      layerPtr->srcTen, layerPtr->dstTen, layerPtr->convDesc,
+                      layerPtr->kernelTen,  //
+                      CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0,
+                      &layerPtr->convAlgoBWFilter),
+                  ret, ERR);
+
+    cnn_run_cudnn(cudnnGetConvolutionBackwardDataAlgorithm(
+                      cnnInit.cudnnHandle,  //
+                      layerPtr->kernelTen, layerPtr->dstTen, layerPtr->convDesc,
+                      layerPtr->srcTen,  //
+                      CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0,
+                      &layerPtr->convAlgoBWGrad),
+                  ret, ERR);
+
+    // Find workspace size
+    cnn_run_cudnn(cudnnGetConvolutionForwardWorkspaceSize(
+                      cnnInit.cudnnHandle, layerPtr->srcTen,
+                      layerPtr->kernelTen, layerPtr->convDesc, layerPtr->dstTen,
+                      layerPtr->convAlgoFW, &sizeTmp),
+                  ret, ERR);
+    if (sizeTmp > wsSize) wsSize = sizeTmp;
+
+    cnn_run_cudnn(cudnnGetConvolutionBackwardFilterWorkspaceSize(
+                      cnnInit.cudnnHandle, layerPtr->srcTen, layerPtr->dstTen,
+                      layerPtr->convDesc, layerPtr->kernelTen,
+                      layerPtr->convAlgoBWFilter, &sizeTmp),
+                  ret, ERR);
+    if (sizeTmp > wsSize) wsSize = sizeTmp;
+
+    cnn_run_cudnn(cudnnGetConvolutionBackwardDataWorkspaceSize(
+                      cnnInit.cudnnHandle, layerPtr->kernelTen,
+                      layerPtr->dstTen, layerPtr->convDesc, layerPtr->srcTen,
+                      layerPtr->convAlgoBWGrad, &sizeTmp),
+                  ret, ERR);
+    if (sizeTmp > wsSize) wsSize = sizeTmp;
+
+    cnnInit.wsSize = wsSize;
+
+#else
     // Find output image size
     cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
                                           inWidth, inHeight, inChannel,
                                           (union CNN_CONFIG_LAYER*)cfgPtr),
             ret, RET);
+#endif
 
     // Find allocate size
     outRows = batch;
@@ -428,14 +547,11 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
     cnn_run(cnn_mat_alloc(&layerPtr->bias, bRows, bCols, 1), ret, ERR);
 #endif
 
+#ifndef CNN_WITH_CUDA
     cnn_run(cnn_mat_alloc(&layerPtr->unroll, outWidth * outHeight * batch,
                           kCols, 1),
             ret, ERR);
 
-#ifdef CNN_WITH_CUDA
-    cnn_alloc_cu(layerPtr->indexMap, outWidth * outHeight * kCols, int, ret,
-                 ERR);
-#else
     cnn_alloc(layerPtr->indexMap, outWidth * outHeight * kCols, int, ret, ERR);
 #endif
 
@@ -445,39 +561,17 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
     layerPtr->inChannel = inChannel;
     layerPtr->outMat.channel = outChannel;
 
-#ifdef CNN_WITH_CUDA
-    // Cache index map size
-    size = outWidth * outHeight * kCols;
-
-    // Buffer allocation
-    cnn_alloc(tmpVec, size, int, ret, ERR);
-#endif
-
+#ifndef CNN_WITH_CUDA
     // Initial index mapping
     switch (cfgPtr->pad)
     {
         case CNN_PAD_VALID:
-#ifdef CNN_WITH_CUDA
-            cnn_conv_unroll_2d_valid(tmpVec, outHeight, outWidth, cfgPtr->size,
-                                     inHeight, inWidth, inChannel);
-
-#else
             cnn_conv_unroll_2d_valid(layerPtr->indexMap, outHeight, outWidth,
                                      cfgPtr->size, inHeight, inWidth,
                                      inChannel);
-#endif
             break;
 
         case CNN_PAD_SAME:
-#ifdef CNN_WITH_CUDA
-            for (int i = 0; i < outWidth * outHeight * kCols; i++)
-            {
-                tmpVec[i] = -1;
-            }
-
-            cnn_conv_unroll_2d_same(tmpVec, outHeight, outWidth, cfgPtr->size,
-                                    inHeight, inWidth, inChannel);
-#else
             for (int i = 0; i < outWidth * outHeight * kCols; i++)
             {
                 layerPtr->indexMap[i] = -1;
@@ -485,18 +579,11 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 
             cnn_conv_unroll_2d_same(layerPtr->indexMap, outHeight, outWidth,
                                     cfgPtr->size, inHeight, inWidth, inChannel);
-#endif
             break;
 
         default:
             assert(!"Invalid padding type");
     }
-
-#ifdef CNN_WITH_CUDA
-    // Copy memory
-    cnn_run_cu(cudaMemcpy(layerPtr->indexMap, tmpVec, size * sizeof(int),
-                          cudaMemcpyHostToDevice),
-               ret, ERR);
 #endif
 
     goto RET;
@@ -505,11 +592,6 @@ ERR:
     cnn_layer_conv_delete(layerPtr);
 
 RET:
-#ifdef CNN_WITH_CUDA
-    // Free buffer
-    cnn_free(tmpVec);
-#endif
-
     return ret;
 }
 

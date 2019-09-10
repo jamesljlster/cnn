@@ -120,6 +120,10 @@ int main()
                               (struct CNN_CONFIG_LAYER_CONV*)&cfg->layerCfg[2],
                               IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch));
 
+#ifdef CNN_WITH_CUDA
+    test(cnn_cudnn_ws_alloc());
+#endif
+
     // Copy memory
     size =
         sizeof(float) * layer[1].outMat.data.rows * layer[1].outMat.data.cols;
