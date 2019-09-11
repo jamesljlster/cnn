@@ -15,20 +15,35 @@
 static inline void cnn_forward_fc(union CNN_LAYER* layerRef,
                                   struct CNN_CONFIG* cfgRef, int layerIndex)
 {
-    // Weight matrix multiplication
 #ifdef CNN_WITH_CUDA
     float alpha = 1.0;
     float beta = 0.0;
-    cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
-                layerRef[layerIndex].outMat.data.cols, cfgRef->batch,
-                layerRef[layerIndex - 1].outMat.data.cols, &alpha,
-                layerRef[layerIndex].fc.weight.mat,
-                layerRef[layerIndex].fc.weight.cols,
-                layerRef[layerIndex - 1].outMat.data.mat,
-                layerRef[layerIndex - 1].outMat.data.cols, &beta,
-                layerRef[layerIndex].outMat.data.mat,
-                layerRef[layerIndex].outMat.data.cols);
+
+    struct CNN_LAYER_FC* layerPtr = &layerRef[layerIndex].fc;
+
+    struct CNN_MAT* wPtr = &layerPtr->weight;
+    struct CNN_MAT* outData = &layerPtr->outMat.data;
+    struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
+
+    // Weight matrix multiplication
+    cnn_assert_cu(cublasSgemm(                           //
+        cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N,    //
+        outData->cols, cfgRef->batch, preOutData->cols,  //
+        &alpha,                                          //
+        wPtr->mat, wPtr->cols,                           //
+        preOutData->mat, preOutData->cols,               //
+        &beta,                                           //
+        outData->mat, outData->cols));
+
+    // Add bias
+    beta = 1.0;
+    cnn_assert_cudnn(cudnnAddTensor(cnnInit.cudnnHandle,                    //
+                                    &alpha,                                 //
+                                    layerPtr->biasTen, layerPtr->bias.mat,  //
+                                    &beta,                                  //
+                                    layerPtr->dstTen, outData->mat));
 #else
+    // Weight matrix multiplication
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                 layerRef[layerIndex - 1].outMat.data.rows,
                 layerRef[layerIndex].outMat.data.cols,
@@ -39,25 +54,16 @@ static inline void cnn_forward_fc(union CNN_LAYER* layerRef,
                 layerRef[layerIndex].fc.weight.cols, 0.0,
                 layerRef[layerIndex].outMat.data.mat,
                 layerRef[layerIndex].outMat.data.cols);
-#endif
 
     // Add bias
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int dstIndex = j * layerRef[layerIndex].outMat.data.cols;
-
-#ifdef CNN_WITH_CUDA
-        beta = 1.0;
-        cublasSaxpy(cnnInit.blasHandle, layerRef[layerIndex].outMat.data.cols,
-                    &alpha, layerRef[layerIndex].fc.bias.mat, 1,
-                    layerRef[layerIndex].outMat.data.mat + dstIndex, 1);
-#else
-
         cblas_saxpy(layerRef[layerIndex].fc.bias.cols, 1.0,
                     layerRef[layerIndex].fc.bias.mat, 1,
                     &layerRef[layerIndex].outMat.data.mat[dstIndex], 1);
-#endif
     }
+#endif
 }
 
 static inline void cnn_backward_fc(union CNN_LAYER* layerRef,

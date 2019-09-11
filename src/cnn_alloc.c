@@ -314,6 +314,23 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
     bRows = 1;
     bCols = cfgPtr->size;
 
+#ifdef CNN_WITH_CUDA
+    // Create bias tensor
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->biasTen), ret, ERR);
+    cnn_run_cudnn(
+        cudnnSetTensor4dDescriptor(layerPtr->biasTen, CUDNN_TENSOR_NCHW,
+                                   CUDNN_DATA_FLOAT,  //
+                                   1, outChannel, outHeight, outWidth),
+        ret, ERR);
+
+    // Create destination tensor
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->dstTen), ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(
+                      layerPtr->dstTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      batch, outChannel, outHeight, outWidth),
+                  ret, ERR);
+#endif
+
     // Allocate memory
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
             ERR);

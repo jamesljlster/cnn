@@ -153,6 +153,11 @@ struct CNN_LAYER_FC
 
     // Bias vector
     struct CNN_MAT bias;
+
+#ifdef CNN_WITH_CUDA
+    cudnnTensorDescriptor_t biasTen;
+    cudnnTensorDescriptor_t dstTen;
+#endif
 };
 
 struct CNN_LAYER_CONV

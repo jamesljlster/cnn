@@ -454,6 +454,12 @@ int cnn_cudnn_ws_alloc(void)
     // Allocate cuDNN workspace
     if (cnnInit.wsSize)
     {
+        if (cnnInit.wsData)
+        {
+            cnn_free_cu(cnnInit.wsData);
+            cnnInit.wsData = NULL;
+        }
+
         if (cudaMalloc((void**)&cnnInit.wsData, cnnInit.wsSize) != cudaSuccess)
         {
             ret = CNN_MEM_FAILED;
