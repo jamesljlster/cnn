@@ -69,20 +69,35 @@ static inline void cnn_forward_fc(union CNN_LAYER* layerRef,
 static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
                                    struct CNN_CONFIG* cfgRef, int layerIndex)
 {
-    // Sum weight gradient matrix
 #ifdef CNN_WITH_CUDA
     float alpha = 1.0;
     float beta = 1.0;
-    cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_T,
-                layerRef[layerIndex].fc.weight.cols,
-                layerRef[layerIndex].fc.weight.rows, cfgRef->batch, &alpha,
-                layerRef[layerIndex].outMat.data.grad,
-                layerRef[layerIndex].outMat.data.cols,
-                layerRef[layerIndex - 1].outMat.data.mat,
-                layerRef[layerIndex - 1].outMat.data.cols, &beta,
-                layerRef[layerIndex].fc.weight.grad,
-                layerRef[layerIndex].fc.weight.cols);
+
+    struct CNN_LAYER_FC* layerPtr = &layerRef[layerIndex].fc;
+
+    struct CNN_MAT* wPtr = &layerPtr->weight;
+    struct CNN_MAT* outData = &layerPtr->outMat.data;
+    struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
+
+    // Sum weight gradient matrix
+    cnn_assert_cu(cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_T,  //
+                              wPtr->cols, wPtr->rows, cfgRef->batch,         //
+                              &alpha,                                        //
+                              outData->grad, outData->cols,                  //
+                              preOutData->mat, preOutData->cols,             //
+                              &beta,                                         //
+                              wPtr->grad, wPtr->cols));
+
+    // Sum bias gradient matrix
+    cnn_assert_cudnn(cudnnReduceTensor(cnnInit.cudnnHandle, layerPtr->reduDesc,
+                                       layerPtr->indData, layerPtr->indSize,  //
+                                       cnnInit.wsData, cnnInit.wsSize,        //
+                                       &alpha,                                //
+                                       layerPtr->dstTen, outData->grad,       //
+                                       &beta,                                 //
+                                       layerPtr->biasTen, layerPtr->bias.grad));
 #else
+    // Sum weight gradient matrix
     cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
                 layerRef[layerIndex].fc.weight.rows,
                 layerRef[layerIndex].fc.weight.cols, cfgRef->batch, 1.0,
@@ -92,38 +107,29 @@ static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
                 layerRef[layerIndex].outMat.data.cols, 1.0,
                 layerRef[layerIndex].fc.weight.grad,
                 layerRef[layerIndex].fc.weight.cols);
-#endif
 
     // Sum bias gradient matrix
     for (int j = 0; j < cfgRef->batch; j++)
     {
         int srcShift = j * layerRef[layerIndex].outMat.data.cols;
-
-#ifdef CNN_WITH_CUDA
-        cublasSaxpy(cnnInit.blasHandle, layerRef[layerIndex].fc.bias.cols,
-                    &alpha, layerRef[layerIndex].outMat.data.grad + srcShift, 1,
-                    layerRef[layerIndex].fc.bias.grad, 1);
-#else
         cblas_saxpy(layerRef[layerIndex].fc.bias.cols, 1.0,
                     &layerRef[layerIndex].outMat.data.grad[srcShift], 1,
                     layerRef[layerIndex].fc.bias.grad, 1);
-#endif
     }
+#endif
 
     // Find layer gradient
     if (layerIndex > 1)
     {
 #ifdef CNN_WITH_CUDA
         beta = 0.0;
-        cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N,
-                    layerRef[layerIndex].fc.weight.rows, cfgRef->batch,
-                    layerRef[layerIndex].fc.weight.cols, &alpha,
-                    layerRef[layerIndex].fc.weight.mat,
-                    layerRef[layerIndex].fc.weight.cols,
-                    layerRef[layerIndex].outMat.data.grad,
-                    layerRef[layerIndex].outMat.data.cols, &beta,
-                    layerRef[layerIndex - 1].outMat.data.grad,
-                    layerRef[layerIndex - 1].outMat.data.cols);
+        cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N,  //
+                    wPtr->rows, cfgRef->batch, wPtr->cols,         //
+                    &alpha,                                        //
+                    wPtr->mat, wPtr->cols,                         //
+                    outData->grad, outData->cols,                  //
+                    &beta,                                         //
+                    preOutData->grad, preOutData->cols);
 #else
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
                     layerRef[layerIndex - 1].outMat.data.rows,

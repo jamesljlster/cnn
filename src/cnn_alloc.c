@@ -298,6 +298,10 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
     int bRows, bCols;      // Bias matrix size
     int outWidth, outHeight, outChannel;
 
+#ifdef CNN_WITH_CUDA
+    size_t sizeTmp;
+#endif
+
     // Find output shape
     cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
                                           inWidth, inHeight, inChannel,
@@ -329,6 +333,33 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
                       layerPtr->dstTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
                       batch, outChannel, outHeight, outWidth),
                   ret, ERR);
+
+    // Create reduction descriptor
+    cnn_run_cudnn(cudnnCreateReduceTensorDescriptor(&layerPtr->reduDesc), ret,
+                  ERR);
+    cnn_run_cudnn(
+        cudnnSetReduceTensorDescriptor(
+            layerPtr->reduDesc, CUDNN_REDUCE_TENSOR_ADD, CUDNN_DATA_FLOAT,
+            CUDNN_PROPAGATE_NAN, CUDNN_REDUCE_TENSOR_FLATTENED_INDICES,
+            CUDNN_32BIT_INDICES),
+        ret, ERR);
+
+    // Find indices size
+    cnn_run_cudnn(cudnnGetReductionIndicesSize(
+                      cnnInit.cudnnHandle, layerPtr->reduDesc, layerPtr->dstTen,
+                      layerPtr->biasTen, &layerPtr->indSize),
+                  ret, ERR);
+
+    // Allocate indices space
+    cnn_alloc_cu(layerPtr->indData, layerPtr->indSize, char, ret, ERR);
+
+    // Find workspace size
+    cnn_run_cudnn(cudnnGetReductionWorkspaceSize(
+                      cnnInit.cudnnHandle, layerPtr->reduDesc, layerPtr->dstTen,
+                      layerPtr->biasTen, &sizeTmp),
+                  ret, ERR);
+    if (sizeTmp > cnnInit.wsSize) cnnInit.wsSize = sizeTmp;
+
 #endif
 
     // Allocate memory
@@ -526,7 +557,7 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
                   ret, ERR);
     if (sizeTmp > wsSize) wsSize = sizeTmp;
 
-    cnnInit.wsSize = wsSize;
+    if (wsSize > cnnInit.wsSize) cnnInit.wsSize = wsSize;
 
 #else
     // Find output image size

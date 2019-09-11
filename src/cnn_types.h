@@ -155,8 +155,13 @@ struct CNN_LAYER_FC
     struct CNN_MAT bias;
 
 #ifdef CNN_WITH_CUDA
+    cudnnReduceTensorDescriptor_t reduDesc;
+
     cudnnTensorDescriptor_t biasTen;
     cudnnTensorDescriptor_t dstTen;
+
+    size_t indSize;
+    uint32_t* indData;
 #endif
 };
 
