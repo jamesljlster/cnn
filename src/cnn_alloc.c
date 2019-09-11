@@ -337,12 +337,11 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
     // Create reduction descriptor
     cnn_run_cudnn(cudnnCreateReduceTensorDescriptor(&layerPtr->reduDesc), ret,
                   ERR);
-    cnn_run_cudnn(
-        cudnnSetReduceTensorDescriptor(
-            layerPtr->reduDesc, CUDNN_REDUCE_TENSOR_ADD, CUDNN_DATA_FLOAT,
-            CUDNN_PROPAGATE_NAN, CUDNN_REDUCE_TENSOR_FLATTENED_INDICES,
-            CUDNN_32BIT_INDICES),
-        ret, ERR);
+    cnn_run_cudnn(cudnnSetReduceTensorDescriptor(
+                      layerPtr->reduDesc, CUDNN_REDUCE_TENSOR_ADD,
+                      CUDNN_DATA_FLOAT, CUDNN_PROPAGATE_NAN,
+                      CUDNN_REDUCE_TENSOR_NO_INDICES, CUDNN_32BIT_INDICES),
+                  ret, ERR);
 
     // Find indices size
     cnn_run_cudnn(cudnnGetReductionIndicesSize(
@@ -358,7 +357,7 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
                       cnnInit.cudnnHandle, layerPtr->reduDesc, layerPtr->dstTen,
                       layerPtr->biasTen, &sizeTmp),
                   ret, ERR);
-    if (sizeTmp > cnnInit.wsSize) cnnInit.wsSize = sizeTmp;
+    cnn_cudnn_ws_size_ext(sizeTmp);
 
 #endif
 
@@ -438,9 +437,8 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 #endif
 
 #ifdef CNN_WITH_CUDA
-    int padSize;        // Padding size
-    int outBatch;       // Convolution output batch size
-    size_t wsSize = 0;  // cuDNN workspace size
+    int padSize;   // Padding size
+    int outBatch;  // Convolution output batch size
     size_t sizeTmp;
 
     // Create source tensor
@@ -541,23 +539,21 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
                       layerPtr->kernelTen, layerPtr->convDesc, layerPtr->dstTen,
                       layerPtr->convAlgoFW, &sizeTmp),
                   ret, ERR);
-    if (sizeTmp > wsSize) wsSize = sizeTmp;
+    cnn_cudnn_ws_size_ext(sizeTmp);
 
     cnn_run_cudnn(cudnnGetConvolutionBackwardFilterWorkspaceSize(
                       cnnInit.cudnnHandle, layerPtr->srcTen, layerPtr->dstTen,
                       layerPtr->convDesc, layerPtr->kernelTen,
                       layerPtr->convAlgoBWFilter, &sizeTmp),
                   ret, ERR);
-    if (sizeTmp > wsSize) wsSize = sizeTmp;
+    cnn_cudnn_ws_size_ext(sizeTmp);
 
     cnn_run_cudnn(cudnnGetConvolutionBackwardDataWorkspaceSize(
                       cnnInit.cudnnHandle, layerPtr->kernelTen,
                       layerPtr->dstTen, layerPtr->convDesc, layerPtr->srcTen,
                       layerPtr->convAlgoBWGrad, &sizeTmp),
                   ret, ERR);
-    if (sizeTmp > wsSize) wsSize = sizeTmp;
-
-    if (wsSize > cnnInit.wsSize) cnnInit.wsSize = wsSize;
+    cnn_cudnn_ws_size_ext(sizeTmp);
 
 #else
     // Find output image size

@@ -440,6 +440,24 @@ RET:
 }
 
 #ifdef CNN_WITH_CUDA
+int cnn_cudnn_ws_size_ext(size_t minSize)
+{
+    int ret = CNN_NO_ERROR;
+
+    // Check initialize status
+    if (!cnnInit.inited)
+    {
+        ret = CNN_NOT_INITIALIZED;
+        goto RET;
+    }
+
+    // Set max size of minSize and current workspace size
+    cnnInit.wsSize = (minSize > cnnInit.wsSize) ? minSize : cnnInit.wsSize;
+
+RET:
+    return ret;
+}
+
 int cnn_cudnn_ws_alloc(void)
 {
     int ret = CNN_NO_ERROR;

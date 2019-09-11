@@ -89,13 +89,22 @@ static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
                               wPtr->grad, wPtr->cols));
 
     // Sum bias gradient matrix
-    cnn_assert_cudnn(cudnnReduceTensor(cnnInit.cudnnHandle, layerPtr->reduDesc,
-                                       layerPtr->indData, layerPtr->indSize,  //
-                                       cnnInit.wsData, cnnInit.wsSize,        //
-                                       &alpha,                                //
-                                       layerPtr->dstTen, outData->grad,       //
-                                       &beta,                                 //
-                                       layerPtr->biasTen, layerPtr->bias.grad));
+    if (cfgRef->batch > 1)
+    {
+        cnn_assert_cudnn(
+            cudnnReduceTensor(cnnInit.cudnnHandle, layerPtr->reduDesc,
+                              layerPtr->indData, layerPtr->indSize,  //
+                              cnnInit.wsData, cnnInit.wsSize,        //
+                              &alpha,                                //
+                              layerPtr->dstTen, outData->grad,       //
+                              &beta,                                 //
+                              layerPtr->biasTen, layerPtr->bias.grad));
+    }
+    else
+    {
+        cublasSaxpy(cnnInit.blasHandle, layerPtr->bias.cols, &alpha,
+                    outData->grad, 1, layerPtr->bias.grad, 1);
+    }
 #else
     // Sum weight gradient matrix
     cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
