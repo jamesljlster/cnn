@@ -362,17 +362,6 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
         &beta,                                         //
         layerPtr->biasTen, layerPtr->bias.grad));
 
-    beta = 0.0;
-    cnn_assert_cudnn(cudnnConvolutionBackwardData(
-        cnnInit.cudnnHandle,                           //
-        &alpha,                                        //
-        layerPtr->kernelTen, layerPtr->kernel.mat,     //
-        layerPtr->dstTen, layerPtr->outMat.data.grad,  //
-        layerPtr->convDesc, layerPtr->convAlgoBWGrad, cnnInit.wsData,
-        cnnInit.wsSize,  //
-        &beta,           //
-        layerPtr->srcTen, layerRef[layerIndex - 1].outMat.data.grad));
-
 #else
     // Cache
     int mapRows =
@@ -419,14 +408,29 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
                     layerRef[layerIndex].conv.bias.grad, 1);
 #endif
     }
+#endif
 
     // Find layer gradient
     if (layerIndex > 1)
     {
+#ifdef CNN_WITH_CUDA
+        cudaMemset(layerRef[layerIndex - 1].outMat.data.grad, 0,
+                   sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
+                       layerRef[layerIndex - 1].outMat.data.cols);
+        beta = 0.0;
+        cnn_assert_cudnn(cudnnConvolutionBackwardData(
+            cnnInit.cudnnHandle,                           //
+            &alpha,                                        //
+            layerPtr->kernelTen, layerPtr->kernel.mat,     //
+            layerPtr->dstTen, layerPtr->outMat.data.grad,  //
+            layerPtr->convDesc, layerPtr->convAlgoBWGrad, cnnInit.wsData,
+            cnnInit.wsSize,  //
+            &beta,           //
+            layerPtr->srcTen, layerRef[layerIndex - 1].outMat.data.grad));
+#else
         memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
                sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
                    layerRef[layerIndex - 1].outMat.data.cols);
-
         for (int j = 0; j < cfgRef->batch; j++)
         {
             int gradShift = j * layerRef[layerIndex].outMat.data.cols;
@@ -451,8 +455,8 @@ static inline void cnn_backward_conv(union CNN_LAYER* layerRef,
                 }
             }
         }
-    }
 #endif
+    }
 }
 
 #endif

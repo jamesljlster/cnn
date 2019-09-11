@@ -9,6 +9,7 @@
 
 #ifdef CNN_WITH_CUDA
 #include <cuda_runtime.h>
+#include <cudnn.h>
 #endif
 
 #define test(func)                                                  \
