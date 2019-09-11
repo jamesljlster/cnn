@@ -43,6 +43,7 @@ extern "C"
     float cnn_zero(void);
 
 #ifdef CNN_WITH_CUDA
+    int cnn_cudnn_ws_size_ext(size_t minSize);
     int cnn_cudnn_ws_alloc(void);
 #endif
 

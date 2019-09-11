@@ -9,6 +9,7 @@
 
 #ifdef CNN_WITH_CUDA
 #include <cuda_runtime.h>
+#include <cudnn.h>
 #endif
 
 #define test(func)                                                  \
@@ -258,6 +259,56 @@ float get_time_cost(struct timespec timeHold)
     tmpTime.tv_nsec -= timeHold.tv_nsec;
 
     return tmpTime.tv_sec * 1000.0 + (double)tmpTime.tv_nsec / 1e+6;
+}
+
+void cudnn_log(cudnnSeverity_t sev, void* udata, const cudnnDebug_t* dbg,
+               const char* msg)
+{
+    // Print time step
+    printf("[%d, %d] ", dbg->time_sec, dbg->time_usec);
+
+    // Print severity message
+    const char* sevMsg = "";
+    switch (sev)
+    {
+        case CUDNN_SEV_FATAL:
+            sevMsg = "Fatal";
+            break;
+
+        case CUDNN_SEV_ERROR:
+            sevMsg = "Error";
+            break;
+
+        case CUDNN_SEV_WARNING:
+            sevMsg = "Warning";
+            break;
+
+        case CUDNN_SEV_INFO:
+            sevMsg = "Info";
+            break;
+    }
+
+    printf("[%s]: ", sevMsg);
+
+    // Print message
+    int index = 0;
+    char ch = -1;
+    char preCh = -1;
+    while (1)
+    {
+        if (ch == '\0' && preCh == '\0')
+        {
+            break;
+        }
+
+        preCh = ch;
+        ch = msg[index++];
+        if (ch == '\0')
+        {
+            printf("\n");
+        }
+        printf("%c", ch);
+    }
 }
 
 #endif

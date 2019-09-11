@@ -147,6 +147,17 @@
     }
 #endif
 
+#define cnn_assert_cu(func)                                         \
+    {                                                               \
+        cudaError_t cuRet = func;                                   \
+        if (cuRet != cudaSuccess)                                   \
+        {                                                           \
+            fprintf(stderr, "%s(), %d: %s failed with error: %d\n", \
+                    __FUNCTION__, __LINE__, #func, cuRet);          \
+            assert(0);                                              \
+        }                                                           \
+    }
+
 #define cnn_assert_cudnn(func)                                      \
     {                                                               \
         cudnnStatus_t cuRet = func;                                 \

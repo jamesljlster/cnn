@@ -298,6 +298,10 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
     int bRows, bCols;      // Bias matrix size
     int outWidth, outHeight, outChannel;
 
+#ifdef CNN_WITH_CUDA
+    size_t sizeTmp;
+#endif
+
     // Find output shape
     cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
                                           inWidth, inHeight, inChannel,
@@ -313,6 +317,49 @@ int cnn_layer_fc_alloc(struct CNN_LAYER_FC* layerPtr,
 
     bRows = 1;
     bCols = cfgPtr->size;
+
+#ifdef CNN_WITH_CUDA
+    // Create bias tensor
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->biasTen), ret, ERR);
+    cnn_run_cudnn(
+        cudnnSetTensor4dDescriptor(layerPtr->biasTen, CUDNN_TENSOR_NCHW,
+                                   CUDNN_DATA_FLOAT,  //
+                                   1, outChannel, outHeight, outWidth),
+        ret, ERR);
+
+    // Create destination tensor
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->dstTen), ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(
+                      layerPtr->dstTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      batch, outChannel, outHeight, outWidth),
+                  ret, ERR);
+
+    // Create reduction descriptor
+    cnn_run_cudnn(cudnnCreateReduceTensorDescriptor(&layerPtr->reduDesc), ret,
+                  ERR);
+    cnn_run_cudnn(cudnnSetReduceTensorDescriptor(
+                      layerPtr->reduDesc, CUDNN_REDUCE_TENSOR_ADD,
+                      CUDNN_DATA_FLOAT, CUDNN_PROPAGATE_NAN,
+                      CUDNN_REDUCE_TENSOR_NO_INDICES, CUDNN_32BIT_INDICES),
+                  ret, ERR);
+
+    // Find indices size
+    cnn_run_cudnn(cudnnGetReductionIndicesSize(
+                      cnnInit.cudnnHandle, layerPtr->reduDesc, layerPtr->dstTen,
+                      layerPtr->biasTen, &layerPtr->indSize),
+                  ret, ERR);
+
+    // Allocate indices space
+    cnn_alloc_cu(layerPtr->indData, layerPtr->indSize, char, ret, ERR);
+
+    // Find workspace size
+    cnn_run_cudnn(cudnnGetReductionWorkspaceSize(
+                      cnnInit.cudnnHandle, layerPtr->reduDesc, layerPtr->dstTen,
+                      layerPtr->biasTen, &sizeTmp),
+                  ret, ERR);
+    cnn_cudnn_ws_size_ext(sizeTmp);
+
+#endif
 
     // Allocate memory
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
@@ -390,9 +437,8 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
 #endif
 
 #ifdef CNN_WITH_CUDA
-    int padSize;        // Padding size
-    int outBatch;       // Convolution output batch size
-    size_t wsSize = 0;  // cuDNN workspace size
+    int padSize;   // Padding size
+    int outBatch;  // Convolution output batch size
     size_t sizeTmp;
 
     // Create source tensor
@@ -493,23 +539,21 @@ int cnn_layer_conv_alloc(struct CNN_LAYER_CONV* layerPtr,
                       layerPtr->kernelTen, layerPtr->convDesc, layerPtr->dstTen,
                       layerPtr->convAlgoFW, &sizeTmp),
                   ret, ERR);
-    if (sizeTmp > wsSize) wsSize = sizeTmp;
+    cnn_cudnn_ws_size_ext(sizeTmp);
 
     cnn_run_cudnn(cudnnGetConvolutionBackwardFilterWorkspaceSize(
                       cnnInit.cudnnHandle, layerPtr->srcTen, layerPtr->dstTen,
                       layerPtr->convDesc, layerPtr->kernelTen,
                       layerPtr->convAlgoBWFilter, &sizeTmp),
                   ret, ERR);
-    if (sizeTmp > wsSize) wsSize = sizeTmp;
+    cnn_cudnn_ws_size_ext(sizeTmp);
 
     cnn_run_cudnn(cudnnGetConvolutionBackwardDataWorkspaceSize(
                       cnnInit.cudnnHandle, layerPtr->kernelTen,
                       layerPtr->dstTen, layerPtr->convDesc, layerPtr->srcTen,
                       layerPtr->convAlgoBWGrad, &sizeTmp),
                   ret, ERR);
-    if (sizeTmp > wsSize) wsSize = sizeTmp;
-
-    cnnInit.wsSize = wsSize;
+    cnn_cudnn_ws_size_ext(sizeTmp);
 
 #else
     // Find output image size

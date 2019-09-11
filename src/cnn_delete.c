@@ -81,6 +81,18 @@ void cnn_layer_fc_delete(struct CNN_LAYER_FC* layerPtr)
     cnn_mat_delete(&layerPtr->weight);
     cnn_mat_delete(&layerPtr->bias);
 
+#ifdef CNN_WITH_CUDA
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->biasTen);
+    cudnnDestroyTensorDescriptor(layerPtr->dstTen);
+
+    // Destroy reduction descriptor
+    cudnnDestroyReduceTensorDescriptor(layerPtr->reduDesc);
+
+    // Free indices space
+    cnn_free_cu(layerPtr->indData);
+#endif
+
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_FC));
 }
