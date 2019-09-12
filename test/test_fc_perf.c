@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     struct timespec timeHold;
     float fwCost, bpCost;
 
-    union CNN_LAYER layer[3];
+    union CNN_LAYER layer[3] = {0};
 
     cnn_config_t cfg = NULL;
 

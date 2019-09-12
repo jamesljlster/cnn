@@ -18,7 +18,7 @@
 int main()
 {
     int size;
-    union CNN_LAYER layer[3];
+    union CNN_LAYER layer[3] = {0};
 
     float src[IMG_WIDTH * IMG_HEIGHT * CH_IN * BATCH] = {
         /* batch 1 */
