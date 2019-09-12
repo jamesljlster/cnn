@@ -261,6 +261,7 @@ float get_time_cost(struct timespec timeHold)
     return tmpTime.tv_sec * 1000.0 + (double)tmpTime.tv_nsec / 1e+6;
 }
 
+#ifdef CNN_WITH_CUDA
 void cudnn_log(cudnnSeverity_t sev, void* udata, const cudnnDebug_t* dbg,
                const char* msg)
 {
@@ -310,5 +311,6 @@ void cudnn_log(cudnnSeverity_t sev, void* udata, const cudnnDebug_t* dbg,
         printf("%c", ch);
     }
 }
+#endif
 
 #endif
