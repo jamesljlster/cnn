@@ -210,8 +210,15 @@ struct CNN_LAYER_POOL
     // Layer output matrix
     struct CNN_SHAPE outMat;
 
+#ifdef CNN_WITH_CUDA
+    cudnnPoolingDescriptor_t poolDesc;
+
+    cudnnTensorDescriptor_t srcTen;
+    cudnnTensorDescriptor_t dstTen;
+#else
     // Pooling index
     int* indexMat;
+#endif
 };
 
 struct CNN_LAYER_DROP

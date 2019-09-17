@@ -389,11 +389,48 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
     int outRows, outCols;                 // Output matrix size
     int outWidth, outHeight, outChannel;  // Valid pooling output size
 
+#ifdef CNN_WITH_CUD
+    int outBatch;            // Pooling output batch size
+    int vPad = 0, hPad = 0;  // Vertical padding, horizontal padding
+
+    // Create source tensor
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->srcTen), ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(
+                      layerPtr->srcTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      batch, inChannel, inHeight, inWidth),
+                  ret, ERR);
+
+    // Create pooling descriptor
+    cnn_run_cudnn(cudnnCreatePoolingDescriptor(&layerPtr->poolDesc), ret, ERR);
+    cnn_run_cudnn(
+        cudnnSetPooling2dDescriptor(
+            layerPtr->poolDesc, CUDNN_POOLING_MAX, CUDNN_PROPAGATE_NAN,  //
+            cfgPtr->size, cfgPtr->size, vPad, hPad, cfgPtr->size, cfgPtr->size),
+        ret, ERR);
+
+    // Create destination tensor
+    cnn_run_cudnn(cudnnGetPooling2dForwardOutputDim(
+                      layerPtr->poolDesc, layerPtr->srcTen, &outBatch,
+                      &outChannel, &outHeight, &outWidth),
+                  ret, ERR);
+    if (outBatch != batch)
+    {
+        assert(!"Batch size is not invarriant");
+    }
+
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->dstTen), ret, ERR);
+    cudnn_run(cudnnSetTensor4dDescriptor(
+                  layerPtr->dstTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                  outBatch, outChannel, outHeight, outWidth),
+              ret, ERR);
+
+#else
     // Find output image size
     cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
                                           inWidth, inHeight, inChannel,
                                           (union CNN_CONFIG_LAYER*)cfgPtr),
             ret, RET);
+#endif
 
     // Find allocate size
     outRows = batch;
@@ -403,9 +440,7 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
             ERR);
 
-#ifdef CNN_WITH_CUDA
-    cnn_alloc_cu(layerPtr->indexMat, outRows * outCols, int, ret, ERR);
-#else
+#ifndef CNN_WITH_CUDA
     cnn_alloc(layerPtr->indexMat, outRows * outCols, int, ret, ERR);
 #endif
 
