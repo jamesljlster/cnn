@@ -130,7 +130,12 @@ int main()
     cudnn_run(cudnnGetPooling2dForwardOutputDim(poolDesc, srcTen, &outN, &outC,
                                                 &outH, &outW));
     printf("outN: %d, outC: %d, outH: %d, outW: %d\n", outN, outC, outH, outW);
-    exit(0);
+
+    cudnnTensorDescriptor_t outTen;
+    cudnn_run(cudnnCreateTensorDescriptor(&outTen));
+    cudnn_run(cudnnSetTensor4dDescriptor(             //
+        outTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+        outN, outC, outH, outW));
 
     cnn_config_t cfg = NULL;
 
@@ -169,8 +174,18 @@ int main()
     // Forward
     for (int i = 0; i < 2; i++)
     {
+        float alpha = 1.0;
+        float beta = 0.0;
+
         printf("***** Forward #%d *****\n", i + 1);
-        cnn_forward_pool(layer, cfg, 2);
+        // cnn_forward_pool(layer, cfg, 2);
+
+        cudnn_run(cudnnPoolingForward(         //
+            cudnn, poolDesc,                   //
+            &alpha,                            //
+            srcTen, layer[1].outMat.data.mat,  //
+            &beta,                             //
+            outTen, layer[2].outMat.data.mat));
 
         print_img_net_msg("Pooling output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
@@ -180,8 +195,20 @@ int main()
     // BP
     for (int i = 0; i < 2; i++)
     {
+        float alpha = 1.0;
+        float beta = 0.0;
+
         printf("***** BP #%d *****\n", i + 1);
-        cnn_backward_pool(layer, cfg, 2);
+        // cnn_backward_pool(layer, cfg, 2);
+
+        cudnn_run(cudnnPoolingBackward(         //
+            cudnn, poolDesc,                    //
+            &alpha,                             //
+            outTen, layer[2].outMat.data.mat,   //
+            outTen, layer[2].outMat.data.grad,  //
+            srcTen, layer[1].outMat.data.mat,   //
+            &beta,                              //
+            srcTen, layer[1].outMat.data.grad));
 
         print_img_net_msg("Pooling layer gradient:", layer[2].outMat.data.grad,
                           layer[2].outMat.width, layer[2].outMat.height,
