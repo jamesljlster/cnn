@@ -389,7 +389,7 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
     int outRows, outCols;                 // Output matrix size
     int outWidth, outHeight, outChannel;  // Valid pooling output size
 
-#ifdef CNN_WITH_CUD
+#ifdef CNN_WITH_CUDA
     int outBatch;            // Pooling output batch size
     int vPad = 0, hPad = 0;  // Vertical padding, horizontal padding
 
@@ -419,10 +419,10 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
     }
 
     cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->dstTen), ret, ERR);
-    cudnn_run(cudnnSetTensor4dDescriptor(
-                  layerPtr->dstTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
-                  outBatch, outChannel, outHeight, outWidth),
-              ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(
+                      layerPtr->dstTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      outBatch, outChannel, outHeight, outWidth),
+                  ret, ERR);
 
 #else
     // Find output image size
