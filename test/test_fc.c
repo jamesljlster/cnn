@@ -16,7 +16,7 @@
 int main()
 {
     int size;
-    union CNN_LAYER layer[3];
+    union CNN_LAYER layer[3] = {0};
 
     float src[SIZE_IN * BATCH] = {
         0.1, 0.2, 0.3, 0.4,  // batch 1

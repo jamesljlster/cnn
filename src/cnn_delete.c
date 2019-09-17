@@ -138,7 +138,12 @@ void cnn_layer_pool_delete(struct CNN_LAYER_POOL* layerPtr)
     cnn_mat_delete(&layerPtr->outMat.data);
 
 #ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->indexMat);
+    // Destroy pooling descriptor
+    cudnnDestroyPoolingDescriptor(layerPtr->poolDesc);
+
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->srcTen);
+    cudnnDestroyTensorDescriptor(layerPtr->dstTen);
 #else
     cnn_free(layerPtr->indexMat);
 #endif
