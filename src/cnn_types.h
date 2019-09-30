@@ -87,6 +87,8 @@ struct CNN_CONFIG_LAYER_BN
 
     float rInit;
     float bInit;
+
+    float expAvgFactor;
 };
 
 struct CNN_CONFIG_LAYER_TEXT
@@ -239,15 +241,29 @@ struct CNN_LAYER_BN
     // BatchNorm variables
     struct CNN_MAT bnVar;
 
+    struct CNN_MAT bnScale;
+    struct CNN_MAT bnBias;
+
+    struct CNN_MAT saveMean;
+    struct CNN_MAT saveVar;
+
+    struct CNN_MAT runMean;
+    struct CNN_MAT runVar;
+
+#ifdef CNN_WITH_CUDA
+    cudnnTensorDescriptor_t srcTen;
+    cudnnTensorDescriptor_t bnTen;
+#endif
+
     // Cache
     float* stddev;
     struct CNN_MAT srcShift;
     struct CNN_MAT srcNorm;
 
-#ifdef CNN_WITH_CUDA
-    // Buffer
-    float* buf;
-#endif
+    //#ifdef CNN_WITH_CUDA
+    //    // Buffer
+    //    float* buf;
+    //#endif
 };
 
 struct CNN_LAYER_TEXT
