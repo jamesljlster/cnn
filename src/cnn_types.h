@@ -310,7 +310,8 @@ struct CNN
     struct CNN_CONFIG cfg;
     union CNN_LAYER* layerList;
 
-    int dropEnable;
+    // int dropEnable;
+    cnn_opmode_t opMode;
 };
 
 #endif

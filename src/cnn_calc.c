@@ -245,7 +245,8 @@ static inline void cnn_forward_kernel(cnn_t cnn, float* inputMat,
 
             // Dropout
             case CNN_LAYER_DROP:
-                if (cnn->dropEnable)
+                // if (cnn->dropEnable)
+                if (cnn->opMode == CNN_OPMODE_TRAIN)
                 {
                     cnn_forward_drop(layerRef, cfgRef, i);
                 }

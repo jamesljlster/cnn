@@ -116,10 +116,12 @@ RET:
     return ret;
 }
 
-void cnn_set_dropout_enabled(cnn_t cnn, int enable)
-{
-    cnn->dropEnable = enable;
-}
+// void cnn_set_dropout_enabled(cnn_t cnn, int enable)
+//{
+//    cnn->dropEnable = enable;
+//}
+
+void cnn_set_opmode(cnn_t cnn, cnn_opmode_t opMode) { cnn->opMode = opMode; }
 
 cnn_config_t cnn_get_config(cnn_t cnn) { return &cnn->cfg; }
 
