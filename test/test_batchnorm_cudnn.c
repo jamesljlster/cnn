@@ -65,6 +65,55 @@ int main()
         -0.2, -0.1, 0.1, 0.2   //
     };
 
+    cudnnTensorDescriptor_t srcTen;
+    cudnn_run(cudnnCreateTensorDescriptor(&srcTen));
+    cudnn_run(cudnnSetTensor4dDescriptor(             //
+        srcTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+        BATCH, CH_IN, IMG_HEIGHT, IMG_WIDTH));
+
+    cudnnTensorDescriptor_t bnTen;
+    cudnn_run(cudnnCreateTensorDescriptor(&bnTen));
+    cudnn_run(
+        cudnnDeriveBNTensorDescriptor(bnTen, srcTen, CUDNN_BATCHNORM_SPATIAL));
+
+    float* bnScale = NULL;
+    float* bnScaleGrad = NULL;
+    float* bnBias = NULL;
+    float* bnBiasGrad = NULL;
+    float* resultRunMean = NULL;
+    float* resultRunVar = NULL;
+    float* saveMean = NULL;
+    float* saveVar = NULL;
+
+    int ret;
+    cnn_alloc_cu(bnScale, CH_IN, float, ret, RET);
+    cnn_alloc_cu(bnScaleGrad, CH_IN, float, ret, RET);
+    cnn_alloc_cu(bnBias, CH_IN, float, ret, RET);
+    cnn_alloc_cu(bnBiasGrad, CH_IN, float, ret, RET);
+    cnn_alloc_cu(resultRunMean, CH_IN, float, ret, RET);
+    cnn_alloc_cu(resultRunVar, CH_IN, float, ret, RET);
+    cnn_alloc_cu(saveMean, CH_IN, float, ret, RET);
+    cnn_alloc_cu(saveVar, CH_IN, float, ret, RET);
+
+    for (int i = 0; i < CH_IN; i++)
+    {
+        float scale = 0.87;
+        cuda_run(cudaMemcpy(bnScale + i, &scale, sizeof(float),
+                            cudaMemcpyHostToDevice));
+
+        float bias = 0.03;
+        cuda_run(cudaMemcpy(bnBias + i, &bias, sizeof(float),
+                            cudaMemcpyHostToDevice));
+
+        float runMu = 0;
+        cuda_run(cudaMemcpy(resultRunMean + i, &runMu, sizeof(float),
+                            cudaMemcpyHostToDevice));
+
+        float runVar = 1;
+        cuda_run(cudaMemcpy(resultRunVar + i, &runVar, sizeof(float),
+                            cudaMemcpyHostToDevice));
+    }
+
     cnn_config_t cfg = NULL;
 
     // Create cnn
@@ -98,11 +147,23 @@ int main()
         sizeof(float) * layer[2].outMat.data.rows * layer[2].outMat.data.cols;
     memcpy_net(layer[2].outMat.data.grad, gradIn, size);
 
-    // Forward
+    // Forward Training
     for (int i = 0; i < 2; i++)
     {
-        printf("***** Forward %d *****\n", i);
-        cnn_forward_bn(layer, cfg, 2);
+        float alpha = 1.0;
+        float beta = 0.0;
+
+        printf("***** Forward Training %d *****\n", i);
+        // cnn_forward_bn(layer, cfg, 2);
+        cudnn_run(cudnnBatchNormalizationForwardTraining(   //
+            cudnn, CUDNN_BATCHNORM_SPATIAL, &alpha, &beta,  //
+            srcTen, layer[1].outMat.data.mat,               //
+            srcTen, layer[2].outMat.data.mat,               //
+            bnTen, bnScale, bnBias,                         //
+            0.7,                                            //
+            resultRunMean, resultRunVar,                    //
+            1e-4,                                           //
+            saveMean, saveVar));
 
         print_img_net_msg("BatchNorm output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
@@ -112,8 +173,21 @@ int main()
     // BP
     for (int i = 0; i < 2; i++)
     {
+        float alpha = 1.0;
+        float betaParam = 1.0;
+        float betaGrad = 0.0;
+
         printf("***** BP %d *****\n", i);
-        cnn_backward_bn(layer, cfg, 2);
+        // cnn_backward_bn(layer, cfg, 2);
+        cudnn_run(cudnnBatchNormalizationBackward(    //
+            cudnn, CUDNN_BATCHNORM_SPATIAL,           //
+            &alpha, &betaGrad, &alpha, &betaParam,    //
+            srcTen, layer[1].outMat.data.mat,         //
+            srcTen, layer[2].outMat.data.grad,        //
+            srcTen, layer[1].outMat.data.grad,        //
+            bnTen, bnScale, bnScaleGrad, bnBiasGrad,  //
+            1e-4,                                     //
+            saveMean, saveVar));
 
         print_img_net_msg(
             "BatchNorm layer gradient:", layer[2].outMat.data.grad,
@@ -128,5 +202,6 @@ int main()
                           layer[2].bn.bnVar.grad, 2, CH_IN, 1, 1);
     }
 
+RET:
     return 0;
 }
