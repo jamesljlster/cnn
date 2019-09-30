@@ -888,7 +888,8 @@ RET:
     return ret;
 }
 
-int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit)
+int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit,
+                                float expAvgFactor)
 {
     int ret = CNN_NO_ERROR;
     int layers;
@@ -897,14 +898,16 @@ int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit)
     cnn_config_get_layers(cfg, &layers);
     layers++;
     cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
-    cnn_run(cnn_config_set_batchnorm(cfg, layers - 1, rInit, bInit), ret, RET);
+    cnn_run(
+        cnn_config_set_batchnorm(cfg, layers - 1, rInit, bInit, expAvgFactor),
+        ret, RET);
 
 RET:
     return ret;
 }
 
 int cnn_config_set_batchnorm(cnn_config_t cfg, int layerIndex, float rInit,
-                             float bInit)
+                             float bInit, float expAvgFactor)
 {
     int ret = CNN_NO_ERROR;
 
@@ -919,13 +922,14 @@ int cnn_config_set_batchnorm(cnn_config_t cfg, int layerIndex, float rInit,
     cfg->layerCfg[layerIndex].type = CNN_LAYER_BN;
     cfg->layerCfg[layerIndex].bn.rInit = rInit;
     cfg->layerCfg[layerIndex].bn.bInit = bInit;
+    cfg->layerCfg[layerIndex].bn.expAvgFactor = expAvgFactor;
 
 RET:
     return ret;
 }
 
 int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex, float* rInitPtr,
-                             float* bInitPtr)
+                             float* bInitPtr, float* expAvgFactorPtr)
 {
     int ret = CNN_NO_ERROR;
 
@@ -951,6 +955,11 @@ int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex, float* rInitPtr,
     if (bInitPtr != NULL)
     {
         *bInitPtr = cfg->layerCfg[layerIndex].bn.bInit;
+    }
+
+    if (expAvgFactorPtr != NULL)
+    {
+        *expAvgFactorPtr = cfg->layerCfg[layerIndex].bn.expAvgFactor;
     }
 
 RET:

@@ -130,11 +130,13 @@ extern "C"
     int cnn_config_get_dropout(cnn_config_t cfg, int layerIndex,
                                float* ratePtr);
 
-    int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit);
+    int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit,
+                                    float expAvgFactor);
     int cnn_config_set_batchnorm(cnn_config_t cfg, int layerIndex, float rInit,
-                                 float bInit);
+                                 float bInit, float expAvgFactor);
     int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex,
-                                 float* rInitPtr, float* bInitPtr);
+                                 float* rInitPtr, float* bInitPtr,
+                                 float* expAvgFactor);
 
     int cnn_config_append_texture(cnn_config_t cfg, cnn_activ_t activID,
                                   int filter, float aInit);

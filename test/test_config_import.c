@@ -22,6 +22,7 @@ int main(int argc, char* argv[])
     int batch;
     float rate;
     float rInit, bInit, aInit;
+    float expAvgFactor;
 
     if (argc < 2)
     {
@@ -86,10 +87,12 @@ int main(int argc, char* argv[])
                 break;
 
             case CNN_LAYER_BN:
-                test(cnn_config_get_batchnorm(cfg, i, &rInit, &bInit));
+                test(cnn_config_get_batchnorm(cfg, i, &rInit, &bInit,
+                                              &expAvgFactor));
                 printf("Type: BatchNorm\n");
                 printf("rInit: %g\n", rInit);
                 printf("bInit: %g\n", bInit);
+                printf("expAvgFactor: %g\n", expAvgFactor);
                 break;
 
             case CNN_LAYER_TEXT:

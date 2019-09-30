@@ -49,7 +49,7 @@ int main()
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_batchnorm(cfg, 0.87, 0.03));
+    test(cnn_config_append_batchnorm(cfg, 0.87, 0.03, 0.001));
 
     // Print information
     print_img_msg("src:", src, IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch);
