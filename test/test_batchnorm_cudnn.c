@@ -5,6 +5,7 @@
 #include <cnn.h>
 #include <cnn_calc.h>
 #include <cnn_private.h>
+#include <cnn_types.h>
 
 #include "test.h"
 
@@ -76,44 +77,6 @@ int main()
     cudnn_run(
         cudnnDeriveBNTensorDescriptor(bnTen, srcTen, CUDNN_BATCHNORM_SPATIAL));
 
-    float* bnScale = NULL;
-    float* bnScaleGrad = NULL;
-    float* bnBias = NULL;
-    float* bnBiasGrad = NULL;
-    float* resultRunMean = NULL;
-    float* resultRunVar = NULL;
-    float* saveMean = NULL;
-    float* saveVar = NULL;
-
-    int ret;
-    cnn_alloc_cu(bnScale, CH_IN, float, ret, RET);
-    cnn_alloc_cu(bnScaleGrad, CH_IN, float, ret, RET);
-    cnn_alloc_cu(bnBias, CH_IN, float, ret, RET);
-    cnn_alloc_cu(bnBiasGrad, CH_IN, float, ret, RET);
-    cnn_alloc_cu(resultRunMean, CH_IN, float, ret, RET);
-    cnn_alloc_cu(resultRunVar, CH_IN, float, ret, RET);
-    cnn_alloc_cu(saveMean, CH_IN, float, ret, RET);
-    cnn_alloc_cu(saveVar, CH_IN, float, ret, RET);
-
-    for (int i = 0; i < CH_IN; i++)
-    {
-        float scale = 0.87;
-        cuda_run(cudaMemcpy(bnScale + i, &scale, sizeof(float),
-                            cudaMemcpyHostToDevice));
-
-        float bias = 0.03;
-        cuda_run(cudaMemcpy(bnBias + i, &bias, sizeof(float),
-                            cudaMemcpyHostToDevice));
-
-        float runMu = 0;
-        cuda_run(cudaMemcpy(resultRunMean + i, &runMu, sizeof(float),
-                            cudaMemcpyHostToDevice));
-
-        float runVar = 1;
-        cuda_run(cudaMemcpy(resultRunVar + i, &runVar, sizeof(float),
-                            cudaMemcpyHostToDevice));
-    }
-
     cnn_config_t cfg = NULL;
 
     // Create cnn
@@ -155,15 +118,15 @@ int main()
 
         printf("***** Forward Training %d *****\n", i);
         // cnn_forward_bn(layer, cfg, 2);
-        cudnn_run(cudnnBatchNormalizationForwardTraining(   //
-            cudnn, CUDNN_BATCHNORM_SPATIAL, &alpha, &beta,  //
-            srcTen, layer[1].outMat.data.mat,               //
-            srcTen, layer[2].outMat.data.mat,               //
-            bnTen, bnScale, bnBias,                         //
-            0.7,                                            //
-            resultRunMean, resultRunVar,                    //
-            1e-4,                                           //
-            saveMean, saveVar));
+        cudnn_run(cudnnBatchNormalizationForwardTraining(            //
+            cudnn, CUDNN_BATCHNORM_SPATIAL, &alpha, &beta,           //
+            srcTen, layer[1].outMat.data.mat,                        //
+            srcTen, layer[2].outMat.data.mat,                        //
+            bnTen, layer[2].bn.bnScale.mat, layer[2].bn.bnBias.mat,  //
+            cfg->layerCfg[2].bn.expAvgFactor,                        //
+            layer[2].bn.runMean.mat, layer[2].bn.runVar.mat,         //
+            CNN_BN_EPS,                                              //
+            layer[2].bn.saveMean.mat, layer[2].bn.saveVar.mat));
 
         print_img_net_msg("BatchNorm output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
@@ -179,15 +142,18 @@ int main()
 
         printf("***** BP %d *****\n", i);
         // cnn_backward_bn(layer, cfg, 2);
-        cudnn_run(cudnnBatchNormalizationBackward(    //
-            cudnn, CUDNN_BATCHNORM_SPATIAL,           //
-            &alpha, &betaGrad, &alpha, &betaParam,    //
-            srcTen, layer[1].outMat.data.mat,         //
-            srcTen, layer[2].outMat.data.grad,        //
-            srcTen, layer[1].outMat.data.grad,        //
-            bnTen, bnScale, bnScaleGrad, bnBiasGrad,  //
-            1e-4,                                     //
-            saveMean, saveVar));
+        cudnn_run(cudnnBatchNormalizationBackward(  //
+            cudnn, CUDNN_BATCHNORM_SPATIAL,         //
+            &alpha, &betaGrad, &alpha, &betaParam,  //
+            srcTen, layer[1].outMat.data.mat,       //
+            srcTen, layer[2].outMat.data.grad,      //
+            srcTen, layer[1].outMat.data.grad,      //
+            bnTen,                                  //
+            layer[2].bn.bnScale.mat,                //
+            layer[2].bn.bnScale.grad,               //
+            layer[2].bn.bnBias.grad,                //
+            CNN_BN_EPS,                             //
+            layer[2].bn.saveMean.mat, layer[2].bn.saveVar.mat));
 
         print_img_net_msg(
             "BatchNorm layer gradient:", layer[2].outMat.data.grad,
@@ -200,8 +166,12 @@ int main()
 
         print_img_net_msg("BatchNorm variable gradient:",
                           layer[2].bn.bnVar.grad, 2, CH_IN, 1, 1);
+
+        print_img_net_msg("BatchNorm scale gradient:", layer[2].bn.bnScale.grad,
+                          1, CH_IN, 1, 1);
+        print_img_net_msg("BatchNorm bias gradient:", layer[2].bn.bnBias.grad,
+                          1, CH_IN, 1, 1);
     }
 
-RET:
     return 0;
 }

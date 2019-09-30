@@ -75,7 +75,7 @@ int main()
     // Forward
     for (int i = 0; i < 2; i++)
     {
-        printf("***** Forward %d *****\n", i);
+        printf("***** Forward Training %d *****\n", i);
         cnn_forward_bn(layer, cfg, 2);
 
         print_img_net_msg("BatchNorm output:", layer[2].outMat.data.mat,
@@ -100,6 +100,11 @@ int main()
 
         print_img_net_msg("BatchNorm variable gradient:",
                           layer[2].bn.bnVar.grad, 2, CH_IN, 1, 1);
+
+        print_img_net_msg("BatchNorm scale gradient:", layer[2].bn.bnScale.grad,
+                          1, CH_IN, 1, 1);
+        print_img_net_msg("BatchNorm bias gradient:", layer[2].bn.bnBias.grad,
+                          1, CH_IN, 1, 1);
     }
 
     return 0;
