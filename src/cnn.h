@@ -166,7 +166,6 @@ extern "C"
     int cnn_clone(cnn_t* dstPtr, const cnn_t src);
     void cnn_delete(cnn_t cnn);
 
-    // void cnn_set_dropout_enabled(cnn_t cnn, int enable);
     void cnn_set_opmode(cnn_t cnn, cnn_opmode_t opMode);
     int cnn_resize_batch(cnn_t* cnnPtr, int batchSize);
 

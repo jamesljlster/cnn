@@ -133,7 +133,6 @@ int main(int argc, char* argv[])
     force = 0;
     for (iter = 0; iter < ITER; iter++)
     {
-        // cnn_set_dropout_enabled(cnn, 1);
         cnn_set_opmode(cnn, CNN_OPMODE_TRAIN);
 
         for (i = 0; i < data.instances; i += BATCH)
@@ -149,7 +148,6 @@ int main(int argc, char* argv[])
             cnn_update(cnn, lRate, GRAD_LIMIT);
         }
 
-        // cnn_set_dropout_enabled(cnn, 0);
         cnn_set_opmode(cnn, CNN_OPMODE_RECALL);
 
         mse = 0;

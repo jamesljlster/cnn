@@ -726,33 +726,12 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     cnn_run(cnn_mat_alloc(&layerPtr->srcShift, outRows, outCols, 0), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->srcNorm, outRows, outCols, 1), ret, ERR);
 
-    //#ifdef CNN_WITH_CUDA
-    //    cnn_alloc_cu(layerPtr->stddev, inChannel, float, ret, ERR);
-    //#else
     cnn_alloc(layerPtr->stddev, inChannel * batch, float, ret, ERR);
-    //#endif
-
-    //#ifdef CNN_WITH_CUDA
-    //    cnn_alloc_cu(layerPtr->buf, inWidth * inHeight, float, ret, ERR);
-    //#endif
 
 #ifdef CNN_WITH_CUDA
     // Buffer allocation
-    // size = inChannel * 2;
     size = inChannel;
     cnn_alloc(tmpVec, size, float, ret, ERR);
-
-    // Set initial gamma, beta
-    // for (int i = 0; i < inChannel; i++)
-    // {
-    //     tmpVec[i * 2 + 0] = cfgPtr->rInit;
-    //     tmpVec[i * 2 + 1] = cfgPtr->bInit;
-    // }
-
-    // Copy memory
-    // cnn_run_cu(cudaMemcpy(layerPtr->bnVar.mat, tmpVec, size * sizeof(float),
-    //                       cudaMemcpyHostToDevice),
-    //            ret, ERR);
 
     // Set initial gamma
     for (int i = 0; i < inChannel; i++)
