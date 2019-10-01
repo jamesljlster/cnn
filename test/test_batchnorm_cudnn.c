@@ -116,7 +116,7 @@ int main()
         float alpha = 1.0;
         float beta = 0.0;
 
-        printf("***** Forward Training %d *****\n", i);
+        printf("***** Forward %d *****\n", i);
         // cnn_forward_bn(layer, cfg, 2);
         cudnn_run(cudnnBatchNormalizationForwardTraining(            //
             cudnn, CUDNN_BATCHNORM_SPATIAL, &alpha, &beta,           //
@@ -131,6 +131,11 @@ int main()
         print_img_net_msg("BatchNorm output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
                           layer[2].outMat.channel, cfg->batch);
+
+        print_img_net_msg("BatchNorm running mean:", layer[2].bn.runMean.mat, 1,
+                          CH_IN, 1, 1);
+        print_img_net_msg("BatchNorm running var:", layer[2].bn.runVar.mat, 1,
+                          CH_IN, 1, 1);
     }
 
     // BP
@@ -171,6 +176,27 @@ int main()
                           1, CH_IN, 1, 1);
         print_img_net_msg("BatchNorm bias gradient:", layer[2].bn.bnBias.grad,
                           1, CH_IN, 1, 1);
+    }
+
+    // Recall
+    for (int i = 0; i < 2; i++)
+    {
+        float alpha = 1.0;
+        float beta = 0.0;
+
+        printf("***** Recall %d *****\n", i);
+        cudnn_run(cudnnBatchNormalizationForwardInference(
+            cudnn, CUDNN_BATCHNORM_SPATIAL, &alpha, &beta,    //
+            srcTen, layer[1].outMat.data.mat,                 //
+            srcTen, layer[2].outMat.data.mat,                 //
+            bnTen,                                            //
+            layer[2].bn.bnScale.mat, layer[2].bn.bnBias.mat,  //
+            layer[2].bn.runMean.mat, layer[2].bn.runVar.mat,  //
+            CNN_BN_EPS));
+
+        print_img_net_msg("BatchNorm output:", layer[2].outMat.data.mat,
+                          layer[2].outMat.width, layer[2].outMat.height,
+                          layer[2].outMat.channel, cfg->batch);
     }
 
     return 0;
