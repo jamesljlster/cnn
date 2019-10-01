@@ -16,6 +16,33 @@
 
 #define CNN_BN_EPS 1e-4
 
+static inline void cnn_recall_bn(union CNN_LAYER* layerRef,
+                                 struct CNN_CONFIG* cfgRef, int layerIndex)
+{
+#ifdef CNN_WITH_CUDA
+    float alpha = 1.0;
+    float beta = 0.0;
+
+    struct CNN_LAYER_BN* layerPtr = &layerRef[layerIndex].bn;
+
+    struct CNN_MAT* outData = &layerPtr->outMat.data;
+    struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
+
+    cnn_assert_cudnn(cudnnBatchNormalizationForwardInference(
+        cnnInit.cudnnHandle, CUDNN_BATCHNORM_SPATIAL,  //
+        &alpha, &beta,                                 //
+        layerPtr->srcTen, preOutData->mat,             //
+        layerPtr->srcTen, outData->mat,                //
+        layerPtr->bnTen,                               //
+        layerPtr->bnScale.mat, layerPtr->bnBias.mat,   //
+        layerPtr->runMean.mat, layerPtr->runVar.mat,   //
+        CNN_BN_EPS));
+
+#else
+    assert(!"Function not implemented");
+#endif
+}
+
 static inline void cnn_forward_bn(union CNN_LAYER* layerRef,
                                   struct CNN_CONFIG* cfgRef, int layerIndex)
 {

@@ -75,12 +75,17 @@ int main()
     // Forward
     for (int i = 0; i < 2; i++)
     {
-        printf("***** Forward Training %d *****\n", i);
+        printf("***** Forward %d *****\n", i);
         cnn_forward_bn(layer, cfg, 2);
 
         print_img_net_msg("BatchNorm output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
                           layer[2].outMat.channel, cfg->batch);
+
+        print_img_net_msg("BatchNorm running mean:", layer[2].bn.runMean.mat, 1,
+                          CH_IN, 1, 1);
+        print_img_net_msg("BatchNorm running var:", layer[2].bn.runVar.mat, 1,
+                          CH_IN, 1, 1);
     }
 
     // BP
@@ -105,6 +110,17 @@ int main()
                           1, CH_IN, 1, 1);
         print_img_net_msg("BatchNorm bias gradient:", layer[2].bn.bnBias.grad,
                           1, CH_IN, 1, 1);
+    }
+
+    // Recall
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** Recall %d *****\n", i);
+        cnn_recall_bn(layer, cfg, 2);
+
+        print_img_net_msg("BatchNorm output:", layer[2].outMat.data.mat,
+                          layer[2].outMat.width, layer[2].outMat.height,
+                          layer[2].outMat.channel, cfg->batch);
     }
 
     return 0;
