@@ -156,19 +156,27 @@ void cnn_layer_bn_delete(struct CNN_LAYER_BN* layerPtr)
 {
     // Free memory
     cnn_mat_delete(&layerPtr->outMat.data);
+
     cnn_mat_delete(&layerPtr->bnVar);
+
+    cnn_mat_delete(&layerPtr->bnScale);
+    cnn_mat_delete(&layerPtr->bnBias);
+
+    cnn_mat_delete(&layerPtr->saveMean);
+    cnn_mat_delete(&layerPtr->saveVar);
+    cnn_mat_delete(&layerPtr->runMean);
+    cnn_mat_delete(&layerPtr->runVar);
+
     cnn_mat_delete(&layerPtr->srcShift);
     cnn_mat_delete(&layerPtr->srcNorm);
 
-    //#ifdef CNN_WITH_CUDA
-    //    cnn_free_cu(layerPtr->stddev);
-    //#else
-    cnn_free(layerPtr->stddev);
-    //#endif
-
 #ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->buf);
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->srcTen);
+    cudnnDestroyTensorDescriptor(layerPtr->bnTen);
 #endif
+
+    cnn_free(layerPtr->stddev);
 
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_BN));

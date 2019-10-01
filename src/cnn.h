@@ -21,6 +21,12 @@ enum CNN_RETVAL
     CNN_NOT_INITIALIZED = -11
 };
 
+typedef enum CNN_OPMODE
+{
+    CNN_OPMODE_RECALL = 0,
+    CNN_OPMODE_TRAIN = 1
+} cnn_opmode_t;
+
 typedef enum CNN_LAYER_TYPE
 {
     CNN_LAYER_INPUT = 0,
@@ -130,11 +136,13 @@ extern "C"
     int cnn_config_get_dropout(cnn_config_t cfg, int layerIndex,
                                float* ratePtr);
 
-    int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit);
+    int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit,
+                                    float expAvgFactor);
     int cnn_config_set_batchnorm(cnn_config_t cfg, int layerIndex, float rInit,
-                                 float bInit);
+                                 float bInit, float expAvgFactor);
     int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex,
-                                 float* rInitPtr, float* bInitPtr);
+                                 float* rInitPtr, float* bInitPtr,
+                                 float* expAvgFactor);
 
     int cnn_config_append_texture(cnn_config_t cfg, cnn_activ_t activID,
                                   int filter, float aInit);
@@ -158,7 +166,7 @@ extern "C"
     int cnn_clone(cnn_t* dstPtr, const cnn_t src);
     void cnn_delete(cnn_t cnn);
 
-    void cnn_set_dropout_enabled(cnn_t cnn, int enable);
+    void cnn_set_opmode(cnn_t cnn, cnn_opmode_t opMode);
     int cnn_resize_batch(cnn_t* cnnPtr, int batchSize);
 
     void cnn_forward(cnn_t cnn, float* inputMat, float* outputMat);

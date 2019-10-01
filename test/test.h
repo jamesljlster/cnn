@@ -6,6 +6,7 @@
 #include <time.h>
 
 #include <cnn_config.h>
+#include <cnn_macro.h>
 
 #ifdef CNN_WITH_CUDA
 #include <cuda_runtime.h>
@@ -311,6 +312,14 @@ void cudnn_log(cudnnSeverity_t sev, void* udata, const cudnnDebug_t* dbg,
         printf("%c", ch);
     }
 }
+
+void cudnn_log_enable()
+{
+    cnn_assert_cudnn(cudnnSetCallback(
+        CUDNN_SEV_INFO_EN | CUDNN_SEV_ERROR_EN | CUDNN_SEV_WARNING_EN, NULL,
+        cudnn_log));
+}
+
 #endif
 
 #endif

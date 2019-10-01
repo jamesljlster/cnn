@@ -245,7 +245,7 @@ static inline void cnn_forward_kernel(cnn_t cnn, float* inputMat,
 
             // Dropout
             case CNN_LAYER_DROP:
-                if (cnn->dropEnable)
+                if (cnn->opMode == CNN_OPMODE_TRAIN)
                 {
                     cnn_forward_drop(layerRef, cfgRef, i);
                 }
@@ -269,7 +269,15 @@ static inline void cnn_forward_kernel(cnn_t cnn, float* inputMat,
 
             // Batch normalization
             case CNN_LAYER_BN:
-                cnn_forward_bn(layerRef, cfgRef, i);
+                if (cnn->opMode == CNN_OPMODE_TRAIN)
+                {
+                    cnn_forward_bn(layerRef, cfgRef, i);
+                }
+                else
+                {
+                    cnn_recall_bn(layerRef, cfgRef, i);
+                }
+
                 break;
 
             // Texture

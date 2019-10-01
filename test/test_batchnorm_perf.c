@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     test(cnn_config_set_input_size(cfg, imgWidth, imgHeight, channel));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_batchnorm(cfg, 0.87, 0.03));
+    test(cnn_config_append_batchnorm(cfg, 0.87, 0.03, 0.001));
 
     // Allocate cnn layer
     test(cnn_layer_activ_alloc(

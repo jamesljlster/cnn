@@ -685,6 +685,18 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
 #ifdef CNN_WITH_CUDA
     int size;
     float* tmpVec = NULL;
+
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->srcTen), ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(                                 //
+                      layerPtr->srcTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      batch, inChannel, inHeight, inWidth),
+                  ret, ERR);
+
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->bnTen), ret, ERR);
+    cnn_run_cudnn(
+        cudnnDeriveBNTensorDescriptor(layerPtr->bnTen, layerPtr->srcTen,
+                                      CUDNN_BATCHNORM_SPATIAL),
+        ret, ERR);
 #endif
 
     // Find output size
@@ -700,37 +712,56 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     // Allocate memory
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
             ERR);
+
     cnn_run(cnn_mat_alloc(&layerPtr->bnVar, inChannel, 2, 1), ret, ERR);
+
+    cnn_run(cnn_mat_alloc(&layerPtr->bnScale, inChannel, 1, 1), ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->bnBias, inChannel, 1, 1), ret, ERR);
+
+    cnn_run(cnn_mat_alloc(&layerPtr->saveMean, inChannel, 1, 0), ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->saveVar, inChannel, 1, 0), ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->runMean, inChannel, 1, 0), ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->runVar, inChannel, 1, 0), ret, ERR);
+
     cnn_run(cnn_mat_alloc(&layerPtr->srcShift, outRows, outCols, 0), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->srcNorm, outRows, outCols, 1), ret, ERR);
 
-    //#ifdef CNN_WITH_CUDA
-    //    cnn_alloc_cu(layerPtr->stddev, inChannel, float, ret, ERR);
-    //#else
     cnn_alloc(layerPtr->stddev, inChannel * batch, float, ret, ERR);
-    //#endif
-
-#ifdef CNN_WITH_CUDA
-    cnn_alloc_cu(layerPtr->buf, inWidth * inHeight, float, ret, ERR);
-#endif
 
 #ifdef CNN_WITH_CUDA
     // Buffer allocation
-    size = inChannel * 2;
+    size = inChannel;
     cnn_alloc(tmpVec, size, float, ret, ERR);
 
-    // Set initial gamma, beta
+    // Set initial gamma
     for (int i = 0; i < inChannel; i++)
     {
-        tmpVec[i * 2 + 0] = cfgPtr->rInit;
-        tmpVec[i * 2 + 1] = cfgPtr->bInit;
+        tmpVec[i] = cfgPtr->rInit;
     }
 
-    // Copy memory
-    cnn_run_cu(cudaMemcpy(layerPtr->bnVar.mat, tmpVec, size * sizeof(float),
+    cnn_run_cu(cudaMemcpy(layerPtr->bnScale.mat, tmpVec, size * sizeof(float),
                           cudaMemcpyHostToDevice),
                ret, ERR);
 
+    // Set initial beta
+    for (int i = 0; i < inChannel; i++)
+    {
+        tmpVec[i] = cfgPtr->bInit;
+    }
+
+    cnn_run_cu(cudaMemcpy(layerPtr->bnBias.mat, tmpVec, size * sizeof(float),
+                          cudaMemcpyHostToDevice),
+               ret, ERR);
+
+    // Set initial running variance
+    for (int i = 0; i < inChannel; i++)
+    {
+        tmpVec[i] = 1.0;
+    }
+
+    cnn_run_cu(cudaMemcpy(layerPtr->runVar.mat, tmpVec, size * sizeof(float),
+                          cudaMemcpyHostToDevice),
+               ret, ERR);
 #else
     // Set initial gamma, beta
     for (int i = 0; i < inChannel; i++)
