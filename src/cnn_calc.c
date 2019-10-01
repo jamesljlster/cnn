@@ -251,18 +251,7 @@ static inline void cnn_forward_kernel(cnn_t cnn, float* inputMat,
                 }
                 else
                 {
-#ifdef CNN_WITH_CUDA
-                    cudaMemcpy(layerRef[i].outMat.data.mat,
-                               layerRef[i - 1].outMat.data.mat,
-                               sizeof(float) * layerRef[i].outMat.data.rows *
-                                   layerRef[i].outMat.data.cols,
-                               cudaMemcpyDeviceToDevice);
-#else
-                    memcpy(layerRef[i].outMat.data.mat,
-                           layerRef[i - 1].outMat.data.mat,
-                           sizeof(float) * layerRef[i].outMat.data.rows *
-                               layerRef[i].outMat.data.cols);
-#endif
+                    cnn_recall_drop(layerRef, cfgRef, i);
                 }
 
                 break;

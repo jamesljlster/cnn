@@ -42,6 +42,21 @@ static inline void cnn_drop_grad(float* gradDst, float* gradSrc, int* mask,
     }
 }
 
+static inline void cnn_recall_drop(union CNN_LAYER* layerRef,
+                                   struct CNN_CONFIG* cfgRef, int layerIndex)
+{
+    struct CNN_MAT* outData = &layerRef[layerIndex].outMat.data;
+    struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
+
+    int size = outData->rows * outData->cols * sizeof(float);
+
+#ifdef CNN_WITH_CUDA
+    cudaMemcpy(outData->mat, preOutData->mat, size, cudaMemcpyDeviceToDevice);
+#else
+    memcpy(outData->mat, preOutData->mat, size);
+#endif
+}
+
 static inline void cnn_forward_drop(union CNN_LAYER* layerRef,
                                     struct CNN_CONFIG* cfgRef, int layerIndex)
 {
