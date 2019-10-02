@@ -103,9 +103,6 @@ int main()
                           layer[1].outMat.width, layer[1].outMat.height,
                           layer[1].outMat.channel, cfg->batch);
 
-        print_img_net_msg("BatchNorm variable gradient:",
-                          layer[2].bn.bnVar.grad, 2, CH_IN, 1, 1);
-
         print_img_net_msg("BatchNorm scale gradient:", layer[2].bn.bnScale.grad,
                           1, CH_IN, 1, 1);
         print_img_net_msg("BatchNorm bias gradient:", layer[2].bn.bnBias.grad,

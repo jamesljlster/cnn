@@ -157,8 +157,6 @@ void cnn_layer_bn_delete(struct CNN_LAYER_BN* layerPtr)
     // Free memory
     cnn_mat_delete(&layerPtr->outMat.data);
 
-    cnn_mat_delete(&layerPtr->bnVar);
-
     cnn_mat_delete(&layerPtr->bnScale);
     cnn_mat_delete(&layerPtr->bnBias);
 

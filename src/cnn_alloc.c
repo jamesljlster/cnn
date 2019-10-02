@@ -683,9 +683,6 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     int outWidth, outHeight, outChannel;
 
 #ifdef CNN_WITH_CUDA
-    int size;
-    float* tmpVec = NULL;
-
     cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->srcTen), ret, ERR);
     cnn_run_cudnn(cudnnSetTensor4dDescriptor(                                 //
                       layerPtr->srcTen, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
@@ -713,8 +710,6 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
             ERR);
 
-    cnn_run(cnn_mat_alloc(&layerPtr->bnVar, inChannel, 2, 1), ret, ERR);
-
     cnn_run(cnn_mat_alloc(&layerPtr->bnScale, inChannel, 1, 1), ret, ERR);
     cnn_run(cnn_mat_alloc(&layerPtr->bnBias, inChannel, 1, 1), ret, ERR);
 
@@ -728,71 +723,47 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
 
     cnn_alloc(layerPtr->stddev, inChannel * batch, float, ret, ERR);
 
-    // Buffer allocation
-#ifdef CNN_WITH_CUDA
-    size = inChannel;
-    cnn_alloc(tmpVec, size, float, ret, ERR);
-#endif
-
     // Set initial gamma
-#ifdef CNN_WITH_CUDA
     for (int i = 0; i < inChannel; i++)
     {
-        tmpVec[i] = cfgPtr->rInit;
-    }
+        float tmp = cfgPtr->rInit;
 
-    cnn_run_cu(cudaMemcpy(layerPtr->bnScale.mat, tmpVec, size * sizeof(float),
-                          cudaMemcpyHostToDevice),
-               ret, ERR);
+#ifdef CNN_WITH_CUDA
+        cnn_run_cu(cudaMemcpy(layerPtr->bnScale.mat + i, &tmp, sizeof(float),
+                              cudaMemcpyHostToDevice),
+                   ret, ERR);
 #else
-    for (int i = 0; i < inChannel; i++)
-    {
-        layerPtr->bnScale.mat[i] = cfgPtr->rInit;
-    }
+        layerPtr->bnScale.mat[i] = tmp;
 #endif
+    }
 
     // Set initial beta
-#ifdef CNN_WITH_CUDA
     for (int i = 0; i < inChannel; i++)
     {
-        tmpVec[i] = cfgPtr->bInit;
-    }
+        float tmp = cfgPtr->bInit;
 
-    cnn_run_cu(cudaMemcpy(layerPtr->bnBias.mat, tmpVec, size * sizeof(float),
-                          cudaMemcpyHostToDevice),
-               ret, ERR);
+#ifdef CNN_WITH_CUDA
+        cnn_run_cu(cudaMemcpy(layerPtr->bnBias.mat + i, &tmp, sizeof(float),
+                              cudaMemcpyHostToDevice),
+                   ret, ERR);
 #else
-    for (int i = 0; i < inChannel; i++)
-    {
-        layerPtr->bnBias.mat[i] = cfgPtr->bInit;
-    }
+        layerPtr->bnBias.mat[i] = tmp;
 #endif
+    }
 
     // Set initial running variance
+    for (int i = 0; i < inChannel; i++)
+    {
+        float tmp = 1.0;
+
 #ifdef CNN_WITH_CUDA
-    for (int i = 0; i < inChannel; i++)
-    {
-        tmpVec[i] = 1.0;
-    }
-
-    cnn_run_cu(cudaMemcpy(layerPtr->runVar.mat, tmpVec, size * sizeof(float),
-                          cudaMemcpyHostToDevice),
-               ret, ERR);
+        cnn_run_cu(cudaMemcpy(layerPtr->runVar.mat + i, &tmp, sizeof(float),
+                              cudaMemcpyHostToDevice),
+                   ret, ERR);
 #else
-    for (int i = 0; i < inChannel; i++)
-    {
-        layerPtr->runVar.mat[i] = 1.0;
-    }
+        layerPtr->runVar.mat[i] = tmp;
 #endif
-
-    //#else
-    //    // Set initial gamma, beta
-    //    for (int i = 0; i < inChannel; i++)
-    //    {
-    //        layerPtr->bnVar.mat[i * 2 + 0] = cfgPtr->rInit;
-    //        layerPtr->bnVar.mat[i * 2 + 1] = cfgPtr->bInit;
-    //    }
-    //#endif
+    }
 
     // Assign value
     layerPtr->outMat.width = outWidth;
@@ -805,10 +776,6 @@ ERR:
     cnn_layer_bn_delete(layerPtr);
 
 RET:
-#ifdef CNN_WITH_CUDA
-    // Free buffer
-    cnn_free(tmpVec);
-#endif
 
     return ret;
 }
