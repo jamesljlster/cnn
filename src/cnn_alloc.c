@@ -728,12 +728,14 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
 
     cnn_alloc(layerPtr->stddev, inChannel * batch, float, ret, ERR);
 
-#ifdef CNN_WITH_CUDA
     // Buffer allocation
+#ifdef CNN_WITH_CUDA
     size = inChannel;
     cnn_alloc(tmpVec, size, float, ret, ERR);
+#endif
 
     // Set initial gamma
+#ifdef CNN_WITH_CUDA
     for (int i = 0; i < inChannel; i++)
     {
         tmpVec[i] = cfgPtr->rInit;
@@ -742,8 +744,15 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     cnn_run_cu(cudaMemcpy(layerPtr->bnScale.mat, tmpVec, size * sizeof(float),
                           cudaMemcpyHostToDevice),
                ret, ERR);
+#else
+    for (int i = 0; i < inChannel; i++)
+    {
+        layerPtr->bnScale.mat[i] = cfgPtr->rInit;
+    }
+#endif
 
     // Set initial beta
+#ifdef CNN_WITH_CUDA
     for (int i = 0; i < inChannel; i++)
     {
         tmpVec[i] = cfgPtr->bInit;
@@ -752,8 +761,15 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
     cnn_run_cu(cudaMemcpy(layerPtr->bnBias.mat, tmpVec, size * sizeof(float),
                           cudaMemcpyHostToDevice),
                ret, ERR);
+#else
+    for (int i = 0; i < inChannel; i++)
+    {
+        layerPtr->bnBias.mat[i] = cfgPtr->bInit;
+    }
+#endif
 
     // Set initial running variance
+#ifdef CNN_WITH_CUDA
     for (int i = 0; i < inChannel; i++)
     {
         tmpVec[i] = 1.0;
@@ -763,13 +779,20 @@ int cnn_layer_bn_alloc(struct CNN_LAYER_BN* layerPtr,
                           cudaMemcpyHostToDevice),
                ret, ERR);
 #else
-    // Set initial gamma, beta
     for (int i = 0; i < inChannel; i++)
     {
-        layerPtr->bnVar.mat[i * 2 + 0] = cfgPtr->rInit;
-        layerPtr->bnVar.mat[i * 2 + 1] = cfgPtr->bInit;
+        layerPtr->runVar.mat[i] = 1.0;
     }
 #endif
+
+    //#else
+    //    // Set initial gamma, beta
+    //    for (int i = 0; i < inChannel; i++)
+    //    {
+    //        layerPtr->bnVar.mat[i * 2 + 0] = cfgPtr->rInit;
+    //        layerPtr->bnVar.mat[i * 2 + 1] = cfgPtr->bInit;
+    //    }
+    //#endif
 
     // Assign value
     layerPtr->outMat.width = outWidth;
