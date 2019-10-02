@@ -254,11 +254,6 @@ struct CNN_LAYER_BN
     cudnnTensorDescriptor_t srcTen;
     cudnnTensorDescriptor_t bnTen;
 #endif
-
-    // Cache
-    float* stddev;
-    struct CNN_MAT srcShift;
-    struct CNN_MAT srcNorm;
 };
 
 struct CNN_LAYER_TEXT
