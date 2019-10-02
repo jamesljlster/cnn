@@ -81,7 +81,8 @@ void cnn_update(cnn_t cnn, float lRate, float gradLimit)
 
             // Batch normalization
             case CNN_LAYER_BN:
-                cnn_mat_update(&layerRef[i].bn.bnVar, lRate, gradLimit);
+                cnn_mat_update(&layerRef[i].bn.bnScale, lRate, gradLimit);
+                cnn_mat_update(&layerRef[i].bn.bnBias, lRate, gradLimit);
                 break;
 
             // Texture

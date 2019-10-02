@@ -239,8 +239,6 @@ struct CNN_LAYER_BN
     struct CNN_SHAPE outMat;
 
     // BatchNorm variables
-    struct CNN_MAT bnVar;
-
     struct CNN_MAT bnScale;
     struct CNN_MAT bnBias;
 

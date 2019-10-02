@@ -42,7 +42,10 @@ const char* cnn_str_list[] = {
     "gamma",      //
     "beta",       //
     "param",      //
-    "alpha"       //
+    "alpha",      //
+    "mean",       //
+    "var",        //
+    "expAvgF",    //
 };
 
 int cnn_strdef_get_id(const char* str)

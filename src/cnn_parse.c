@@ -137,7 +137,7 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
     xmlAttrPtr index = NULL, type = NULL;
     xmlAttrPtr pad = NULL, dim = NULL, size = NULL, poolType = NULL, id = NULL,
                rate = NULL, filter = NULL, gamma = NULL, beta = NULL,
-               alpha = NULL;
+               alpha = NULL, expAvgF = NULL;
 
     xmlChar* xStr = NULL;
 
@@ -195,6 +195,10 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
 
             case CNN_STR_ALPHA:
                 alpha = attrCur;
+                break;
+
+            case CNN_STR_EAF:
+                expAvgF = attrCur;
                 break;
         }
 
@@ -437,7 +441,7 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
             break;
 
         case CNN_LAYER_BN:
-            if (gamma == NULL || beta == NULL)
+            if (gamma == NULL || beta == NULL || expAvgF == NULL)
             {
                 ret = CNN_INFO_NOT_FOUND;
                 goto RET;
@@ -454,6 +458,14 @@ int cnn_parse_network_layer_xml(struct CNN_CONFIG* cfgPtr, xmlNodePtr node)
             // Parse beta
             xStr = xmlNodeGetContent(beta->children);
             cnn_run(cnn_strtof(&cfgPtr->layerCfg[tmpIndex].bn.bInit,
+                               (const char*)xStr),
+                    ret, RET);
+            xmlFree(xStr);
+            xStr = NULL;
+
+            // Parse exponential average factor
+            xStr = xmlNodeGetContent(expAvgF->children);
+            cnn_run(cnn_strtof(&cfgPtr->layerCfg[tmpIndex].bn.expAvgFactor,
                                (const char*)xStr),
                     ret, RET);
             xmlFree(xStr);
@@ -956,9 +968,27 @@ int cnn_parse_network_detail_bn_xml(struct CNN* cnn, int layerIndex,
         strId = cnn_strdef_get_id((const char*)cur->name);
         switch (strId)
         {
-            case CNN_STR_PARAM:
+            case CNN_STR_GAMMA:
                 cnn_run(
-                    cnn_parse_mat(&cnn->layerList[layerIndex].bn.bnVar, cur),
+                    cnn_parse_mat(&cnn->layerList[layerIndex].bn.bnScale, cur),
+                    ret, RET);
+                break;
+
+            case CNN_STR_BETA:
+                cnn_run(
+                    cnn_parse_mat(&cnn->layerList[layerIndex].bn.bnBias, cur),
+                    ret, RET);
+                break;
+
+            case CNN_STR_MEAN:
+                cnn_run(
+                    cnn_parse_mat(&cnn->layerList[layerIndex].bn.runMean, cur),
+                    ret, RET);
+                break;
+
+            case CNN_STR_VAR:
+                cnn_run(
+                    cnn_parse_mat(&cnn->layerList[layerIndex].bn.runVar, cur),
                     ret, RET);
                 break;
         }

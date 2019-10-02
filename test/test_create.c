@@ -176,7 +176,6 @@ void check_cnn_arch(cnn_t cnn)
                 print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 
                 test_mat(cnn->layerList[i].outMat.data);
-                test_mat(cnn->layerList[i].bn.bnVar);
                 test_mat(cnn->layerList[i].bn.bnScale);
                 test_mat(cnn->layerList[i].bn.bnBias);
                 test_mat(cnn->layerList[i].bn.saveMean);

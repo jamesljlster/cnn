@@ -390,25 +390,44 @@ int cnn_write_layer_bn_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
                 ret, RET);
 
     // Write gamma
-    cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.rInit);
+    cnn_ftostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.rInit);
     cnn_xml_run(
         xmlTextWriterWriteAttribute(
             writer, (xmlChar*)cnn_str_list[CNN_STR_GAMMA], (xmlChar*)buf),
         ret, RET);
 
     // Write beta
-    cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.bInit);
+    cnn_ftostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.bInit);
     cnn_xml_run(
         xmlTextWriterWriteAttribute(
             writer, (xmlChar*)cnn_str_list[CNN_STR_BETA], (xmlChar*)buf),
         ret, RET);
 
+    // Write exponential average factor
+    cnn_ftostr(buf, CNN_XML_BUFLEN,
+               cfgRef->layerCfg[layerIndex].bn.expAvgFactor);
+    cnn_xml_run(xmlTextWriterWriteAttribute(
+                    writer, (xmlChar*)cnn_str_list[CNN_STR_EAF], (xmlChar*)buf),
+                ret, RET);
+
     // Write network detail
     if (layerRef != NULL)
     {
         // Write batch normalization parameter
-        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.bnVar,
-                                  cnn_str_list[CNN_STR_PARAM], writer),
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.bnScale,
+                                  cnn_str_list[CNN_STR_GAMMA], writer),
+                ret, RET);
+
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.bnBias,
+                                  cnn_str_list[CNN_STR_BETA], writer),
+                ret, RET);
+
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.runMean,
+                                  cnn_str_list[CNN_STR_MEAN], writer),
+                ret, RET);
+
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.runVar,
+                                  cnn_str_list[CNN_STR_VAR], writer),
                 ret, RET);
     }
 
