@@ -42,12 +42,12 @@ static inline void cnn_forward_activ(union CNN_LAYER* layerRef,
         struct CNN_MAT* outData = &layerPtr->outMat.data;
         struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
 
-        cnn_assert_cudnn(cudnnSoftmaxForward(                 //
-            cnnInit.cudnnHandle,                              //
-            CUDNN_SOFTMAX_FAST, CUDNN_SOFTMAX_MODE_INSTANCE,  //
-            &alpha,                                           //
-            layerPtr->ten, preOutData->mat,                   //
-            &beta,                                            //
+        cnn_assert_cudnn(cudnnSoftmaxForward(                     //
+            cnnInit.cudnnHandle,                                  //
+            CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,  //
+            &alpha,                                               //
+            layerPtr->ten, preOutData->mat,                       //
+            &beta,                                                //
             layerPtr->ten, outData->mat));
 #else
         for (int j = 0; j < cfgRef->batch; j++)
@@ -109,13 +109,13 @@ static inline void cnn_backward_activ(union CNN_LAYER* layerRef,
             struct CNN_MAT* outData = &layerPtr->outMat.data;
             struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
 
-            cnn_assert_cudnn(cudnnSoftmaxBackward(                //
-                cnnInit.cudnnHandle,                              //
-                CUDNN_SOFTMAX_FAST, CUDNN_SOFTMAX_MODE_INSTANCE,  //
-                &alpha,                                           //
-                layerPtr->ten, outData->mat,                      //
-                layerPtr->ten, outData->grad,                     //
-                &beta,                                            //
+            cnn_assert_cudnn(cudnnSoftmaxBackward(                    //
+                cnnInit.cudnnHandle,                                  //
+                CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,  //
+                &alpha,                                               //
+                layerPtr->ten, outData->mat,                          //
+                layerPtr->ten, outData->grad,                         //
+                &beta,                                                //
                 layerPtr->ten, preOutData->grad));
 
 #else
