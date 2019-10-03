@@ -5,6 +5,7 @@
 
 #include "cnn.h"
 #include "cnn_builtin_math.h"
+#include "cnn_macro.h"
 #include "cnn_types.h"
 
 #ifdef CNN_WITH_CUDA
@@ -32,6 +33,23 @@ static inline void cnn_forward_activ(union CNN_LAYER* layerRef,
     }
     else
     {
+#ifdef CNN_WITH_CUDA
+        float alpha = 1.0;
+        float beta = 0.0;
+
+        struct CNN_LAYER_ACTIV* layerPtr = &layerRef[layerIndex].activ;
+
+        struct CNN_MAT* outData = &layerPtr->outMat.data;
+        struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
+
+        cnn_assert_cudnn(cudnnSoftmaxForward(                 //
+            cnnInit.cudnnHandle,                              //
+            CUDNN_SOFTMAX_FAST, CUDNN_SOFTMAX_MODE_INSTANCE,  //
+            &alpha,                                           //
+            layerPtr->ten, preOutData->mat,                   //
+            &beta,                                            //
+            layerPtr->ten, outData->mat));
+#else
         for (int j = 0; j < cfgRef->batch; j++)
         {
             int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
@@ -44,6 +62,7 @@ static inline void cnn_forward_activ(union CNN_LAYER* layerRef,
             cnn_activ_list[id](dstPtr, srcPtr,
                                layerRef[layerIndex].outMat.data.cols, bufPtr);
         }
+#endif
     }
 }
 
@@ -81,6 +100,25 @@ static inline void cnn_backward_activ(union CNN_LAYER* layerRef,
         }
         else
         {
+#ifdef CNN_WITH_CUDA
+            float alpha = 1.0;
+            float beta = 0.0;
+
+            struct CNN_LAYER_ACTIV* layerPtr = &layerRef[layerIndex].activ;
+
+            struct CNN_MAT* outData = &layerPtr->outMat.data;
+            struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
+
+            cnn_assert_cudnn(cudnnSoftmaxBackward(                //
+                cnnInit.cudnnHandle,                              //
+                CUDNN_SOFTMAX_FAST, CUDNN_SOFTMAX_MODE_INSTANCE,  //
+                &alpha,                                           //
+                layerPtr->ten, outData->mat,                      //
+                layerPtr->ten, outData->grad,                     //
+                &beta,                                            //
+                layerPtr->ten, preOutData->grad));
+
+#else
             for (int j = 0; j < cfgRef->batch; j++)
             {
                 int srcShift;
@@ -154,6 +192,7 @@ static inline void cnn_backward_activ(union CNN_LAYER* layerRef,
 #endif
                 }
             }
+#endif
         }
     }
 }

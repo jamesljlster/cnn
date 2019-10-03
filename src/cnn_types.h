@@ -143,6 +143,10 @@ struct CNN_LAYER_ACTIV
 
     // Calculate buffer
     struct CNN_MAT buf;
+
+#ifdef CNN_WITH_CUDA
+    cudnnTensorDescriptor_t ten;
+#endif
 };
 
 struct CNN_LAYER_FC

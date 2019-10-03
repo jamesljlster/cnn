@@ -80,6 +80,11 @@ void cnn_layer_activ_delete(struct CNN_LAYER_ACTIV* layerPtr)
     cnn_mat_delete(&layerPtr->gradMat);
     cnn_mat_delete(&layerPtr->buf);
 
+#ifdef CNN_WITH_CUDA
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->ten);
+#endif
+
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_ACTIV));
 }

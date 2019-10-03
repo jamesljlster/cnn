@@ -283,6 +283,15 @@ int cnn_layer_activ_alloc(struct CNN_LAYER_ACTIV* layerPtr,
                                           (union CNN_CONFIG_LAYER*)cfgPtr),
             ret, RET);
 
+#ifdef CNN_WITH_CUDA
+    // Create tensor
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->ten), ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(
+                      layerPtr->ten, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      batch, inChannel, inHeight, inWidth),
+                  ret, ERR);
+#endif
+
     // Find allocate size
     outRows = batch;
     outCols = inWidth * inHeight * inChannel;
