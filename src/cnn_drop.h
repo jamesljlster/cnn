@@ -103,6 +103,7 @@ static inline void cnn_forward_drop(union CNN_LAYER* layerRef,
 static inline void cnn_backward_drop(union CNN_LAYER* layerRef,
                                      struct CNN_CONFIG* cfgRef, int layerIndex)
 {
+    // Find layer gradient
     if (layerIndex > 1)
     {
 #ifdef CNN_WITH_CUDA
