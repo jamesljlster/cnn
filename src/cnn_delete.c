@@ -56,7 +56,17 @@ void cnn_layer_drop_delete(struct CNN_LAYER_DROP* layerPtr)
     cnn_free(layerPtr->mask);
 
 #ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->maskGpu);
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->ten);
+
+    // Destroy dropout descriptor
+    cudnnDestroyDropoutDescriptor(layerPtr->dropDesc);
+
+    // Free state space
+    cnn_free_cu(layerPtr->stateSpace);
+
+    // Free reserve space
+    cnn_free_cu(layerPtr->rsvSpace);
 #endif
 
     // Zero memory
@@ -69,6 +79,11 @@ void cnn_layer_activ_delete(struct CNN_LAYER_ACTIV* layerPtr)
     cnn_mat_delete(&layerPtr->outMat.data);
     cnn_mat_delete(&layerPtr->gradMat);
     cnn_mat_delete(&layerPtr->buf);
+
+#ifdef CNN_WITH_CUDA
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->ten);
+#endif
 
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_ACTIV));

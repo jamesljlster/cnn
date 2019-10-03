@@ -143,6 +143,10 @@ struct CNN_LAYER_ACTIV
 
     // Calculate buffer
     struct CNN_MAT buf;
+
+#ifdef CNN_WITH_CUDA
+    cudnnTensorDescriptor_t ten;
+#endif
 };
 
 struct CNN_LAYER_FC
@@ -230,7 +234,17 @@ struct CNN_LAYER_DROP
 
     // Dropout mask
     int* mask;
-    int* maskGpu;
+
+#ifdef CNN_WITH_CUDA
+    cudnnDropoutDescriptor_t dropDesc;
+    cudnnTensorDescriptor_t ten;
+
+    size_t stateSize;
+    void* stateSpace;
+
+    size_t rsvSize;
+    void* rsvSpace;
+#endif
 };
 
 struct CNN_LAYER_BN

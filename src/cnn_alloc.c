@@ -224,7 +224,34 @@ int cnn_layer_drop_alloc(struct CNN_LAYER_DROP* layerPtr,
     cnn_alloc(layerPtr->mask, outRows * outCols, int, ret, ERR);
 
 #ifdef CNN_WITH_CUDA
-    cnn_alloc_cu(layerPtr->maskGpu, outRows * outCols, int, ret, ERR);
+    // Create tensor
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->ten), ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(
+                      layerPtr->ten, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      batch, inChannel, inHeight, inWidth),
+                  ret, ERR);
+
+    // Allocate state space
+    cnn_run_cudnn(
+        cudnnDropoutGetStatesSize(cnnInit.cudnnHandle, &layerPtr->stateSize),
+        ret, ERR);
+    cnn_alloc_cu(layerPtr->stateSpace, layerPtr->stateSize, char, ret, ERR);
+
+    // Create dropout descriptor
+    cnn_run_cudnn(cudnnCreateDropoutDescriptor(&layerPtr->dropDesc), ret, ERR);
+    cnn_run_cudnn(cudnnSetDropoutDescriptor(                      //
+                      layerPtr->dropDesc, cnnInit.cudnnHandle,    //
+                      cfgPtr->rate,                               //
+                      layerPtr->stateSpace, layerPtr->stateSize,  //
+                      cnnInit.randSeed),
+                  ret, ERR);
+
+    // Allocate reserve space
+    cnn_run_cudnn(
+        cudnnDropoutGetReserveSpaceSize(layerPtr->ten, &layerPtr->rsvSize), ret,
+        ERR);
+    cnn_alloc_cu(layerPtr->rsvSpace, layerPtr->rsvSize, char, ret, ERR);
+
 #endif
 
     // Assign value
@@ -255,6 +282,15 @@ int cnn_layer_activ_alloc(struct CNN_LAYER_ACTIV* layerPtr,
                                           inWidth, inHeight, inChannel,
                                           (union CNN_CONFIG_LAYER*)cfgPtr),
             ret, RET);
+
+#ifdef CNN_WITH_CUDA
+    // Create tensor
+    cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->ten), ret, ERR);
+    cnn_run_cudnn(cudnnSetTensor4dDescriptor(
+                      layerPtr->ten, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,  //
+                      batch, inChannel, inHeight, inWidth),
+                  ret, ERR);
+#endif
 
     // Find allocate size
     outRows = batch;
