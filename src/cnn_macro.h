@@ -2,6 +2,7 @@
 #define __CNN_MACRO_H__
 
 #include <assert.h>
+#include <stdio.h>
 
 #include "cnn_config.h"
 
