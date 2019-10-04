@@ -85,7 +85,8 @@ static inline void cnn_backward_activ(union CNN_LAYER* layerRef,
 
             // Find gradient matrix
             cnn_activ_grad_list[cfgRef->layerCfg[layerIndex].activ.id](
-                dstPtr, srcPtr, size, layerRef[layerIndex].outMat.data.mat);
+                dstPtr, srcPtr, NULL, size,
+                layerRef[layerIndex].outMat.data.mat, NULL);
 
             // Find layer gradient
 #ifdef CNN_WITH_CUDA
@@ -142,8 +143,8 @@ static inline void cnn_backward_activ(union CNN_LAYER* layerRef,
 
                 // Find gradient matrix
                 cnn_activ_grad_list[cfgRef->layerCfg[layerIndex].activ.id](
-                    dstPtr, srcPtr, layerRef[layerIndex].outMat.data.cols,
-                    layerRef[layerIndex].outMat.data.mat + srcShift);
+                    dstPtr, srcPtr, NULL, layerRef[layerIndex].outMat.data.cols,
+                    layerRef[layerIndex].outMat.data.mat + srcShift, NULL);
 
                 // Find layer gradient
                 if (cfgRef->layerCfg[layerIndex].activ.id == CNN_SOFTMAX)

@@ -3,6 +3,8 @@
 
 #include <string.h>
 
+#include <cblas.h>
+
 #include "cnn_builtin_math.h"
 #include "cnn_types.h"
 
@@ -287,7 +289,8 @@ static inline void cnn_backward_text(union CNN_LAYER* layerRef,
                     activRows, 0.0, activGrad, activCols);
 
         // Find scale gradient matrix
-        cnn_activ_grad_list[activId](scaleGrad, scalePtr, scaleSize, scaleGrad);
+        cnn_activ_grad_list[activId](scaleGrad, scalePtr, NULL, scaleSize,
+                                     scaleGrad, NULL);
         for (int i = 0; i < scaleSize; i++)
         {
             scaleGrad[i] *= activGrad[i];

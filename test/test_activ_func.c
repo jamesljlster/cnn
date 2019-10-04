@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
         cudaMemcpy(deri, cuDeri, len * len * sizeof(float),
                    cudaMemcpyDeviceToHost);
 #else
-        cnn_activ_grad_list[id](deri, src, len, dst);
+        cnn_activ_grad_list[id](deri, src, NULL, len, dst, NULL);
 #endif
 
         // Find error
