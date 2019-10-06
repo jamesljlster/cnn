@@ -66,8 +66,12 @@ int main(int argc, char* argv[])
 
     for (int i = 0; i < len; i++)
     {
-        gradIn[i] = 1.0;
+        gradIn[i] = (float)(i + 1) * 0.1;
     }
+
+    printf("Gradient Input:\n");
+    print_mat(gradIn, len, 1);
+    printf("\n");
 
 #ifdef CNN_WITH_CUDA
     cu_alloc(cuSrc, len, float);
@@ -199,7 +203,7 @@ int main(int argc, char* argv[])
                 cnn_activ_list[id](deriBuf, src, len, NULL);
 #endif
 
-                deri[i] = (deriBuf[i] - dst[i]) / dx;
+                deri[i] = (deriBuf[i] - dst[i]) * gradIn[i] / dx;
             }
 
             // Find gradient
