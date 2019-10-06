@@ -15,6 +15,9 @@
 #include <cuda_runtime.h>
 #endif
 
+void matmul(float* matA, int rowsA, int colsA, float* matB, int rowsB,
+            int colsB, float* matC, int rowsC, int colsC);
+
 int main(int argc, char* argv[])
 {
     int id;
@@ -84,7 +87,6 @@ int main(int argc, char* argv[])
         }
 
         // Test derivative and gradient
-        memset(deri, 0, len * len * sizeof(float));
 #ifdef CNN_WITH_CUDA
         cudaMemcpy(cuSrc, src, len * sizeof(float), cudaMemcpyHostToDevice);
         cnn_activ_list[id](cuDst, cuSrc, len, cuBuf);
@@ -154,6 +156,24 @@ int main(int argc, char* argv[])
             printf("\n");
             printf("Sum of error: %lf\n", err);
             printf("\n");
+
+            // Find gradient output error
+            matmul(deri, len, len, gradIn, len, 1, buf, len, 1);
+
+            err = 0;
+            for (i = 0; i < len; i++)
+            {
+                err += fabs(gradOut[i] - buf[i]);
+            }
+
+            printf("Layer gradient with deri:\n");
+            print_mat(buf, len, 1);
+            printf("\n");
+            printf("Layer gradient with grad:\n");
+            print_mat(gradOut, len, 1);
+            printf("\n");
+            printf("Sum of error: %lf\n", err);
+            printf("\n");
         }
         else
         {
@@ -218,4 +238,30 @@ int main(int argc, char* argv[])
     }
 
     return 0;
+}
+
+void matmul(float* matA, int rowsA, int colsA, float* matB, int rowsB,
+            int colsB, float* matC, int rowsC, int colsC)
+{
+    int i, j, k;
+    float tmp;
+
+    // Check argument
+    assert((rowsA == rowsC && colsB == colsC && colsA == rowsB) &&
+           "Invalid argument for matrix multiplication");
+
+    // Matrix multiplication
+    for (i = 0; i < rowsC; i++)
+    {
+        for (j = 0; j < colsC; j++)
+        {
+            tmp = 0;
+            for (k = 0; k < colsA; k++)
+            {
+                tmp += matA[i * colsA + k] * matB[k * colsB + j];
+            }
+
+            matC[i * colsC + j] = tmp;
+        }
+    }
 }
