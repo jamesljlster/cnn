@@ -235,7 +235,7 @@ CNN_ACTIV_GRAD_DEF(cnn_tanh_grad)
 #pragma omp parallel for shared(gradOut, gradIn, cache) private(cacheVal)
     for (int i = 0; i < len; i++)
     {
-        cacheVal = buf[i];
+        cacheVal = cache[i];
         gradOut[i] = (1.0 - cacheVal * cacheVal) * gradIn[i];
     }
 #endif
