@@ -26,8 +26,8 @@
         cnn_##name##_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(dst, src, len); \
     }                                                                         \
                                                                               \
-    __global__ void cnn_##name##_grad_kernel(float* dst, float* src,          \
-                                             float* cache, int len)           \
+    __global__ void cnn_##name##_grad_kernel(                                 \
+        float* gradOut, float* gradIn, float* src, int len, float* cache)     \
     {                                                                         \
         int index = blockIdx.x * blockDim.x + threadIdx.x;                    \
         if (index >= len)                                                     \
@@ -38,7 +38,8 @@
         bpProc                                                                \
     }                                                                         \
                                                                               \
-    void cnn_##name##_grad_gpu(float* dst, float* src, float* cache, int len) \
+    void cnn_##name##_grad_gpu(float* gradOut, float* gradIn, float* src,     \
+                               int len, float* cache)                         \
     {                                                                         \
         int blocks = len / CNN_THREAD_PER_BLOCK;                              \
         if (len % CNN_THREAD_PER_BLOCK)                                       \
@@ -47,7 +48,7 @@
         }                                                                     \
                                                                               \
         cnn_##name##_grad_kernel<<<blocks, CNN_THREAD_PER_BLOCK>>>(           \
-            dst, src, cache, len);                                            \
+            gradOut, gradIn, src, len, cache);                                \
     }
 
 #ifdef __cplusplus
@@ -395,11 +396,11 @@ extern "C"
         cnn_smax_grad_kernel<<<grid, blk>>>(dst, cache, len);
     }
 
-    CNN_SCALAR_ACTIV_IMPL(                         //
-        relu,                                      //
-        dst[index] = fmaxf(src[index], 0.0f);      //
-        ,                                          //
-        dst[index] = (src[index] < 0.0f) ? 0 : 1;  //
+    CNN_SCALAR_ACTIV_IMPL(                                         //
+        relu,                                                      //
+        dst[index] = fmaxf(src[index], 0.0f);                      //
+        ,                                                          //
+        gradOut[index] = (src[index] < 0.0f) ? 0 : gradIn[index];  //
     )
 
     CNN_SCALAR_ACTIV_IMPL(                                     //
@@ -408,34 +409,37 @@ extern "C"
         ,                                                      //
         if (src[index] == 0.0f)                                //
         {                                                      //
-            dst[index] = 0.5;                                  //
+            gradOut[index] = 0.5;                              //
         }                                                      //
         else                                                   //
         {                                                      //
-            dst[index] = cache[index] + (cache[index] / src[index]) *
-                                            (1.0f - cache[index]);  //
-        }                                                           //
+            gradOut[index] = (cache[index] + (cache[index] / src[index]) *
+                                                 (1.0f - cache[index])) *
+                             gradIn[index];  //
+        }                                    //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(                                 //
-        sigmoid,                                           //
-        dst[index] = 1.0f / (1.0f + expf(-src[index]));    //
-        ,                                                  //
-        dst[index] = cache[index] * (1.0 - cache[index]);  //
+    CNN_SCALAR_ACTIV_IMPL(                               //
+        sigmoid,                                         //
+        dst[index] = 1.0f / (1.0f + expf(-src[index]));  //
+        ,                                                //
+        gradOut[index] = cache[index] * (1.0 - cache[index]) *
+                         gradIn[index];  //
     )
 
     CNN_SCALAR_ACTIV_IMPL(                                        //
         tanh,                                                     //
         dst[index] = 2.0 / (1.0 + exp(-2.0 * src[index])) - 1.0;  //
         ,                                                         //
-        dst[index] = 1.0 - cache[index] * cache[index];           //
+        gradOut[index] = (1.0 - cache[index] * cache[index]) *
+                         gradIn[index];  //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(                                 //
-        gaussian,                                          //
-        dst[index] = exp(-src[index] * src[index] * 0.5);  //
-        ,                                                  //
-        dst[index] = -src[index] * cache[index];           //
+    CNN_SCALAR_ACTIV_IMPL(                                            //
+        gaussian,                                                     //
+        dst[index] = exp(-src[index] * src[index] * 0.5);             //
+        ,                                                             //
+        gradOut[index] = -src[index] * cache[index] * gradIn[index];  //
     )
 
     CNN_SCALAR_ACTIV_IMPL(  //
@@ -443,15 +447,16 @@ extern "C"
         dst[index] = (sqrt(src[index] * src[index] + 1.0) - 1.0) / 2.0 +
                      src[index];  //
         ,                         //
-        dst[index] = src[index] / (2.0 * sqrt(src[index] * src[index] + 1.0)) +
-                     1.0;  //
+        gradOut[index] =
+            (src[index] / (2.0 * sqrt(src[index] * src[index] + 1.0)) + 1.0) *
+            gradIn[index];  //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(                            //
-        softplus,                                     //
-        dst[index] = log1p(exp(src[index]));          //
-        ,                                             //
-        dst[index] = 1.0 / (1.0 + exp(-src[index]));  //
+    CNN_SCALAR_ACTIV_IMPL(                                          //
+        softplus,                                                   //
+        dst[index] = log1p(exp(src[index]));                        //
+        ,                                                           //
+        gradOut[index] = gradIn[index] / (1.0 + exp(-src[index]));  //
     )
 
     CNN_SCALAR_ACTIV_IMPL(                                   //
@@ -459,7 +464,7 @@ extern "C"
         dst[index] = src[index] / (1.0 + fabs(src[index]));  //
         ,                                                    //
         float tmp = 1.0 + fabs(src[index]);                  //
-        dst[index] = 1.0 / (tmp * tmp);                      //
+        gradOut[index] = gradIn[index] / (tmp * tmp);        //
     )
 
     CNN_SCALAR_ACTIV_IMPL(                              //
@@ -475,27 +480,28 @@ extern "C"
         ,                                               //
         if (src[index] == 0.0)                          //
         {                                               //
-            dst[index] = 0.0;                           //
+            gradOut[index] = 0.0;                       //
         }                                               //
         else                                            //
         {                                               //
-            dst[index] = (cos(src[index]) / src[index]) -
-                         (sin(src[index]) / (src[index] * src[index]));  //
-        }                                                                //
+            gradOut[index] = ((cos(src[index]) / src[index]) -
+                              (sin(src[index]) / (src[index] * src[index]))) *
+                             gradIn[index];  //
+        }                                    //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(             //
-        sin,                           //
-        dst[index] = sin(src[index]);  //
-        ,                              //
-        dst[index] = cos(src[index]);  //
+    CNN_SCALAR_ACTIV_IMPL(                                 //
+        sin,                                               //
+        dst[index] = sin(src[index]);                      //
+        ,                                                  //
+        gradOut[index] = cos(src[index]) * gradIn[index];  //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(        //
-        identity,                 //
-        dst[index] = src[index];  //
-        ,                         //
-        dst[index] = 1.0;         //
+    CNN_SCALAR_ACTIV_IMPL(               //
+        identity,                        //
+        dst[index] = src[index];         //
+        ,                                //
+        gradOut[index] = gradIn[index];  //
     )
 
 #ifdef __cplusplus

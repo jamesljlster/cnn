@@ -6,6 +6,8 @@
 #include "cnn.h"
 #include "cnn_builtin_math.h"
 #include "cnn_config.h"
+#include "cnn_init.h"
+#include "cnn_macro.h"
 
 #ifdef CNN_WITH_CUDA
 #include <cuda_runtime.h>
@@ -59,8 +61,25 @@ const char* cnn_activ_name[] = {
 
 CNN_ACTIV_DEF(cnn_softmax)
 {
-    int i;
     float max, sum;
+
+#ifdef CNN_WITH_CUDA
+    // Find max value
+    cnn_max_gpu(&max, src, len, buf);
+
+    // Find shifted vector
+    cnn_add_gpu(buf, src, len, -max);
+
+    // Find exponential vector
+    cnn_exp_gpu(buf, buf, len);
+
+    // Find sum
+    cnn_sum_gpu(&sum, buf, len, dst);
+
+    // Find softmax
+    cnn_div_gpu(dst, buf, len, sum);
+#else
+    int i;
 
     // Find max value
     max = src[0];
@@ -85,11 +104,36 @@ CNN_ACTIV_DEF(cnn_softmax)
     {
         dst[i] = exp(dst[i]) / sum;
     }
-    //#endif
+#endif
 }
 
 CNN_ACTIV_GRAD_DEF(cnn_softmax_grad)
 {
+#ifdef CNN_WITH_CUDA
+    float alpha = 1.0;
+    float beta = 0.0;
+
+    // Find derivative matrix
+    cnn_smax_grad_gpu(buf, cache, len);
+
+    // Find layer gradient
+    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,  //
+                1, len, len,                                //
+                1.0,                                        //
+                gradIn, len,                                //
+                buf, len,                                   //
+                0.0,                                        //
+                gradOut, len);
+
+    cnn_assert_cu(cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N,  //
+                              1, len, len,                                   //
+                              &alpha,                                        //
+                              gradIn, len,                                   //
+                              buf, len,                                      //
+                              &beta,                                         //
+                              gradOut, len));
+
+#else
     int i, j;
 
     // Find softmax gradient matrix
@@ -109,6 +153,7 @@ CNN_ACTIV_GRAD_DEF(cnn_softmax_grad)
                 buf, len,                                   //
                 0.0,                                        //
                 gradOut, len);
+#endif
 }
 
 CNN_ACTIV_DEF(cnn_relu)
@@ -127,7 +172,7 @@ CNN_ACTIV_DEF(cnn_relu)
 CNN_ACTIV_GRAD_DEF(cnn_relu_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_relu_grad_gpu(dst, src, buf, len);
+    cnn_relu_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find relu gradient
 #pragma omp parallel for shared(gradOut, gradIn, src)
@@ -157,7 +202,7 @@ CNN_ACTIV_DEF(cnn_swish)
 CNN_ACTIV_GRAD_DEF(cnn_swish_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_swish_grad_gpu(dst, src, buf, len);
+    cnn_swish_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find swish gradient
     float srcVal, cacheVal;
@@ -197,7 +242,7 @@ CNN_ACTIV_DEF(cnn_sigmoid)
 CNN_ACTIV_GRAD_DEF(cnn_sigmoid_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_sigmoid_grad_gpu(dst, src, buf, len);
+    cnn_sigmoid_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     float cacheVal;
 
@@ -227,7 +272,7 @@ CNN_ACTIV_DEF(cnn_tanh)
 CNN_ACTIV_GRAD_DEF(cnn_tanh_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_tanh_grad_gpu(dst, src, buf, len);
+    cnn_tanh_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     float cacheVal;
 
@@ -257,7 +302,7 @@ CNN_ACTIV_DEF(cnn_gaussian)
 CNN_ACTIV_GRAD_DEF(cnn_gaussian_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_gaussian_grad_gpu(dst, src, buf, len);
+    cnn_gaussian_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find gaussian gradient
 #pragma omp parallel for shared(gradOut, gradIn, src, cache)
@@ -287,7 +332,7 @@ CNN_ACTIV_DEF(cnn_bent_identity)
 CNN_ACTIV_GRAD_DEF(cnn_bent_identity_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_bent_identity_grad_gpu(dst, src, buf, len);
+    cnn_bent_identity_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find bent indentity gradient
     float srcVal;
@@ -318,7 +363,7 @@ CNN_ACTIV_DEF(cnn_softplus)
 CNN_ACTIV_GRAD_DEF(cnn_softplus_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_softplus_grad_gpu(dst, src, buf, len);
+    cnn_softplus_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find softplus gradient
 #pragma omp parallel for shared(gradOut, gradIn, src)
@@ -348,7 +393,7 @@ CNN_ACTIV_DEF(cnn_softsign)
 CNN_ACTIV_GRAD_DEF(cnn_softsign_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_softsign_grad_gpu(dst, src, buf, len);
+    cnn_softsign_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find softsign gradient
 #pragma omp parallel for shared(gradOut, gradIn, src)
@@ -385,7 +430,7 @@ CNN_ACTIV_DEF(cnn_sinc)
 CNN_ACTIV_GRAD_DEF(cnn_sinc_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_sinc_grad_gpu(dst, src, buf, len);
+    cnn_sinc_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find sinc gradient
     float srcVal;
@@ -424,7 +469,7 @@ CNN_ACTIV_DEF(cnn_sinusoid)
 CNN_ACTIV_GRAD_DEF(cnn_sinusoid_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_sin_grad_gpu(dst, src, buf, len);
+    cnn_sin_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find sinusoid gradient
 #pragma omp parallel for shared(gradOut, gradIn, src)
@@ -451,7 +496,7 @@ CNN_ACTIV_DEF(cnn_identity)
 CNN_ACTIV_GRAD_DEF(cnn_identity_grad)
 {
 #ifdef CNN_WITH_CUDA
-    cnn_identity_grad_gpu(dst, src, buf, len);
+    cnn_identity_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find identity gradient
 #pragma omp parallel for shared(gradOut, gradIn)

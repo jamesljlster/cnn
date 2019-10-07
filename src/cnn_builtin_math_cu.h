@@ -1,9 +1,10 @@
 #ifndef __CNN_BUILTIN_MATH_CU_H__
 #define __CNN_BUILTIN_MATH_CU_H__
 
-#define CNN_SCALAR_ACTIV_DEF(name)                          \
-    void cnn_##name##_gpu(float* dst, float* src, int len); \
-    void cnn_##name##_grad_gpu(float* dst, float* src, float* cache, int len);
+#define CNN_SCALAR_ACTIV_DEF(name)                                        \
+    void cnn_##name##_gpu(float* dst, float* src, int len);               \
+    void cnn_##name##_grad_gpu(float* gradOut, float* gradIn, float* src, \
+                               int len, float* cache);
 
 #ifdef __cplusplus
 extern "C"
