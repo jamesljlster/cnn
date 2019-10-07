@@ -409,7 +409,7 @@ extern "C"
         ,                                                      //
         if (src[index] == 0.0f)                                //
         {                                                      //
-            gradOut[index] = 0.5;                              //
+            gradOut[index] = 0.5 * gradIn[index];              //
         }                                                      //
         else                                                   //
         {                                                      //

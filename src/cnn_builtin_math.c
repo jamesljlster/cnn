@@ -118,10 +118,10 @@ CNN_ACTIV_GRAD_DEF(cnn_softmax_grad)
 
     // Find layer gradient
     cnn_assert_cu(cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N,  //
-                              1, len, len,                                   //
+                              len, 1, len,                                   //
                               &alpha,                                        //
-                              gradIn, len,                                   //
                               buf, len,                                      //
+                              gradIn, len,                                   //
                               &beta,                                         //
                               gradOut, len));
 
