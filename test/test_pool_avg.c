@@ -92,7 +92,7 @@ int main()
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_MAX, POOL_SIZE));
+    test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_AVG, POOL_SIZE));
 
     // Print information
     print_img_msg("src:", src, IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch);
@@ -120,13 +120,7 @@ int main()
     for (int i = 0; i < 2; i++)
     {
         printf("***** Forward #%d *****\n", i + 1);
-        // cnn_forward_pool(layer, cfg, 2);
-
-        cnn_pool_2d_avg(layer[2].outMat.data.mat,                       //
-                        layer[2].outMat.height, layer[2].outMat.width,  //
-                        layer[1].outMat.data.mat,                       //
-                        layer[1].outMat.height, layer[1].outMat.width,  //
-                        BATCH, CH_IN, POOL_SIZE);
+        cnn_forward_pool(layer, cfg, 2);
 
         print_img_net_msg("Pooling output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
@@ -137,13 +131,7 @@ int main()
     for (int i = 0; i < 2; i++)
     {
         printf("***** BP #%d *****\n", i + 1);
-        // cnn_backward_pool(layer, cfg, 2);
-
-        cnn_pool_2d_avg_grad(layer[1].outMat.data.grad,                      //
-                             layer[1].outMat.height, layer[1].outMat.width,  //
-                             layer[2].outMat.data.grad,                      //
-                             layer[2].outMat.height, layer[2].outMat.width,  //
-                             BATCH, CH_IN, POOL_SIZE);
+        cnn_backward_pool(layer, cfg, 2);
 
         print_img_net_msg("Pooling layer gradient:", layer[2].outMat.data.grad,
                           layer[2].outMat.width, layer[2].outMat.height,

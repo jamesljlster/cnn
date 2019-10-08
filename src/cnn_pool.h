@@ -154,26 +154,41 @@ static inline void cnn_forward_pool(union CNN_LAYER* layerRef,
         &beta,                                    //
         layerPtr->dstTen, outData->mat));
 #else
-    // Clear outputs
-    memset(layerRef[layerIndex].outMat.data.mat, 0,
-           sizeof(float) * layerRef[layerIndex].outMat.data.rows *
-               layerRef[layerIndex].outMat.data.cols);
-
-    for (int j = 0; j < cfgRef->batch; j++)
+    if (cfgRef->layerCfg[layerIndex].pool.poolType == CNN_POOL_MAX)
     {
-        int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
-        int dstShift = j * layerRef[layerIndex].outMat.data.cols;
+        // Clear outputs
+        memset(layerRef[layerIndex].outMat.data.mat, 0,
+               sizeof(float) * layerRef[layerIndex].outMat.data.rows *
+                   layerRef[layerIndex].outMat.data.cols);
 
-        float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
-        float* dstPtr = layerRef[layerIndex].outMat.data.mat + dstShift;
+        for (int j = 0; j < cfgRef->batch; j++)
+        {
+            int srcShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+            int dstShift = j * layerRef[layerIndex].outMat.data.cols;
 
-        cnn_pool_2d_max(dstPtr, &layerRef[layerIndex].pool.indexMat[dstShift],
+            float* srcPtr = layerRef[layerIndex - 1].outMat.data.mat + srcShift;
+            float* dstPtr = layerRef[layerIndex].outMat.data.mat + dstShift;
+
+            cnn_pool_2d_max(dstPtr,
+                            &layerRef[layerIndex].pool.indexMat[dstShift],
+                            layerRef[layerIndex].outMat.height,
+                            layerRef[layerIndex].outMat.width, srcPtr,
+                            layerRef[layerIndex - 1].outMat.height,
+                            layerRef[layerIndex - 1].outMat.width,
+                            cfgRef->layerCfg[layerIndex].pool.size,
+                            layerRef[layerIndex].outMat.channel);
+        }
+    }
+    else
+    {
+        cnn_pool_2d_avg(layerRef[layerIndex].outMat.data.mat,
                         layerRef[layerIndex].outMat.height,
-                        layerRef[layerIndex].outMat.width, srcPtr,
+                        layerRef[layerIndex].outMat.width,
+                        layerRef[layerIndex - 1].outMat.data.mat,
                         layerRef[layerIndex - 1].outMat.height,
-                        layerRef[layerIndex - 1].outMat.width,
-                        cfgRef->layerCfg[layerIndex].pool.size,
-                        layerRef[layerIndex].outMat.channel);
+                        layerRef[layerIndex - 1].outMat.width, cfgRef->batch,
+                        layerRef[layerIndex].outMat.channel,
+                        cfgRef->layerCfg[layerIndex].pool.size);
     }
 #endif
 }
@@ -206,25 +221,40 @@ static inline void cnn_backward_pool(union CNN_LAYER* layerRef,
             &beta,                                    //
             layerPtr->srcTen, preOutData->grad));
 #else
-        // Zero layer gradient
-        memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
-               sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
-                   layerRef[layerIndex - 1].outMat.data.cols);
-
-        for (int j = 0; j < cfgRef->batch; j++)
+        if (cfgRef->layerCfg[layerIndex].pool.poolType == CNN_POOL_MAX)
         {
-            srcShift = j * layerRef[layerIndex].outMat.data.cols;
-            dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
+            // Zero layer gradient
+            memset(layerRef[layerIndex - 1].outMat.data.grad, 0,
+                   sizeof(float) * layerRef[layerIndex - 1].outMat.data.rows *
+                       layerRef[layerIndex - 1].outMat.data.cols);
 
-            srcPtr = layerRef[layerIndex].outMat.data.grad + srcShift;
+            for (int j = 0; j < cfgRef->batch; j++)
+            {
+                srcShift = j * layerRef[layerIndex].outMat.data.cols;
+                dstShift = j * layerRef[layerIndex - 1].outMat.data.cols;
 
-            // Find layer gradient
-            cnn_pool_2d_max_grad(
-                &layerRef[layerIndex - 1].outMat.data.grad[dstShift],
-                &layerRef[layerIndex].pool.indexMat[srcShift], srcPtr,
-                layerRef[layerIndex].outMat.height,
-                layerRef[layerIndex].outMat.width,
-                layerRef[layerIndex].outMat.channel);
+                srcPtr = layerRef[layerIndex].outMat.data.grad + srcShift;
+
+                // Find layer gradient
+                cnn_pool_2d_max_grad(
+                    &layerRef[layerIndex - 1].outMat.data.grad[dstShift],
+                    &layerRef[layerIndex].pool.indexMat[srcShift], srcPtr,
+                    layerRef[layerIndex].outMat.height,
+                    layerRef[layerIndex].outMat.width,
+                    layerRef[layerIndex].outMat.channel);
+            }
+        }
+        else
+        {
+            cnn_pool_2d_avg_grad(layerRef[layerIndex - 1].outMat.data.grad,
+                                 layerRef[layerIndex - 1].outMat.height,
+                                 layerRef[layerIndex - 1].outMat.width,
+                                 layerRef[layerIndex].outMat.data.grad,
+                                 layerRef[layerIndex].outMat.height,
+                                 layerRef[layerIndex].outMat.width,
+                                 cfgRef->batch,
+                                 layerRef[layerIndex].outMat.channel,
+                                 cfgRef->layerCfg[layerIndex].pool.size);
         }
 #endif
     }

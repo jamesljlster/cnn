@@ -429,6 +429,11 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
     int outBatch;            // Pooling output batch size
     int vPad = 0, hPad = 0;  // Vertical padding, horizontal padding
 
+    cudnnPoolingMode_t poolMode =
+        (cfgPtr->poolType == CNN_POOL_MAX)
+            ? CUDNN_POOLING_MAX
+            : CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+
     // Create source tensor
     cnn_run_cudnn(cudnnCreateTensorDescriptor(&layerPtr->srcTen), ret, ERR);
     cnn_run_cudnn(cudnnSetTensor4dDescriptor(
@@ -439,8 +444,8 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
     // Create pooling descriptor
     cnn_run_cudnn(cudnnCreatePoolingDescriptor(&layerPtr->poolDesc), ret, ERR);
     cnn_run_cudnn(
-        cudnnSetPooling2dDescriptor(
-            layerPtr->poolDesc, CUDNN_POOLING_MAX, CUDNN_PROPAGATE_NAN,  //
+        cudnnSetPooling2dDescriptor(                            //
+            layerPtr->poolDesc, poolMode, CUDNN_PROPAGATE_NAN,  //
             cfgPtr->size, cfgPtr->size, vPad, hPad, cfgPtr->size, cfgPtr->size),
         ret, ERR);
 
@@ -477,7 +482,10 @@ int cnn_layer_pool_alloc(struct CNN_LAYER_POOL* layerPtr,
             ERR);
 
 #ifndef CNN_WITH_CUDA
-    cnn_alloc(layerPtr->indexMat, outRows * outCols, int, ret, ERR);
+    if (cfgPtr->poolType == CNN_POOL_MAX)
+    {
+        cnn_alloc(layerPtr->indexMat, outRows * outCols, int, ret, ERR);
+    }
 #endif
 
     // Assing value
