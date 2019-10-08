@@ -15,6 +15,37 @@ void cnn_pool_2d_max_grad_gpu(float* grad, int* indexMat, float* gradIn,
                               int size);
 #endif
 
+static inline void cnn_pool_2d_avg(float* dst, int dstHeight, int dstWidth,
+                                   float* src, int srcHeight, int srcWidth,
+                                   int batch, int channel, int poolSize)
+{
+    for (int i = 0; i < batch * channel * dstHeight * dstWidth; i++)
+    {
+        int w = i % dstWidth;
+        int h = (i / dstWidth) % dstHeight;
+        int c = (i / (dstHeight * dstWidth)) % channel;
+        int n = i / (channel * dstHeight * dstWidth);
+
+        float sum = 0;
+
+        for (int poolH = 0; poolH < poolSize; poolH++)
+        {
+            for (int poolW = 0; poolW < poolSize; poolW++)
+            {
+                sum += src[n * (channel * srcHeight * srcWidth) +  //
+                           c * (srcHeight * srcWidth) +            //
+                           (h * poolSize + poolH) * srcWidth +     //
+                           (w * poolSize + poolW)];
+            }
+        }
+
+        dst[n * (channel * dstHeight * dstWidth) +  //
+            c * (dstHeight * dstWidth) +            //
+            h * dstWidth +                          //
+            w] = sum / (poolSize * poolSize);
+    }
+}
+
 static inline void cnn_pool_2d_max(float* dst, int* indexMat, int dstHeight,
                                    int dstWidth, float* src, int srcWidth,
                                    int srcHeight, int poolSize, int channel)
