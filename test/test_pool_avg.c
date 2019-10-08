@@ -133,22 +133,22 @@ int main()
                           layer[2].outMat.channel, cfg->batch);
     }
 
-    exit(0);
-
     // BP
     for (int i = 0; i < 2; i++)
     {
         printf("***** BP #%d *****\n", i + 1);
-        cnn_backward_pool(layer, cfg, 2);
+        // cnn_backward_pool(layer, cfg, 2);
+
+        cnn_pool_2d_avg_grad(layer[1].outMat.data.grad,                      //
+                             layer[1].outMat.height, layer[1].outMat.width,  //
+                             layer[2].outMat.data.grad,                      //
+                             layer[2].outMat.height, layer[2].outMat.width,  //
+                             BATCH, CH_IN, POOL_SIZE);
 
         print_img_net_msg("Pooling layer gradient:", layer[2].outMat.data.grad,
                           layer[2].outMat.width, layer[2].outMat.height,
                           layer[2].outMat.channel, cfg->batch);
-#ifndef CNN_WITH_CUDA
-        print_img_int_net_msg("Gradient index mat:", layer[2].pool.indexMat,
-                              layer[2].outMat.width, layer[2].outMat.height,
-                              layer[2].outMat.channel, 1);
-#endif
+
         print_img_net_msg("Previous layer gradient:", layer[1].outMat.data.grad,
                           layer[1].outMat.width, layer[1].outMat.height,
                           layer[1].outMat.channel, cfg->batch);

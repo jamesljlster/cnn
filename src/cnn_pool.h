@@ -15,9 +15,10 @@ void cnn_pool_2d_max_grad_gpu(float* grad, int* indexMat, float* gradIn,
                               int size);
 #endif
 
-static inline void cnn_pool_2d_avg(float* dst, int dstHeight, int dstWidth,
-                                   float* src, int srcHeight, int srcWidth,
-                                   int batch, int channel, int poolSize)
+static inline void cnn_pool_2d_avg(           //
+    float* dst, int dstHeight, int dstWidth,  //
+    float* src, int srcHeight, int srcWidth,  //
+    int batch, int channel, int poolSize)
 {
     for (int i = 0; i < batch * channel * dstHeight * dstWidth; i++)
     {
@@ -43,6 +44,37 @@ static inline void cnn_pool_2d_avg(float* dst, int dstHeight, int dstWidth,
             c * (dstHeight * dstWidth) +            //
             h * dstWidth +                          //
             w] = sum / (poolSize * poolSize);
+    }
+}
+
+static inline void cnn_pool_2d_avg_grad(                  //
+    float* gradOut, int gradOutHeight, int gradOutWidth,  //
+    float* gradIn, int gradInHeight, int gradInWidth,     //
+    int batch, int channel, int poolSize)
+{
+    for (int i = 0; i < batch * channel * gradInHeight * gradInWidth; i++)
+    {
+        int w = i % gradInWidth;
+        int h = (i / gradInWidth) % gradInHeight;
+        int c = (i / (gradInHeight * gradInWidth)) % channel;
+        int n = i / (channel * gradInHeight * gradInWidth);
+
+        float gradTmp = gradIn[n * (channel * gradInHeight * gradInWidth) +  //
+                               c * (gradInHeight * gradInWidth) +            //
+                               h * gradInWidth +                             //
+                               w] /
+                        (poolSize * poolSize);
+
+        for (int poolH = 0; poolH < poolSize; poolH++)
+        {
+            for (int poolW = 0; poolW < poolSize; poolW++)
+            {
+                gradOut[n * (channel * gradOutHeight * gradOutWidth) +  //
+                        c * (gradOutHeight * gradOutWidth) +            //
+                        (h * poolSize + poolH) * gradOutWidth +         //
+                        (w * poolSize + poolW)] = gradTmp;
+            }
+        }
     }
 }
 
