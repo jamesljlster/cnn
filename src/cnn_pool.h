@@ -20,6 +20,7 @@ static inline void cnn_pool_2d_avg(           //
     float* src, int srcHeight, int srcWidth,  //
     int batch, int channel, int poolSize)
 {
+#pragma omp parallel for
     for (int i = 0; i < batch * channel * dstHeight * dstWidth; i++)
     {
         int w = i % dstWidth;
@@ -52,6 +53,7 @@ static inline void cnn_pool_2d_avg_grad(                  //
     float* gradIn, int gradInHeight, int gradInWidth,     //
     int batch, int channel, int poolSize)
 {
+#pragma omp parallel for
     for (int i = 0; i < batch * channel * gradInHeight * gradInWidth; i++)
     {
         int w = i % gradInWidth;
