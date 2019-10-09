@@ -5,6 +5,7 @@
 
 #include "cnn.h"
 #include "cnn_builtin_math.h"
+#include "cnn_builtin_math_inline.h"
 #include "cnn_config.h"
 #include "cnn_init.h"
 #include "cnn_macro.h"
@@ -153,10 +154,11 @@ CNN_ACTIV_DEF(cnn_relu)
 #ifdef CNN_WITH_CUDA
     cnn_relu_gpu(dst, src, len);
 #else
-#pragma omp parallel for shared(dst, src)
+#pragma omp parallel for  // shared(dst, src)
     for (int i = 0; i < len; i++)
     {
-        dst[i] = fmaxf(src[i], 0.0f);
+        __cnn_relu(dst + i, src + i);
+        // dst[i] = fmaxf(src[i], 0.0f);
     }
 #endif
 }
@@ -167,10 +169,11 @@ CNN_ACTIV_GRAD_DEF(cnn_relu_grad)
     cnn_relu_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find relu gradient
-#pragma omp parallel for shared(gradOut, gradIn, src)
+#pragma omp parallel for  // shared(gradOut, gradIn, src)
     for (int i = 0; i < len; i++)
     {
-        gradOut[i] = ((src[i] < 0.0f) ? 0 : 1) * gradIn[i];
+        __cnn_relu_grad(gradOut + i, gradIn + i, src + i, NULL);
+        // gradOut[i] = ((src[i] < 0.0f) ? 0 : 1) * gradIn[i];
     }
 #endif
 }
@@ -180,13 +183,14 @@ CNN_ACTIV_DEF(cnn_swish)
 #ifdef CNN_WITH_CUDA
     cnn_swish_gpu(dst, src, len);
 #else
-    float srcVal;
+    // float srcVal;
 
-#pragma omp parallel for shared(dst, src) private(srcVal)
+#pragma omp parallel for  // shared(dst, src) private(srcVal)
     for (int i = 0; i < len; i++)
     {
-        srcVal = src[i];
-        dst[i] = srcVal / (1.0f + expf(-srcVal));
+        __cnn_swish(dst + i, src + i);
+        // srcVal = src[i];
+        // dst[i] = srcVal / (1.0f + expf(-srcVal));
     }
 #endif
 }
@@ -197,23 +201,25 @@ CNN_ACTIV_GRAD_DEF(cnn_swish_grad)
     cnn_swish_grad_gpu(gradOut, gradIn, src, len, cache);
 #else
     // Find swish gradient
-    float srcVal, cacheVal;
+    // float srcVal, cacheVal;
 
-#pragma omp parallel for shared(gradOut, gradIn, src, cache) private(srcVal, \
-                                                                     cacheVal)
+#pragma omp parallel for
+    // shared(gradOut, gradIn, src, cache) private(srcVal, cacheVal)
     for (int i = 0; i < len; i++)
     {
-        srcVal = src[i];
-        if (srcVal == 0.0f)
-        {
-            gradOut[i] = 0.5 * gradIn[i];
-        }
-        else
-        {
-            cacheVal = cache[i];
-            gradOut[i] = (cacheVal + (cacheVal / srcVal) * (1.0f - cacheVal)) *
-                         gradIn[i];
-        }
+        __cnn_swish_grad(gradOut + i, gradIn + i, src + i, cache + i);
+        // srcVal = src[i];
+        // if (srcVal == 0.0f)
+        //{
+        //    gradOut[i] = 0.5 * gradIn[i];
+        //}
+        // else
+        //{
+        //    cacheVal = cache[i];
+        //    gradOut[i] = (cacheVal + (cacheVal / srcVal) * (1.0f - cacheVal))
+        //    *
+        //                 gradIn[i];
+        //}
     }
 #endif
 }
