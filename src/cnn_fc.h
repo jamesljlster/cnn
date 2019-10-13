@@ -26,7 +26,7 @@ static inline void cnn_forward_fc(union CNN_LAYER* layerRef,
     struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
 
     // Weight matrix multiplication
-    cnn_assert_cu(cublasSgemm(                           //
+    cnn_assert_cublas(cublasSgemm(                       //
         cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_N,    //
         outData->cols, cfgRef->batch, preOutData->cols,  //
         &alpha,                                          //
@@ -80,13 +80,14 @@ static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
     struct CNN_MAT* preOutData = &layerRef[layerIndex - 1].outMat.data;
 
     // Sum weight gradient matrix
-    cnn_assert_cu(cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_T,  //
-                              wPtr->cols, wPtr->rows, cfgRef->batch,         //
-                              &alpha,                                        //
-                              outData->grad, outData->cols,                  //
-                              preOutData->mat, preOutData->cols,             //
-                              &beta,                                         //
-                              wPtr->grad, wPtr->cols));
+    cnn_assert_cublas(                                             //
+        cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_N, CUBLAS_OP_T,  //
+                    wPtr->cols, wPtr->rows, cfgRef->batch,         //
+                    &alpha,                                        //
+                    outData->grad, outData->cols,                  //
+                    preOutData->mat, preOutData->cols,             //
+                    &beta,                                         //
+                    wPtr->grad, wPtr->cols));
 
     // Sum bias gradient matrix
     if (cfgRef->batch > 1)
@@ -102,8 +103,11 @@ static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
     }
     else
     {
-        cublasSaxpy(cnnInit.blasHandle, layerPtr->bias.cols, &alpha,
-                    outData->grad, 1, layerPtr->bias.grad, 1);
+        cnn_assert_cublas(                                        //
+            cublasSaxpy(cnnInit.blasHandle, layerPtr->bias.cols,  //
+                        &alpha,                                   //
+                        outData->grad, 1,                         //
+                        layerPtr->bias.grad, 1));
     }
 #else
     // Sum weight gradient matrix
@@ -132,13 +136,14 @@ static inline void cnn_backward_fc(union CNN_LAYER* layerRef,
     {
 #ifdef CNN_WITH_CUDA
         beta = 0.0;
-        cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N,  //
-                    wPtr->rows, cfgRef->batch, wPtr->cols,         //
-                    &alpha,                                        //
-                    wPtr->mat, wPtr->cols,                         //
-                    outData->grad, outData->cols,                  //
-                    &beta,                                         //
-                    preOutData->grad, preOutData->cols);
+        cnn_assert_cublas(                                             //
+            cublasSgemm(cnnInit.blasHandle, CUBLAS_OP_T, CUBLAS_OP_N,  //
+                        wPtr->rows, cfgRef->batch, wPtr->cols,         //
+                        &alpha,                                        //
+                        wPtr->mat, wPtr->cols,                         //
+                        outData->grad, outData->cols,                  //
+                        &beta,                                         //
+                        preOutData->grad, preOutData->cols));
 #else
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
                     layerRef[layerIndex - 1].outMat.data.rows,
