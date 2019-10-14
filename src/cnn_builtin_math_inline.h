@@ -3,11 +3,20 @@
 
 #include <math.h>
 
+#include "cnn_config.h"
+
+#ifdef CNN_WITH_CUDA
+#include <cuda_runtime.h>
+#define __CNN_MATH_API __device__ void
+#else
+#define __CNN_MATH_API static inline void
+#endif
+
 #define CNN_ACTIV_INLINE_DEF(name) \
-    static inline void __cnn_##name(float* dst, float* src)
-#define CNN_ACTIV_GRAD_INLINE_DEF(name)                                   \
-    static inline void __cnn_##name##_grad(float* gradOut, float* gradIn, \
-                                           float* src, float* cache)
+    __CNN_MATH_API __cnn_##name(float* dst, float* src)
+#define CNN_ACTIV_GRAD_INLINE_DEF(name)                               \
+    __CNN_MATH_API __cnn_##name##_grad(float* gradOut, float* gradIn, \
+                                       float* src, float* cache)
 
 // Relu
 CNN_ACTIV_INLINE_DEF(relu) { *dst = fmaxf(*src, 0.0f); }

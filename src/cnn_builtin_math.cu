@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 
 #include "cnn_builtin_math_cu.h"
+#include "cnn_builtin_math_inline.h"
 #include "cnn_cudef.h"
 
 #define CNN_SCALAR_ACTIV_IMPL(name, fwProc, bpProc)                           \
@@ -396,112 +397,89 @@ extern "C"
         cnn_smax_grad_kernel<<<grid, blk>>>(dst, cache, len);
     }
 
-    CNN_SCALAR_ACTIV_IMPL(                                         //
-        relu,                                                      //
-        dst[index] = fmaxf(src[index], 0.0f);                      //
-        ,                                                          //
-        gradOut[index] = (src[index] < 0.0f) ? 0 : gradIn[index];  //
+    CNN_SCALAR_ACTIV_IMPL(                                                    //
+        relu,                                                                 //
+        __cnn_relu(dst + index, src + index);                                 //
+        ,                                                                     //
+        __cnn_relu_grad(gradOut + index, gradIn + index, src + index, NULL);  //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(                                     //
-        swish,                                                 //
-        dst[index] = src[index] / (1.0f + expf(-src[index]));  //
-        ,                                                      //
-        if (src[index] == 0.0f)                                //
-        {                                                      //
-            gradOut[index] = 0.5 * gradIn[index];              //
-        }                                                      //
-        else                                                   //
-        {                                                      //
-            gradOut[index] = (cache[index] + (cache[index] / src[index]) *
-                                                 (1.0f - cache[index])) *
-                             gradIn[index];  //
-        }                                    //
+    CNN_SCALAR_ACTIV_IMPL(                      //
+        swish,                                  //
+        __cnn_swish(dst + index, src + index);  //
+        ,                                       //
+        __cnn_swish_grad(gradOut + index, gradIn + index, src + index,
+                         cache + index);  //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(                               //
-        sigmoid,                                         //
-        dst[index] = 1.0f / (1.0f + expf(-src[index]));  //
-        ,                                                //
-        gradOut[index] = cache[index] * (1.0 - cache[index]) *
-                         gradIn[index];  //
+    CNN_SCALAR_ACTIV_IMPL(                        //
+        sigmoid,                                  //
+        __cnn_sigmoid(dst + index, src + index);  //
+        ,                                         //
+        __cnn_sigmoid_grad(gradOut + index, gradIn + index, NULL,
+                           cache + index);  //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(                                        //
-        tanh,                                                     //
-        dst[index] = 2.0 / (1.0 + exp(-2.0 * src[index])) - 1.0;  //
-        ,                                                         //
-        gradOut[index] = (1.0 - cache[index] * cache[index]) *
-                         gradIn[index];  //
+    CNN_SCALAR_ACTIV_IMPL(                     //
+        tanh,                                  //
+        __cnn_tanh(dst + index, src + index);  //
+        ,                                      //
+        __cnn_tanh_grad(gradOut + index, gradIn + index, NULL,
+                        cache + index);  //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(                                            //
-        gaussian,                                                     //
-        dst[index] = exp(-src[index] * src[index] * 0.5);             //
-        ,                                                             //
-        gradOut[index] = -src[index] * cache[index] * gradIn[index];  //
-    )
-
-    CNN_SCALAR_ACTIV_IMPL(  //
-        bent_identity,      //
-        dst[index] = (sqrt(src[index] * src[index] + 1.0) - 1.0) / 2.0 +
-                     src[index];  //
-        ,                         //
-        gradOut[index] =
-            (src[index] / (2.0 * sqrt(src[index] * src[index] + 1.0)) + 1.0) *
-            gradIn[index];  //
-    )
-
-    CNN_SCALAR_ACTIV_IMPL(                                          //
-        softplus,                                                   //
-        dst[index] = log1p(exp(src[index]));                        //
-        ,                                                           //
-        gradOut[index] = gradIn[index] / (1.0 + exp(-src[index]));  //
-    )
-
-    CNN_SCALAR_ACTIV_IMPL(                                   //
-        softsign,                                            //
-        dst[index] = src[index] / (1.0 + fabs(src[index]));  //
-        ,                                                    //
-        float tmp = 1.0 + fabs(src[index]);                  //
-        gradOut[index] = gradIn[index] / (tmp * tmp);        //
+    CNN_SCALAR_ACTIV_IMPL(                         //
+        gaussian,                                  //
+        __cnn_gaussian(dst + index, src + index);  //
+        ,                                          //
+        __cnn_gaussian_grad(gradOut + index, gradIn + index, src + index,
+                            cache + index);  //
     )
 
     CNN_SCALAR_ACTIV_IMPL(                              //
-        sinc,                                           //
-        if (src[index] == 0.0)                          //
-        {                                               //
-            dst[index] = 1.0;                           //
-        }                                               //
-        else                                            //
-        {                                               //
-            dst[index] = sin(src[index]) / src[index];  //
-        }                                               //
+        bent_identity,                                  //
+        __cnn_bent_identity(dst + index, src + index);  //
         ,                                               //
-        if (src[index] == 0.0)                          //
-        {                                               //
-            gradOut[index] = 0.0;                       //
-        }                                               //
-        else                                            //
-        {                                               //
-            gradOut[index] = ((cos(src[index]) / src[index]) -
-                              (sin(src[index]) / (src[index] * src[index]))) *
-                             gradIn[index];  //
-        }                                    //
+        __cnn_bent_identity_grad(gradOut + index, gradIn + index, src + index,
+                                 NULL);  //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(                                 //
-        sin,                                               //
-        dst[index] = sin(src[index]);                      //
-        ,                                                  //
-        gradOut[index] = cos(src[index]) * gradIn[index];  //
+    CNN_SCALAR_ACTIV_IMPL(                         //
+        softplus,                                  //
+        __cnn_softplus(dst + index, src + index);  //
+        ,                                          //
+        __cnn_softplus_grad(gradOut + index, gradIn + index, src + index,
+                            NULL);  //
     )
 
-    CNN_SCALAR_ACTIV_IMPL(               //
-        identity,                        //
-        dst[index] = src[index];         //
-        ,                                //
-        gradOut[index] = gradIn[index];  //
+    CNN_SCALAR_ACTIV_IMPL(                         //
+        softsign,                                  //
+        __cnn_softsign(dst + index, src + index);  //
+        ,                                          //
+        __cnn_softsign_grad(gradOut + index, gradIn + index, src + index,
+                            NULL);  //
+    )
+
+    CNN_SCALAR_ACTIV_IMPL(                                                    //
+        sinc,                                                                 //
+        __cnn_sinc(dst + index, src + index);                                 //
+        ,                                                                     //
+        __cnn_sinc_grad(gradOut + index, gradIn + index, src + index, NULL);  //
+    )
+
+    CNN_SCALAR_ACTIV_IMPL(                         //
+        sin,                                       //
+        __cnn_sinusoid(dst + index, src + index);  //
+        ,                                          //
+        __cnn_sinusoid_grad(gradOut + index, gradIn + index, src + index,
+                            NULL);  //
+    )
+
+    CNN_SCALAR_ACTIV_IMPL(                                                 //
+        identity,                                                          //
+        __cnn_identity(dst + index, src + index);                          //
+        ,                                                                  //
+        __cnn_identity_grad(gradOut + index, gradIn + index, NULL, NULL);  //
     )
 
 #ifdef __cplusplus
