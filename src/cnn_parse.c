@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "cnn_builtin_math.h"
+#include "cnn_init.h"
 #include "cnn_parse.h"
 #include "cnn_strdef.h"
 
@@ -711,6 +712,11 @@ int cnn_import_root(struct CNN_CONFIG* cfgPtr, union CNN_LAYER** layerPtr,
 
         // Parsing
         cnn_run(cnn_parse_network_detail_xml(&tmpCnn, doc), ret, RET);
+
+#ifdef CNN_WITH_CUDA
+        // Allocate workspace size
+        cnn_run(cnn_cudnn_ws_alloc(), ret, RET);
+#endif
 
         // Assign value
         *layerPtr = tmpCnn.layerList;
