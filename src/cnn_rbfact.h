@@ -13,8 +13,7 @@ static inline void cnn_forward_rbfact_cpu(float* dst, int dstChannel,
     for (int i = 0; i < batch * dstChannel * height * width; i++)
     {
         // Indexing
-        int w = i % width;
-        int h = (i / width) % height;
+        int e = i % (height * width);
         int c = (i / (height * width)) % dstChannel;
         int n = i / (dstChannel * height * width);
 
@@ -24,8 +23,7 @@ static inline void cnn_forward_rbfact_cpu(float* dst, int dstChannel,
         {
             float srcVal = src[n * (srcChannel * height * width) +  //
                                inC * (height * width) +             //
-                               h * width +                          //
-                               w];
+                               e];
 
             pwrDist += (srcVal - center[c * srcChannel + inC]) *
                        (srcVal - center[c * srcChannel + inC]);
@@ -33,8 +31,7 @@ static inline void cnn_forward_rbfact_cpu(float* dst, int dstChannel,
 
         dst[n * (dstChannel * height * width) +  //
             c * (height * width) +               //
-            h * width +                          //
-            w] = exp(-1.0 * pwrDist / (2.0 * sigma[c]));
+            e] = exp(-1.0 * pwrDist / (2.0 * sigma[c]));
     }
 }
 
