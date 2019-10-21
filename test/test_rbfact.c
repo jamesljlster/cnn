@@ -7,7 +7,7 @@
 #include <cnn_private.h>
 #include <cnn_rbfact.h>
 
-#define FLOAT_FMT "%.7e"
+#define FLOAT_FMT "%+.7e"
 #include "test.h"
 
 #define W_SIZE 8
