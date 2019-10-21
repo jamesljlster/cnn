@@ -61,6 +61,10 @@
     }
 #endif
 
+#ifndef FLOAT_FMT
+#define FLOAT_FMT "%g"
+#endif
+
 void print_mat(float* src, int rows, int cols)
 {
     int i, j;
@@ -101,7 +105,7 @@ void print_img(float* src, int width, int height, int channel, int batch)
                 printf("[");
                 for (int w = 0; w < width; w++)
                 {
-                    printf("%g", src[shift + w]);
+                    printf(FLOAT_FMT, src[shift + w]);
                     if (w < width - 1)
                     {
                         printf(", ");
