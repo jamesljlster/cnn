@@ -50,10 +50,16 @@ int main()
         0.0, -0.3, 0.0,  //
     };
 
-    float sigma[CH_OUT] = {
+    float centerGrad[CH_IN * CH_OUT];
+    float centerBuf[CH_IN * CH_OUT];
+
+    float runVar[CH_OUT] = {
         0.7,  //
         0.9   //
     };
+
+    float saveVar[CH_OUT];
+    float varBuf[CH_OUT];
 
     float output[IMG_WIDTH * IMG_HEIGHT * CH_OUT * BATCH] = {0};
 
@@ -102,20 +108,40 @@ int main()
     for (int i = 0; i < 2; i++)
     {
         printf("***** Forward #%d *****\n", i + 1);
-        cnn_forward_rbfact_cpu(output, CH_OUT, src, CH_IN, center, sigma, BATCH,
-                               IMG_HEIGHT, IMG_WIDTH);
+        cnn_forward_rbfact_cpu(output, CH_OUT, src, CH_IN, center, runVar,
+                               saveVar, varBuf, BATCH, IMG_WIDTH, IMG_HEIGHT,
+                               0.01);
 
         print_img_net_msg("RBFAct output:", output, IMG_WIDTH, IMG_HEIGHT,
                           CH_OUT, cfg->batch);
-
-        exit(0);
+        print_img_net_msg("Saved variance:", saveVar, 1, 1, CH_OUT, 1);
+        print_img_net_msg("Running variance:", runVar, 1, 1, CH_OUT, 1);
     }
 
     // BP
-    // for (int i = 0; i < 2; i++)
-    //{
-    //    printf("***** BP #%d *****\n", i + 1);
-    //}
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** BP #%d *****\n", i + 1);
+        cnn_backward_rbfact_cpu(layer[1].outMat.data.grad, CH_IN, gradIn,
+                                CH_OUT, src, output, center, centerGrad,
+                                centerBuf, saveVar, BATCH, IMG_HEIGHT,
+                                IMG_WIDTH);
+
+        print_img_net_msg("Previous layer gradient:", layer[1].outMat.data.grad,
+                          layer[1].outMat.width, layer[1].outMat.height,
+                          layer[1].outMat.channel, cfg->batch);
+    }
+
+    // Recall
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** Recall #%d *****\n", i + 1);
+        cnn_recall_rbfact_cpu(output, CH_OUT, src, CH_IN, center, runVar, BATCH,
+                              IMG_HEIGHT, IMG_WIDTH);
+
+        print_img_net_msg("RBFAct output:", output, IMG_WIDTH, IMG_HEIGHT,
+                          CH_OUT, cfg->batch);
+    }
 
     return 0;
 }
