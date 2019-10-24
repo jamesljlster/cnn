@@ -6,6 +6,8 @@
 
 #include "cnn_types.h"
 
+#define CNN_RBFACT_EPS 1e-4
+
 static inline void cnn_rbfact_forward_inference_cpu(  //
     float* dst, int dstChannel, float* src, int srcChannel, float* center,
     float* var, int batch, int height, int width)
@@ -31,7 +33,7 @@ static inline void cnn_rbfact_forward_inference_cpu(  //
 
         dst[n * (dstChannel * height * width) +  //
             c * (height * width) +               //
-            e] = exp(-1.0 * pwrDist / (2.0 * var[c]));
+            e] = exp(-1.0 * pwrDist / (2.0 * var[c] + CNN_RBFACT_EPS));
     }
 }
 
@@ -70,7 +72,7 @@ static inline void cnn_rbfact_forward_training_cpu(  //
 
         dst[n * (dstChannel * height * width) +  //
             c * (height * width) +               //
-            e] = exp(-1.0 * pwrDist / (2.0 * runVar[c]));
+            e] = exp(-1.0 * pwrDist / (2.0 * runVar[c] + CNN_RBFACT_EPS));
     }
 
     // Find new running variance
@@ -110,9 +112,11 @@ static inline void cnn_rbfact_backward_layer_cpu(  //
                                   e];
             float ctr = center[gInC * gradOutCh + c];
 
-            gradSum += gInVal * cacheVal * ((srcVal - ctr) / saveVar[gInC]) *
+            gradSum += gInVal * cacheVal *
+                       ((srcVal - ctr) / (saveVar[gInC] + CNN_RBFACT_EPS)) *
                        (((srcVal - ctr) * (srcVal - ctr) /
-                         ((float)(batch * height * width) * saveVar[gInC])) -
+                         ((float)(batch * height * width) * saveVar[gInC] +
+                          CNN_RBFACT_EPS)) -
                         1);
         }
 
@@ -128,6 +132,11 @@ static inline void cnn_rbfact_backward_center_cpu(  //
 {
     // Cache
     float* ctrSquareSum = workSpace;
+    float* gradBuf = workSpace + dstChannel;
+    float gradScale = 1.0 / (float)(batch * width * height);
+
+    // Clear memory
+    memset(gradBuf, 0, sizeof(float) * srcChannel * dstChannel);
 
     // Find squared sum of centers
     for (int i = 0; i < dstChannel; i++)
@@ -172,9 +181,14 @@ static inline void cnn_rbfact_backward_center_cpu(  //
                            srcCh * (height * width) +           //
                            e;
 
-            centerGrad[c * srcChannel + srcCh] +=
+            gradBuf[c * srcChannel + srcCh] +=
                 sim * (src[srcIndex] - center[c * srcChannel + srcCh]);
         }
+    }
+
+    for (int i = 0; i < srcChannel * dstChannel; i++)
+    {
+        centerGrad[i] += gradScale * gradBuf[i];
     }
 }
 
