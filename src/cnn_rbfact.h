@@ -116,7 +116,7 @@ static inline void cnn_backward_rbfact_cpu(float* gradOut, int gradOutCh,
             float gInVal = gradIn[n * (gradInCh * height * width) +  //
                                   gInC * (height * width) +          //
                                   e];
-            float ctr = center[gInC * gradInCh + c];
+            float ctr = center[gInC * gradOutCh + c];
 
             gradSum += gInVal * cacheVal * ((srcVal - ctr) / saveVar[gInC]) *
                        (((srcVal - ctr) * (srcVal - ctr) /
