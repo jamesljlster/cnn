@@ -51,7 +51,7 @@ int main()
         0.0, -0.3, 0.0,  //
     };
 
-    float centerGrad[CH_IN * CH_OUT];
+    float centerGrad[CH_IN * CH_OUT] = {0};
 
     float runVar[CH_OUT] = {
         0.7,  //

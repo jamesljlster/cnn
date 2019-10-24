@@ -163,7 +163,7 @@ static inline void cnn_rbfact_backward_center_cpu(  //
             sim += src[srcIndex] * center[c * srcChannel + srcCh];
         }
 
-        sim /= ctrSquareSum[c] * srcSquaredSum;
+        sim /= sqrt(ctrSquareSum[c]) * sqrt(srcSquaredSum);
 
         // Sum difference
         for (int srcCh = 0; srcCh < srcChannel; srcCh++)
