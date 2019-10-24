@@ -946,3 +946,46 @@ RET:
 
     return ret;
 }
+
+int cnn_layer_rbfact_alloc(struct CNN_LAYER_RBFACT* layerPtr,
+                           struct CNN_CONFIG_LAYER_RBFACT* cfgPtr, int inWidth,
+                           int inHeight, int inChannel, int batch)
+{
+    int ret = CNN_NO_ERROR;
+    int outRows, outCols;
+    int outWidth, outHeight, outChannel;
+
+    // Find output shape
+    cnn_run(cnn_config_find_layer_outsize(&outWidth, &outHeight, &outChannel,
+                                          inWidth, inHeight, inChannel,
+                                          (union CNN_CONFIG_LAYER*)cfgPtr),
+            ret, RET);
+
+    // Find allocate size
+    outRows = batch;
+    outCols = outWidth * outHeight * outChannel;
+
+    // Allocate memory
+    cnn_run(cnn_mat_alloc(&layerPtr->outMat.data, outRows, outCols, 1), ret,
+            ERR);
+
+    cnn_run(cnn_mat_alloc(&layerPtr->center, outChannel, inChannel, 1), ret,
+            ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->runVar, 1, outChannel, 0), ret, ERR);
+    cnn_run(cnn_mat_alloc(&layerPtr->saveVar, 1, outChannel, 0), ret, ERR);
+
+    cnn_alloc(layerPtr->ws, outChannel, float, ret, ERR);
+
+    // Assign value
+    layerPtr->outMat.width = outWidth;
+    layerPtr->outMat.height = outHeight;
+    layerPtr->outMat.channel = outChannel;
+
+    goto RET;
+
+ERR:
+    cnn_layer_rbfact_delete(layerPtr);
+
+RET:
+    return ret;
+}

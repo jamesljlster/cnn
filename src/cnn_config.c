@@ -322,6 +322,12 @@ int cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
             outChannel = layerCfg->text.filter;
             break;
 
+        case CNN_LAYER_RBFACT:
+            outWidth = inWidth;
+            outHeight = outHeight;
+            outChannel = layerCfg->rbfact.clust;
+            break;
+
         default:
             assert(!"Invalid layer type");
     }
@@ -1036,6 +1042,76 @@ int cnn_config_get_texture(cnn_config_t cfg, int layerIndex, cnn_activ_t* idPtr,
     if (aInitPtr != NULL)
     {
         *aInitPtr = cfg->layerCfg[layerIndex].text.aInit;
+    }
+
+RET:
+    return ret;
+}
+
+int cnn_config_append_rbfact(cnn_config_t cfg, int clust, float expAvgFactor)
+{
+    int ret = CNN_NO_ERROR;
+    int layers;
+
+    // Append texture layer
+    cnn_config_get_layers(cfg, &layers);
+    layers++;
+    cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
+    cnn_run(cnn_config_set_rbfact(cfg, layers - 1, clust, expAvgFactor), ret,
+            RET);
+
+RET:
+    return ret;
+}
+
+int cnn_config_set_rbfact(cnn_config_t cfg, int layerIndex, int clust,
+                          float expAvgFactor)
+{
+    int ret = CNN_NO_ERROR;
+
+    // Checking
+    if (layerIndex <= 0 || layerIndex >= cfg->layers || clust <= 0)
+    {
+        ret = CNN_INVALID_ARG;
+        goto RET;
+    }
+
+    // Set config
+    cfg->layerCfg[layerIndex].type = CNN_LAYER_RBFACT;
+    cfg->layerCfg[layerIndex].rbfact.clust = clust;
+    cfg->layerCfg[layerIndex].rbfact.expAvgFactor = expAvgFactor;
+
+RET:
+    return ret;
+}
+
+int cnn_config_get_rbfact(cnn_config_t cfg, int layerIndex, int* clustPtr,
+                          float* factorPtr)
+{
+    int ret = CNN_NO_ERROR;
+
+    // Checking
+    if (layerIndex < 0 || layerIndex >= cfg->layers)
+    {
+        ret = CNN_INVALID_ARG;
+        goto RET;
+    }
+
+    if (cfg->layerCfg[layerIndex].type != CNN_LAYER_RBFACT)
+    {
+        ret = CNN_INVALID_ARG;
+        goto RET;
+    }
+
+    // Assign value
+    if (clustPtr != NULL)
+    {
+        *clustPtr = cfg->layerCfg[layerIndex].rbfact.clust;
+    }
+
+    if (factorPtr != NULL)
+    {
+        *factorPtr = cfg->layerCfg[layerIndex].rbfact.expAvgFactor;
     }
 
 RET:

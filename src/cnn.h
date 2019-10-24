@@ -36,7 +36,8 @@ typedef enum CNN_LAYER_TYPE
     CNN_LAYER_POOL = 4,
     CNN_LAYER_DROP = 5,
     CNN_LAYER_BN = 6,
-    CNN_LAYER_TEXT = 7
+    CNN_LAYER_TEXT = 7,
+    CNN_LAYER_RBFACT = 8
 } cnn_layer_t;
 
 typedef enum CNN_POOL_TYPE
@@ -151,6 +152,13 @@ extern "C"
     int cnn_config_get_texture(cnn_config_t cfg, int layerIndex,
                                cnn_activ_t* idPtr, int* filterPtr,
                                float* aInitPtr);
+
+    int cnn_config_append_rbfact(cnn_config_t cfg, int clust,
+                                 float expAvgFactor);
+    int cnn_config_set_rbfact(cnn_config_t cfg, int layerIndex, int clust,
+                              float expAvgFactor);
+    int cnn_config_get_rbfact(cnn_config_t cfg, int layerIndex, int* clustPtr,
+                              float* factorPtr);
 
     int cnn_config_import(cnn_config_t* cfgPtr, const char* fPath);
     int cnn_config_export(cnn_config_t cfg, const char* fPath);

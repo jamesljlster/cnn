@@ -216,6 +216,20 @@ void cnn_layer_text_delete(struct CNN_LAYER_TEXT* layerPtr)
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_TEXT));
 }
 
+void cnn_layer_rbfact_delete(struct CNN_LAYER_RBFACT* layerPtr)
+{
+    // Free memory
+    cnn_mat_delete(&layerPtr->outMat.data);
+    cnn_mat_delete(&layerPtr->center);
+    cnn_mat_delete(&layerPtr->runVar);
+    cnn_mat_delete(&layerPtr->saveVar);
+
+    cnn_free(layerPtr->ws);
+
+    // Zero memory
+    memset(layerPtr, 0, sizeof(struct CNN_LAYER_TEXT));
+}
+
 void cnn_network_delete(struct CNN* cnn)
 {
     int i;

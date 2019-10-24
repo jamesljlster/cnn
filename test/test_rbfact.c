@@ -59,7 +59,6 @@ int main()
     };
 
     float saveVar[CH_OUT];
-    float varBuf[CH_OUT];
 
     float output[IMG_WIDTH * IMG_HEIGHT * CH_OUT * BATCH] = {0};
 
@@ -111,8 +110,8 @@ int main()
     {
         printf("***** Forward #%d *****\n", i + 1);
         cnn_rbfact_forward_training_cpu(output, CH_OUT, src, CH_IN, center,
-                                        runVar, saveVar, varBuf, BATCH,
-                                        IMG_WIDTH, IMG_HEIGHT, 0.01);
+                                        runVar, saveVar, ws, BATCH, IMG_WIDTH,
+                                        IMG_HEIGHT, 0.01);
 
         print_img_net_msg("RBFAct output:", output, IMG_WIDTH, IMG_HEIGHT,
                           CH_OUT, cfg->batch);

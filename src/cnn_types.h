@@ -101,6 +101,15 @@ struct CNN_CONFIG_LAYER_TEXT
     float aInit;
 };
 
+struct CNN_CONFIG_LAYER_RBFACT
+{
+    // Layer type
+    cnn_layer_t type;
+
+    int clust;
+    float expAvgFactor;
+};
+
 union CNN_CONFIG_LAYER {
     // Layer type
     cnn_layer_t type;
@@ -113,6 +122,7 @@ union CNN_CONFIG_LAYER {
     struct CNN_CONFIG_LAYER_DROP drop;
     struct CNN_CONFIG_LAYER_BN bn;
     struct CNN_CONFIG_LAYER_TEXT text;
+    struct CNN_CONFIG_LAYER_RBFACT rbfact;
 };
 
 struct CNN_CONFIG
@@ -293,6 +303,22 @@ struct CNN_LAYER_TEXT
     int* ctrMap;  // Center mapping
 };
 
+struct CNN_LAYER_RBFACT
+{
+    // Layer output matrix
+    struct CNN_SHAPE outMat;
+
+    // Center
+    struct CNN_MAT center;
+
+    // Variance
+    struct CNN_MAT runVar;
+    struct CNN_MAT saveVar;
+
+    // Workspace (calculation buffer)
+    float* ws;
+};
+
 union CNN_LAYER {
     // Layer output matrix
     struct CNN_SHAPE outMat;
@@ -305,6 +331,7 @@ union CNN_LAYER {
     struct CNN_LAYER_DROP drop;
     struct CNN_LAYER_BN bn;
     struct CNN_LAYER_TEXT text;
+    struct CNN_LAYER_RBFACT rbfact;
 };
 
 struct CNN
