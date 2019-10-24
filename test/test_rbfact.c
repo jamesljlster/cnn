@@ -52,7 +52,6 @@ int main()
     };
 
     float centerGrad[CH_IN * CH_OUT];
-    float centerBuf[CH_IN * CH_OUT];
 
     float runVar[CH_OUT] = {
         0.7,  //
@@ -79,6 +78,8 @@ int main()
         2, 1,  //
         2, 3,  //
     };
+
+    float ws[CH_OUT];
 
     cnn_config_t cfg = NULL;
 
@@ -123,10 +124,13 @@ int main()
     for (int i = 0; i < 2; i++)
     {
         printf("***** BP #%d *****\n", i + 1);
+        cnn_rbfact_backward_center_cpu(center, centerGrad, ws, CH_IN, CH_OUT,
+                                       src, BATCH, IMG_HEIGHT, IMG_WIDTH);
         cnn_rbfact_backward_layer_cpu(layer[1].outMat.data.grad, CH_IN, gradIn,
                                       CH_OUT, src, output, center, saveVar,
                                       BATCH, IMG_HEIGHT, IMG_WIDTH);
 
+        print_img_net_msg("Center gradient:", centerGrad, CH_IN, 1, CH_OUT, 1);
         print_img_net_msg("Previous layer gradient:", layer[1].outMat.data.grad,
                           layer[1].outMat.width, layer[1].outMat.height,
                           layer[1].outMat.channel, cfg->batch);

@@ -122,4 +122,60 @@ static inline void cnn_rbfact_backward_layer_cpu(  //
     }
 }
 
+static inline void cnn_rbfact_backward_center_cpu(  //
+    float* center, float* centerGrad, float* workSpace, int srcChannel,
+    int dstChannel, float* src, int batch, int height, int width)
+{
+    // Cache
+    float* ctrSquareSum = workSpace;
+
+    // Find squared sum of centers
+    for (int i = 0; i < dstChannel; i++)
+    {
+        float sum = 0;
+        for (int j = 0; j < srcChannel; j++)
+        {
+            sum += center[i * srcChannel + j] * center[i * srcChannel + j];
+        }
+
+        ctrSquareSum[i] = sum;
+    }
+
+    // Do clustering
+    for (int i = 0; i < batch * dstChannel * height * width; i++)
+    {
+        float sim = 0;
+
+        // Indexing
+        int e = i % (height * width);
+        int c = (i / (height * width)) % dstChannel;
+        int n = i / (dstChannel * height * width);
+
+        // Find vector similarity
+        float srcSquaredSum = 0;
+        for (int srcCh = 0; srcCh < srcChannel; srcCh++)
+        {
+            int srcIndex = n * (srcChannel * height * width) +  //
+                           srcCh * (height * width) +           //
+                           e;
+
+            srcSquaredSum += src[srcIndex] * src[srcIndex];
+            sim += src[srcIndex] * center[c * srcChannel + srcCh];
+        }
+
+        sim /= ctrSquareSum[c] * srcSquaredSum;
+
+        // Sum difference
+        for (int srcCh = 0; srcCh < srcChannel; srcCh++)
+        {
+            int srcIndex = n * (srcChannel * height * width) +  //
+                           srcCh * (height * width) +           //
+                           e;
+
+            centerGrad[c * srcChannel + srcCh] +=
+                sim * (src[srcIndex] - center[c * srcChannel + srcCh]);
+        }
+    }
+}
+
 #endif
