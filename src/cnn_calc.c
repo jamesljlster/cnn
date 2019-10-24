@@ -92,6 +92,11 @@ void cnn_update(cnn_t cnn, float lRate, float gradLimit)
                 cnn_mat_update(&layerRef[i].text.alpha, lRate, gradLimit);
                 break;
 
+            // RBFAct
+            case CNN_LAYER_RBFACT:
+                cnn_mat_update(&layerRef[i].rbfact.center, lRate, gradLimit);
+                break;
+
             case CNN_LAYER_INPUT:
             case CNN_LAYER_ACTIV:
             case CNN_LAYER_POOL:
@@ -150,6 +155,11 @@ static inline void cnn_backward_kernel(cnn_t cnn, float* errGrad)
             // Texture
             case CNN_LAYER_TEXT:
                 cnn_backward_text(layerRef, cfgRef, i);
+                break;
+
+            // RBFAct
+            case CNN_LAYER_RBFACT:
+                cnn_backward_rbfact(layerRef, cfgRef, i);
                 break;
 
             default:
@@ -273,6 +283,19 @@ static inline void cnn_forward_kernel(cnn_t cnn, float* inputMat,
             // Texture
             case CNN_LAYER_TEXT:
                 cnn_forward_text(layerRef, cfgRef, i);
+                break;
+
+            // RBFAct
+            case CNN_LAYER_RBFACT:
+                if (cnn->opMode == CNN_OPMODE_TRAIN)
+                {
+                    cnn_forward_rbfact(layerRef, cfgRef, i);
+                }
+                else
+                {
+                    cnn_recall_rbfact(layerRef, cfgRef, i);
+                }
+
                 break;
 
             default:

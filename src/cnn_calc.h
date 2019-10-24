@@ -7,6 +7,7 @@
 #include "cnn_drop.h"
 #include "cnn_fc.h"
 #include "cnn_pool.h"
+#include "cnn_rbfact.h"
 #include "cnn_text.h"
 
 #endif

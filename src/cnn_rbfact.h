@@ -178,4 +178,64 @@ static inline void cnn_rbfact_backward_center_cpu(  //
     }
 }
 
+static inline void cnn_recall_rbfact(union CNN_LAYER* layerRef,
+                                     struct CNN_CONFIG* cfgRef, int layerIndex)
+{
+    struct CNN_LAYER_RBFACT* layerPtr = &layerRef[layerIndex].rbfact;
+
+    struct CNN_SHAPE* outShape = &layerPtr->outMat;
+    struct CNN_SHAPE* preOutShape = &layerRef[layerIndex - 1].outMat;
+
+    cnn_rbfact_forward_inference_cpu(                 //
+        outShape->data.mat, outShape->channel,        //
+        preOutShape->data.mat, preOutShape->channel,  //
+        layerPtr->center.mat, layerPtr->runVar.mat,   //
+        cfgRef->batch, outShape->height, outShape->width);
+}
+
+static inline void cnn_forward_rbfact(union CNN_LAYER* layerRef,
+                                      struct CNN_CONFIG* cfgRef, int layerIndex)
+{
+    struct CNN_LAYER_RBFACT* layerPtr = &layerRef[layerIndex].rbfact;
+
+    struct CNN_SHAPE* outShape = &layerPtr->outMat;
+    struct CNN_SHAPE* preOutShape = &layerRef[layerIndex - 1].outMat;
+
+    cnn_rbfact_forward_training_cpu(                       //
+        outShape->data.mat, outShape->channel,             //
+        preOutShape->data.mat, preOutShape->channel,       //
+        layerPtr->center.mat,                              //
+        layerPtr->runVar.mat, layerPtr->saveVar.mat,       //
+        layerPtr->ws,                                      //
+        cfgRef->batch, outShape->height, outShape->width,  //
+        cfgRef->layerCfg[layerIndex].rbfact.expAvgFactor);
+}
+
+static inline void cnn_backward_rbfact(union CNN_LAYER* layerRef,
+                                       struct CNN_CONFIG* cfgRef,
+                                       int layerIndex)
+{
+    struct CNN_LAYER_RBFACT* layerPtr = &layerRef[layerIndex].rbfact;
+
+    struct CNN_SHAPE* outShape = &layerPtr->outMat;
+    struct CNN_SHAPE* preOutShape = &layerRef[layerIndex - 1].outMat;
+
+    cnn_rbfact_backward_layer_cpu(                     //
+        preOutShape->data.grad, preOutShape->channel,  //
+        outShape->data.grad, outShape->channel,        //
+        preOutShape->data.mat, outShape->data.mat,     //
+        layerPtr->center.mat, layerPtr->saveVar.mat,   //
+        cfgRef->batch, outShape->height, outShape->width);
+
+    // Find layer gradient
+    if (layerIndex > 1)
+    {
+        cnn_rbfact_backward_center_cpu(                                      //
+            layerPtr->center.mat, layerPtr->center.grad,                     //
+            layerPtr->ws,                                                    //
+            preOutShape->channel, outShape->channel, preOutShape->data.mat,  //
+            cfgRef->batch, outShape->height, outShape->width);
+    }
+}
+
 #endif
