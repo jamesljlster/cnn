@@ -6,10 +6,9 @@
 
 #include "cnn_types.h"
 
-static inline void cnn_recall_rbfact_cpu(float* dst, int dstChannel, float* src,
-                                         int srcChannel, float* center,
-                                         float* var, int batch, int height,
-                                         int width)
+static inline void cnn_rbfact_forward_inference_cpu(  //
+    float* dst, int dstChannel, float* src, int srcChannel, float* center,
+    float* var, int batch, int height, int width)
 {
     for (int i = 0; i < batch * dstChannel * height * width; i++)
     {
@@ -36,12 +35,10 @@ static inline void cnn_recall_rbfact_cpu(float* dst, int dstChannel, float* src,
     }
 }
 
-static inline void cnn_forward_rbfact_cpu(float* dst, int dstChannel,
-                                          float* src, int srcChannel,
-                                          float* center, float* runVar,
-                                          float* saveVar, float* varBuf,
-                                          int batch, int height, int width,
-                                          float expAvgFactor)
+static inline void cnn_rbfact_forward_training_cpu(  //
+    float* dst, int dstChannel, float* src, int srcChannel, float* center,
+    float* runVar, float* saveVar, float* varBuf, int batch, int height,
+    int width, float expAvgFactor)
 {
     // Clear buffer
     memset(varBuf, 0, sizeof(float) * dstChannel);
@@ -84,16 +81,11 @@ static inline void cnn_forward_rbfact_cpu(float* dst, int dstChannel,
     }
 }
 
-static inline void cnn_backward_rbfact_cpu(float* gradOut, int gradOutCh,
-                                           float* gradIn, int gradInCh,
-                                           float* src, float* cache,
-                                           float* center, float* centerGrad,
-                                           float* centerBuf, float* saveVar,
-                                           int batch, int height, int width)
+static inline void cnn_rbfact_backward_layer_cpu(  //
+    float* gradOut, int gradOutCh, float* gradIn, int gradInCh, float* src,
+    float* cache, float* center, float* saveVar, int batch, int height,
+    int width)
 {
-    // Clear buffer
-    memset(centerBuf, 0, sizeof(float) * gradInCh * gradOutCh);
-
     // RBFAct layer gradient
     for (int i = 0; i < batch * gradOutCh * height * width; i++)
     {
@@ -128,8 +120,6 @@ static inline void cnn_backward_rbfact_cpu(float* gradOut, int gradOutCh,
                 c * (height * width) +              //
                 e] = gradSum;
     }
-
-    // Find new center
 }
 
 #endif
