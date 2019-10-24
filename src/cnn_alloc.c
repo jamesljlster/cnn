@@ -101,6 +101,14 @@ int cnn_network_alloc(struct CNN* cnn)
                         ret, ERR);
                 break;
 
+            case CNN_LAYER_RBFACT:
+                cnn_run(cnn_layer_rbfact_alloc(
+                            &cnn->layerList[i].rbfact,
+                            (struct CNN_CONFIG_LAYER_RBFACT*)&cfg->layerCfg[i],
+                            tmpWidth, tmpHeight, tmpChannel, cfg->batch),
+                        ret, ERR);
+                break;
+
             default:
                 assert(!"Invalid layer type");
         }
