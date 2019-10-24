@@ -293,6 +293,21 @@ void cnn_rand_network(cnn_t cnn)
 #endif
                 break;
 
+            case CNN_LAYER_RBFACT:
+                // Rand center
+                size = cnn->layerList[i].rbfact.center.rows *
+                       cnn->layerList[i].rbfact.center.cols;
+
+                // Generate random distribution
+                for (j = 0; j < size; j++)
+                {
+                    cnn->layerList[i].text.weight.mat[j] = cnn_xavier_init(
+                        &bm, cnn->layerList[i - 1].outMat.data.cols,
+                        cnn->layerList[i].outMat.data.cols);
+                }
+
+                break;
+
             case CNN_LAYER_INPUT:
             case CNN_LAYER_ACTIV:
             case CNN_LAYER_POOL:
@@ -327,7 +342,7 @@ void cnn_zero_network(cnn_t cnn)
     // Get reference
     cfgRef = &cnn->cfg;
 
-    // Rand network
+    // Zero network
     for (i = 1; i < cfgRef->layers; i++)
     {
         switch (cfgRef->layerCfg[i].type)
@@ -417,6 +432,15 @@ void cnn_zero_network(cnn_t cnn)
                 memset(cnn->layerList[i].text.bias.mat, 0,
                        size * sizeof(float));
 #endif
+                break;
+
+            case CNN_LAYER_RBFACT:
+                // Zero center
+                size = cnn->layerList[i].rbfact.center.rows *
+                       cnn->layerList[i].rbfact.center.cols;
+                memset(cnn->layerList[i].rbfact.center.mat, 0,
+                       size * sizeof(float));
+
                 break;
 
             case CNN_LAYER_INPUT:
