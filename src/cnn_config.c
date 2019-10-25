@@ -324,7 +324,7 @@ int cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
 
         case CNN_LAYER_RBFACT:
             outWidth = inWidth;
-            outHeight = outHeight;
+            outHeight = inHeight;
             outChannel = layerCfg->rbfact.clust;
             break;
 
