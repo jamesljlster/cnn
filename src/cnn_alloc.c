@@ -985,7 +985,7 @@ int cnn_layer_rbfact_alloc(struct CNN_LAYER_RBFACT* layerPtr,
     cnn_alloc(layerPtr->ws, (outChannel + 1) * inChannel, float, ret, ERR);
 
     // Set initial running variance
-    for (int i = 0; i < inChannel; i++)
+    for (int i = 0; i < outChannel; i++)
     {
         layerPtr->runVar.mat[i] = 1.0;
     }

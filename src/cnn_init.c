@@ -301,7 +301,7 @@ void cnn_rand_network(cnn_t cnn)
                 // Generate random distribution
                 for (j = 0; j < size; j++)
                 {
-                    cnn->layerList[i].text.weight.mat[j] = cnn_xavier_init(
+                    cnn->layerList[i].rbfact.center.mat[j] = cnn_xavier_init(
                         &bm, cnn->layerList[i - 1].outMat.data.cols,
                         cnn->layerList[i].outMat.data.cols);
                 }
