@@ -25,6 +25,9 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# Export compile commands (For some useful tools like YCM, Sourcetrail, ...)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
 # Library paths
 set(LIB_PATHS
     ${CMAKE_CURRENT_SOURCE_DIR}/src
