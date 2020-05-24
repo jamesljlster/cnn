@@ -8,3 +8,6 @@ CMakeFiles
 
 # YouCompleteMe generated files
 .ycm_extra_conf.py
+
+# Sourcetrail workspace
+sourcetrail
