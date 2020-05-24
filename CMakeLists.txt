@@ -10,6 +10,9 @@ endif()
 # Set variables
 set(PROJECT_NAME cnn)
 set(PROJECT_LANGUAGE C)
+if(${WITH_CUDA})
+    set(PROJECT_LANGUAGE ${PROJECT_LANGUAGE} CUDA)
+endif()
 
 # Environment variables
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation directory")
