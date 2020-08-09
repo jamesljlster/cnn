@@ -91,7 +91,8 @@ struct CNN_CONFIG_LAYER_BN
     float expAvgFactor;
 };
 
-union CNN_CONFIG_LAYER {
+union CNN_CONFIG_LAYER
+{
     // Layer type
     cnn_layer_t type;
 
@@ -257,7 +258,8 @@ struct CNN_LAYER_BN
 #endif
 };
 
-union CNN_LAYER {
+union CNN_LAYER
+{
     // Layer output matrix
     struct CNN_SHAPE outMat;
 
