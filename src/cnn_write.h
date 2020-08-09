@@ -38,9 +38,6 @@ extern "C"
     int cnn_write_layer_bn_xml(struct CNN_CONFIG* cfgRef,
                                union CNN_LAYER* layerRef, int layerIndex,
                                xmlTextWriterPtr writer);
-    int cnn_write_layer_text_xml(struct CNN_CONFIG* cfgRef,
-                                 union CNN_LAYER* layerRef, int layerIndex,
-                                 xmlTextWriterPtr writer);
 
     int cnn_write_pad_attr_xml(int pad, xmlTextWriterPtr writer);
     int cnn_write_dim_attr_xml(int dim, xmlTextWriterPtr writer);

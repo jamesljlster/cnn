@@ -91,25 +91,6 @@ struct CNN_CONFIG_LAYER_BN
     float expAvgFactor;
 };
 
-struct CNN_CONFIG_LAYER_TEXT
-{
-    // Layer type
-    cnn_layer_t type;
-
-    cnn_activ_t activId;
-    int filter;
-    float aInit;
-};
-
-struct CNN_CONFIG_LAYER_RBFACT
-{
-    // Layer type
-    cnn_layer_t type;
-
-    int clust;
-    float expAvgFactor;
-};
-
 union CNN_CONFIG_LAYER {
     // Layer type
     cnn_layer_t type;
@@ -121,8 +102,6 @@ union CNN_CONFIG_LAYER {
     struct CNN_CONFIG_LAYER_POOL pool;
     struct CNN_CONFIG_LAYER_DROP drop;
     struct CNN_CONFIG_LAYER_BN bn;
-    struct CNN_CONFIG_LAYER_TEXT text;
-    struct CNN_CONFIG_LAYER_RBFACT rbfact;
 };
 
 struct CNN_CONFIG
@@ -278,47 +257,6 @@ struct CNN_LAYER_BN
 #endif
 };
 
-struct CNN_LAYER_TEXT
-{
-    // Layer output matrix
-    struct CNN_SHAPE outMat;
-
-    // Texture weights
-    struct CNN_MAT weight;
-    struct CNN_MAT bias;
-    struct CNN_MAT alpha;
-
-    // Channel
-    int inChannel;
-
-    // Texture calculation buffer
-    struct CNN_MAT nbrUnroll;
-    struct CNN_MAT ctrUnroll;
-    struct CNN_MAT diff;
-    struct CNN_MAT scale;
-    struct CNN_MAT activ;
-
-    // Index mapping
-    int* nbrMap;  // Neighbor mapping
-    int* ctrMap;  // Center mapping
-};
-
-struct CNN_LAYER_RBFACT
-{
-    // Layer output matrix
-    struct CNN_SHAPE outMat;
-
-    // Center
-    struct CNN_MAT center;
-
-    // Variance
-    struct CNN_MAT runVar;
-    struct CNN_MAT saveVar;
-
-    // Workspace (calculation buffer)
-    float* ws;
-};
-
 union CNN_LAYER {
     // Layer output matrix
     struct CNN_SHAPE outMat;
@@ -330,8 +268,6 @@ union CNN_LAYER {
     struct CNN_LAYER_POOL pool;
     struct CNN_LAYER_DROP drop;
     struct CNN_LAYER_BN bn;
-    struct CNN_LAYER_TEXT text;
-    struct CNN_LAYER_RBFACT rbfact;
 };
 
 struct CNN

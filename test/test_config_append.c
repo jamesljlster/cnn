@@ -52,12 +52,6 @@ void check_cnn_layer_config(cnn_config_t cfg, int layerIndex)
                    cfg->layerCfg[layerIndex].bn.expAvgFactor);
             break;
 
-        case CNN_LAYER_TEXT:
-            printf("The layer is texture\n");
-            printf("activID: %d\n", cfg->layerCfg[layerIndex].text.activId);
-            printf("filter: %d\n", cfg->layerCfg[layerIndex].text.filter);
-            break;
-
         default:
             printf("Not a cnn layer config?!\n");
     }
@@ -82,7 +76,6 @@ int main()
     // Test set config
     test(cnn_config_set_input_size(cfg, 640, 480, 1));
 
-    test(cnn_config_append_texture(cfg, CNN_SIGMOID, 9, 2.7183));
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 1, 1, 3));
     test(cnn_config_append_batchnorm(cfg, 1.0, 0.0, 0.001));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));

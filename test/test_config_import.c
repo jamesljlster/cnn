@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
     int width, height, channel;
     int batch;
     float rate;
-    float rInit, bInit, aInit;
+    float rInit, bInit;
     float expAvgFactor;
 
     if (argc < 2)
@@ -93,14 +93,6 @@ int main(int argc, char* argv[])
                 printf("rInit: %g\n", rInit);
                 printf("bInit: %g\n", bInit);
                 printf("expAvgFactor: %g\n", expAvgFactor);
-                break;
-
-            case CNN_LAYER_TEXT:
-                test(cnn_config_get_texture(cfg, i, &id, &filter, &aInit));
-                printf("Type: Texture\n");
-                printf("ID: %d\n", id);
-                printf("filter: %d\n", filter);
-                printf("aInit: %g\n", aInit);
                 break;
         }
 

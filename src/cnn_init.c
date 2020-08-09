@@ -243,71 +243,6 @@ void cnn_rand_network(cnn_t cnn)
 
                 break;
 
-            case CNN_LAYER_TEXT:
-                // Random weight
-                size = cnn->layerList[i].text.weight.rows *
-                       cnn->layerList[i].text.weight.cols;
-
-#ifdef CNN_WITH_CUDA
-                // Buffer allocation
-                cnn_alloc(tmpVec, size, float, ret, ERR);
-
-                // Generate random distribution
-                for (j = 0; j < size; j++)
-                {
-                    tmpVec[j] = cnn_xavier_init(
-                        &bm, cnn->layerList[i - 1].outMat.data.cols,
-                        cnn->layerList[i].outMat.data.cols);
-                }
-
-                // Copy memory
-                cnn_run_cu(
-                    cudaMemcpy(cnn->layerList[i].text.weight.mat, tmpVec,
-                               size * sizeof(float), cudaMemcpyHostToDevice),
-                    ret, ERR);
-
-                // Free buffer
-                cnn_free(tmpVec);
-                tmpVec = NULL;
-#else
-                // Generate random distribution
-                for (j = 0; j < size; j++)
-                {
-                    cnn->layerList[i].text.weight.mat[j] = cnn_xavier_init(
-                        &bm, cnn->layerList[i - 1].outMat.data.cols,
-                        cnn->layerList[i].outMat.data.cols);
-                }
-#endif
-
-                // Zero bias
-                size = cnn->layerList[i].text.bias.rows *
-                       cnn->layerList[i].text.bias.cols;
-
-#ifdef CNN_WITH_CUDA
-                cnn_run_cu(cudaMemset(cnn->layerList[i].text.bias.mat, 0,
-                                      size * sizeof(float)),
-                           ret, ERR);
-#else
-                memset(cnn->layerList[i].text.bias.mat, 0,
-                       size * sizeof(float));
-#endif
-                break;
-
-            case CNN_LAYER_RBFACT:
-                // Rand center
-                size = cnn->layerList[i].rbfact.center.rows *
-                       cnn->layerList[i].rbfact.center.cols;
-
-                // Generate random distribution
-                for (j = 0; j < size; j++)
-                {
-                    cnn->layerList[i].rbfact.center.mat[j] = cnn_xavier_init(
-                        &bm, cnn->layerList[i - 1].outMat.data.cols,
-                        cnn->layerList[i].outMat.data.cols);
-                }
-
-                break;
-
             case CNN_LAYER_INPUT:
             case CNN_LAYER_ACTIV:
             case CNN_LAYER_POOL:
@@ -403,43 +338,6 @@ void cnn_zero_network(cnn_t cnn)
                        size * sizeof(float));
 #endif
 #endif
-
-                break;
-
-            case CNN_LAYER_TEXT:
-                // Zero weight
-                size = cnn->layerList[i].text.weight.rows *
-                       cnn->layerList[i].text.weight.cols;
-
-#ifdef CNN_WITH_CUDA
-                cnn_run_cu(cudaMemset(cnn->layerList[i].text.weight.mat, 0,
-                                      size * sizeof(float)),
-                           ret, ERR);
-#else
-                memset(cnn->layerList[i].text.weight.mat, 0,
-                       size * sizeof(float));
-#endif
-
-                // Zero bias
-                size = cnn->layerList[i].text.bias.rows *
-                       cnn->layerList[i].text.bias.cols;
-
-#ifdef CNN_WITH_CUDA
-                cnn_run_cu(cudaMemset(cnn->layerList[i].text.bias.mat, 0,
-                                      size * sizeof(float)),
-                           ret, ERR);
-#else
-                memset(cnn->layerList[i].text.bias.mat, 0,
-                       size * sizeof(float));
-#endif
-                break;
-
-            case CNN_LAYER_RBFACT:
-                // Zero center
-                size = cnn->layerList[i].rbfact.center.rows *
-                       cnn->layerList[i].rbfact.center.cols;
-                memset(cnn->layerList[i].rbfact.center.mat, 0,
-                       size * sizeof(float));
 
                 break;
 

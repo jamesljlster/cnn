@@ -103,10 +103,6 @@ int cnn_config_compare(const cnn_config_t src1, const cnn_config_t src2)
                 __cmp_mem(bn, struct CNN_CONFIG_LAYER_BN);
                 break;
 
-            case CNN_LAYER_TEXT:
-                __cmp_mem(text, struct CNN_CONFIG_LAYER_TEXT);
-                break;
-
             default:
                 assert(!"Invalid layer type");
         }
@@ -314,18 +310,6 @@ int cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
             outWidth = inWidth / layerCfg->pool.size;
             outHeight = inHeight / layerCfg->pool.size;
             outChannel = inChannel;
-            break;
-
-        case CNN_LAYER_TEXT:
-            outWidth = inWidth;
-            outHeight = inHeight;
-            outChannel = layerCfg->text.filter;
-            break;
-
-        case CNN_LAYER_RBFACT:
-            outWidth = inWidth;
-            outHeight = inHeight;
-            outChannel = layerCfg->rbfact.clust;
             break;
 
         default:
@@ -963,155 +947,6 @@ int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex, float* rInitPtr,
     if (expAvgFactorPtr != NULL)
     {
         *expAvgFactorPtr = cfg->layerCfg[layerIndex].bn.expAvgFactor;
-    }
-
-RET:
-    return ret;
-}
-
-int cnn_config_append_texture(cnn_config_t cfg, cnn_activ_t activID, int filter,
-                              float aInit)
-{
-    int ret = CNN_NO_ERROR;
-    int layers;
-
-    // Append texture layer
-    cnn_config_get_layers(cfg, &layers);
-    layers++;
-    cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
-    cnn_run(cnn_config_set_texture(cfg, layers - 1, activID, filter, aInit),
-            ret, RET);
-
-RET:
-    return ret;
-}
-
-int cnn_config_set_texture(cnn_config_t cfg, int layerIndex,
-                           cnn_activ_t activID, int filter, float aInit)
-{
-    int ret = CNN_NO_ERROR;
-
-    // Checking
-    if (layerIndex <= 0 || layerIndex >= cfg->layers ||           //
-        activID <= CNN_SOFTMAX || activID >= CNN_ACTIV_AMOUNT ||  //
-        filter <= 0)
-    {
-        ret = CNN_INVALID_ARG;
-        goto RET;
-    }
-
-    // Set config
-    cfg->layerCfg[layerIndex].type = CNN_LAYER_TEXT;
-    cfg->layerCfg[layerIndex].text.activId = activID;
-    cfg->layerCfg[layerIndex].text.filter = filter;
-    cfg->layerCfg[layerIndex].text.aInit = aInit;
-
-RET:
-    return ret;
-}
-
-int cnn_config_get_texture(cnn_config_t cfg, int layerIndex, cnn_activ_t* idPtr,
-                           int* filterPtr, float* aInitPtr)
-{
-    int ret = CNN_NO_ERROR;
-
-    // Checking
-    if (layerIndex < 0 || layerIndex >= cfg->layers)
-    {
-        ret = CNN_INVALID_ARG;
-        goto RET;
-    }
-
-    if (cfg->layerCfg[layerIndex].type != CNN_LAYER_TEXT)
-    {
-        ret = CNN_INVALID_ARG;
-        goto RET;
-    }
-
-    // Assign value
-    if (idPtr != NULL)
-    {
-        *idPtr = cfg->layerCfg[layerIndex].text.activId;
-    }
-
-    if (filterPtr != NULL)
-    {
-        *filterPtr = cfg->layerCfg[layerIndex].text.filter;
-    }
-
-    if (aInitPtr != NULL)
-    {
-        *aInitPtr = cfg->layerCfg[layerIndex].text.aInit;
-    }
-
-RET:
-    return ret;
-}
-
-int cnn_config_append_rbfact(cnn_config_t cfg, int clust, float expAvgFactor)
-{
-    int ret = CNN_NO_ERROR;
-    int layers;
-
-    // Append texture layer
-    cnn_config_get_layers(cfg, &layers);
-    layers++;
-    cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
-    cnn_run(cnn_config_set_rbfact(cfg, layers - 1, clust, expAvgFactor), ret,
-            RET);
-
-RET:
-    return ret;
-}
-
-int cnn_config_set_rbfact(cnn_config_t cfg, int layerIndex, int clust,
-                          float expAvgFactor)
-{
-    int ret = CNN_NO_ERROR;
-
-    // Checking
-    if (layerIndex <= 0 || layerIndex >= cfg->layers || clust <= 0)
-    {
-        ret = CNN_INVALID_ARG;
-        goto RET;
-    }
-
-    // Set config
-    cfg->layerCfg[layerIndex].type = CNN_LAYER_RBFACT;
-    cfg->layerCfg[layerIndex].rbfact.clust = clust;
-    cfg->layerCfg[layerIndex].rbfact.expAvgFactor = expAvgFactor;
-
-RET:
-    return ret;
-}
-
-int cnn_config_get_rbfact(cnn_config_t cfg, int layerIndex, int* clustPtr,
-                          float* factorPtr)
-{
-    int ret = CNN_NO_ERROR;
-
-    // Checking
-    if (layerIndex < 0 || layerIndex >= cfg->layers)
-    {
-        ret = CNN_INVALID_ARG;
-        goto RET;
-    }
-
-    if (cfg->layerCfg[layerIndex].type != CNN_LAYER_RBFACT)
-    {
-        ret = CNN_INVALID_ARG;
-        goto RET;
-    }
-
-    // Assign value
-    if (clustPtr != NULL)
-    {
-        *clustPtr = cfg->layerCfg[layerIndex].rbfact.clust;
-    }
-
-    if (factorPtr != NULL)
-    {
-        *factorPtr = cfg->layerCfg[layerIndex].rbfact.expAvgFactor;
     }
 
 RET:

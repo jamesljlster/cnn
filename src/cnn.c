@@ -164,18 +164,6 @@ void cnn_clone_network_detail(struct CNN* dst, const struct CNN* src)
 
                 break;
 
-            case CNN_LAYER_TEXT:
-                // Clone weight
-                __cnn_mat_clone(text.weight);
-
-                // Clone bias
-                __cnn_mat_clone(text.bias);
-
-                // Clone alpha
-                __cnn_mat_clone(text.alpha);
-
-                break;
-
             case CNN_LAYER_INPUT:
             case CNN_LAYER_ACTIV:
             case CNN_LAYER_POOL:

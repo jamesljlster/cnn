@@ -117,7 +117,6 @@ int main(int argc, char* argv[])
     test(cnn_config_append_batchnorm(cfg, 1.0, 0.0, 0.001));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_texture(cfg, CNN_RELU, 3, 2.7183));
     test(cnn_config_append_full_connect(cfg, 128));
     test(cnn_config_append_dropout(cfg, 0.5));
     test(cnn_config_append_full_connect(cfg, 64));

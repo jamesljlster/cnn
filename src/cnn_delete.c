@@ -190,46 +190,6 @@ void cnn_layer_bn_delete(struct CNN_LAYER_BN* layerPtr)
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_BN));
 }
 
-void cnn_layer_text_delete(struct CNN_LAYER_TEXT* layerPtr)
-{
-    // Free memory
-    cnn_mat_delete(&layerPtr->outMat.data);
-    cnn_mat_delete(&layerPtr->weight);
-    cnn_mat_delete(&layerPtr->bias);
-    cnn_mat_delete(&layerPtr->alpha);
-
-    cnn_mat_delete(&layerPtr->nbrUnroll);
-    cnn_mat_delete(&layerPtr->ctrUnroll);
-    cnn_mat_delete(&layerPtr->diff);
-    cnn_mat_delete(&layerPtr->scale);
-    cnn_mat_delete(&layerPtr->activ);
-
-#ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->nbrMap);
-    cnn_free_cu(layerPtr->ctrMap);
-#else
-    cnn_free(layerPtr->nbrMap);
-    cnn_free(layerPtr->ctrMap);
-#endif
-
-    // Zero memory
-    memset(layerPtr, 0, sizeof(struct CNN_LAYER_TEXT));
-}
-
-void cnn_layer_rbfact_delete(struct CNN_LAYER_RBFACT* layerPtr)
-{
-    // Free memory
-    cnn_mat_delete(&layerPtr->outMat.data);
-    cnn_mat_delete(&layerPtr->center);
-    cnn_mat_delete(&layerPtr->runVar);
-    cnn_mat_delete(&layerPtr->saveVar);
-
-    cnn_free(layerPtr->ws);
-
-    // Zero memory
-    memset(layerPtr, 0, sizeof(struct CNN_LAYER_TEXT));
-}
-
 void cnn_network_delete(struct CNN* cnn)
 {
     int i;
@@ -267,14 +227,6 @@ void cnn_network_delete(struct CNN* cnn)
 
                 case CNN_LAYER_BN:
                     cnn_layer_bn_delete(&cnn->layerList[i].bn);
-                    break;
-
-                case CNN_LAYER_TEXT:
-                    cnn_layer_text_delete(&cnn->layerList[i].text);
-                    break;
-
-                case CNN_LAYER_RBFACT:
-                    cnn_layer_rbfact_delete(&cnn->layerList[i].rbfact);
                     break;
             }
         }
