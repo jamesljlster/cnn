@@ -6,8 +6,8 @@ CMakeFiles
 # Temp file
 *.swp
 
-# YouCompleteMe generated files
-.ycm_extra_conf.py
+# Exported compile commands
+compile_commands.json
 
 # Sourcetrail workspace
 sourcetrail
