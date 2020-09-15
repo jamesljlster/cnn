@@ -81,14 +81,8 @@ void cnn_update(cnn_t cnn, float lRate, float gradLimit)
 
             // Batch normalization
             case CNN_LAYER_BN:
-                cnn_mat_update(&layerRef[i].bn.bnVar, lRate, gradLimit);
-                break;
-
-            // Texture
-            case CNN_LAYER_TEXT:
-                cnn_mat_update(&layerRef[i].text.weight, lRate, gradLimit);
-                cnn_mat_update(&layerRef[i].text.bias, lRate, gradLimit);
-                cnn_mat_update(&layerRef[i].text.alpha, lRate, gradLimit);
+                cnn_mat_update(&layerRef[i].bn.bnScale, lRate, gradLimit);
+                cnn_mat_update(&layerRef[i].bn.bnBias, lRate, gradLimit);
                 break;
 
             case CNN_LAYER_INPUT:
@@ -144,11 +138,6 @@ static inline void cnn_backward_kernel(cnn_t cnn, float* errGrad)
             // Batch normalization
             case CNN_LAYER_BN:
                 cnn_backward_bn(layerRef, cfgRef, i);
-                break;
-
-            // Texture
-            case CNN_LAYER_TEXT:
-                cnn_backward_text(layerRef, cfgRef, i);
                 break;
 
             default:
@@ -245,36 +234,28 @@ static inline void cnn_forward_kernel(cnn_t cnn, float* inputMat,
 
             // Dropout
             case CNN_LAYER_DROP:
-                if (cnn->dropEnable)
+                if (cnn->opMode == CNN_OPMODE_TRAIN)
                 {
                     cnn_forward_drop(layerRef, cfgRef, i);
                 }
                 else
                 {
-#ifdef CNN_WITH_CUDA
-                    cudaMemcpy(layerRef[i].outMat.data.mat,
-                               layerRef[i - 1].outMat.data.mat,
-                               sizeof(float) * layerRef[i].outMat.data.rows *
-                                   layerRef[i].outMat.data.cols,
-                               cudaMemcpyDeviceToDevice);
-#else
-                    memcpy(layerRef[i].outMat.data.mat,
-                           layerRef[i - 1].outMat.data.mat,
-                           sizeof(float) * layerRef[i].outMat.data.rows *
-                               layerRef[i].outMat.data.cols);
-#endif
+                    cnn_recall_drop(layerRef, cfgRef, i);
                 }
 
                 break;
 
             // Batch normalization
             case CNN_LAYER_BN:
-                cnn_forward_bn(layerRef, cfgRef, i);
-                break;
+                if (cnn->opMode == CNN_OPMODE_TRAIN)
+                {
+                    cnn_forward_bn(layerRef, cfgRef, i);
+                }
+                else
+                {
+                    cnn_recall_bn(layerRef, cfgRef, i);
+                }
 
-            // Texture
-            case CNN_LAYER_TEXT:
-                cnn_forward_text(layerRef, cfgRef, i);
                 break;
 
             default:

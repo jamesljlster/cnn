@@ -5,3 +5,9 @@ CMakeFiles
 
 # Temp file
 *.swp
+
+# Exported compile commands
+compile_commands.json
+
+# Sourcetrail workspace
+sourcetrail

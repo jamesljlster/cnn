@@ -8,9 +8,9 @@ set(PROJECT_DEPS cnn ${CBLAS_LIBS} ${LIBXML2_LIBRARIES})
 if(${WITH_CUDA})
     set(PROJECT_DEPS
         ${PROJECT_DEPS}
-        ${CUDA_CUBLAS_LIBRARIES}
-        ${CUDA_LIBRARIES}
-        stdc++
+        cudnn
+        CUDA::cublas
+        CUDA::cudart
         )
 endif()
 

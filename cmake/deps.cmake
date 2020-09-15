@@ -1,8 +1,7 @@
-# Find CUDA
+# Find CUDA Toolkit
 if(${WITH_CUDA})
-    set(CUDA_SEPARABLE_COMPILATION ON)
-    find_package(CUDA QUIET REQUIRED)
-    include_directories(${CUDA_INCLUDE_DIRS})
+    find_package(CUDAToolkit REQUIRED)
+    include_directories(${CUDAToolkit_INCLUDE_DIRS})
 endif()
 
 # Find CBLAS
@@ -43,18 +42,26 @@ include_directories(${DEPS_PATHS}
 
 # Find check
 #if(BUILD_TEST)
-#	find_path(Check_INCLUDE_DIR check.h
-#		"/usr/include"
-#		"/usr/local/include"
-#		)
+#   find_path(Check_INCLUDE_DIR check.h
+#       "/usr/include"
+#       "/usr/local/include"
+#       )
 #
-#	find_library(Check_LIB check
-#		"/usr/lib"
-#		"/usr/local/lib"
-#		)
+#   find_library(Check_LIB check
+#       "/usr/lib"
+#       "/usr/local/lib"
+#       )
 #
-#	include_directories(${Check_INCLUDE_DIR})
+#   include_directories(${Check_INCLUDE_DIR})
 #endif()
+
+# Find OpenMP
+find_package(OpenMP QUIET)
+if(${OpenMP_FOUND})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
 # Add subdirectories
 foreach(DEPS_PATH ${DEPS_PATHS})

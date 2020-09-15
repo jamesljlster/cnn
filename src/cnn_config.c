@@ -103,10 +103,6 @@ int cnn_config_compare(const cnn_config_t src1, const cnn_config_t src2)
                 __cmp_mem(bn, struct CNN_CONFIG_LAYER_BN);
                 break;
 
-            case CNN_LAYER_TEXT:
-                __cmp_mem(text, struct CNN_CONFIG_LAYER_TEXT);
-                break;
-
             default:
                 assert(!"Invalid layer type");
         }
@@ -116,10 +112,7 @@ RET:
     return ret;
 }
 
-void cnn_set_dropout_enabled(cnn_t cnn, int enable)
-{
-    cnn->dropEnable = enable;
-}
+void cnn_set_opmode(cnn_t cnn, cnn_opmode_t opMode) { cnn->opMode = opMode; }
 
 cnn_config_t cnn_get_config(cnn_t cnn) { return &cnn->cfg; }
 
@@ -317,12 +310,6 @@ int cnn_config_find_layer_outsize(int* outWPtr, int* outHPtr, int* outCPtr,
             outWidth = inWidth / layerCfg->pool.size;
             outHeight = inHeight / layerCfg->pool.size;
             outChannel = inChannel;
-            break;
-
-        case CNN_LAYER_TEXT:
-            outWidth = inWidth;
-            outHeight = inHeight;
-            outChannel = layerCfg->text.filter;
             break;
 
         default:
@@ -888,7 +875,8 @@ RET:
     return ret;
 }
 
-int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit)
+int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit,
+                                float expAvgFactor)
 {
     int ret = CNN_NO_ERROR;
     int layers;
@@ -897,14 +885,16 @@ int cnn_config_append_batchnorm(cnn_config_t cfg, float rInit, float bInit)
     cnn_config_get_layers(cfg, &layers);
     layers++;
     cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
-    cnn_run(cnn_config_set_batchnorm(cfg, layers - 1, rInit, bInit), ret, RET);
+    cnn_run(
+        cnn_config_set_batchnorm(cfg, layers - 1, rInit, bInit, expAvgFactor),
+        ret, RET);
 
 RET:
     return ret;
 }
 
 int cnn_config_set_batchnorm(cnn_config_t cfg, int layerIndex, float rInit,
-                             float bInit)
+                             float bInit, float expAvgFactor)
 {
     int ret = CNN_NO_ERROR;
 
@@ -919,13 +909,14 @@ int cnn_config_set_batchnorm(cnn_config_t cfg, int layerIndex, float rInit,
     cfg->layerCfg[layerIndex].type = CNN_LAYER_BN;
     cfg->layerCfg[layerIndex].bn.rInit = rInit;
     cfg->layerCfg[layerIndex].bn.bInit = bInit;
+    cfg->layerCfg[layerIndex].bn.expAvgFactor = expAvgFactor;
 
 RET:
     return ret;
 }
 
 int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex, float* rInitPtr,
-                             float* bInitPtr)
+                             float* bInitPtr, float* expAvgFactorPtr)
 {
     int ret = CNN_NO_ERROR;
 
@@ -953,83 +944,9 @@ int cnn_config_get_batchnorm(cnn_config_t cfg, int layerIndex, float* rInitPtr,
         *bInitPtr = cfg->layerCfg[layerIndex].bn.bInit;
     }
 
-RET:
-    return ret;
-}
-
-int cnn_config_append_texture(cnn_config_t cfg, cnn_activ_t activID, int filter,
-                              float aInit)
-{
-    int ret = CNN_NO_ERROR;
-    int layers;
-
-    // Append texture layer
-    cnn_config_get_layers(cfg, &layers);
-    layers++;
-    cnn_run(cnn_config_set_layers(cfg, layers), ret, RET);
-    cnn_run(cnn_config_set_texture(cfg, layers - 1, activID, filter, aInit),
-            ret, RET);
-
-RET:
-    return ret;
-}
-
-int cnn_config_set_texture(cnn_config_t cfg, int layerIndex,
-                           cnn_activ_t activID, int filter, float aInit)
-{
-    int ret = CNN_NO_ERROR;
-
-    // Checking
-    if (layerIndex <= 0 || layerIndex >= cfg->layers ||           //
-        activID <= CNN_SOFTMAX || activID >= CNN_ACTIV_AMOUNT ||  //
-        filter <= 0)
+    if (expAvgFactorPtr != NULL)
     {
-        ret = CNN_INVALID_ARG;
-        goto RET;
-    }
-
-    // Set config
-    cfg->layerCfg[layerIndex].type = CNN_LAYER_TEXT;
-    cfg->layerCfg[layerIndex].text.activId = activID;
-    cfg->layerCfg[layerIndex].text.filter = filter;
-    cfg->layerCfg[layerIndex].text.aInit = aInit;
-
-RET:
-    return ret;
-}
-
-int cnn_config_get_texture(cnn_config_t cfg, int layerIndex, cnn_activ_t* idPtr,
-                           int* filterPtr, float* aInitPtr)
-{
-    int ret = CNN_NO_ERROR;
-
-    // Checking
-    if (layerIndex < 0 || layerIndex >= cfg->layers)
-    {
-        ret = CNN_INVALID_ARG;
-        goto RET;
-    }
-
-    if (cfg->layerCfg[layerIndex].type != CNN_LAYER_TEXT)
-    {
-        ret = CNN_INVALID_ARG;
-        goto RET;
-    }
-
-    // Assign value
-    if (idPtr != NULL)
-    {
-        *idPtr = cfg->layerCfg[layerIndex].text.activId;
-    }
-
-    if (filterPtr != NULL)
-    {
-        *filterPtr = cfg->layerCfg[layerIndex].text.filter;
-    }
-
-    if (aInitPtr != NULL)
-    {
-        *aInitPtr = cfg->layerCfg[layerIndex].text.aInit;
+        *expAvgFactorPtr = cfg->layerCfg[layerIndex].bn.expAvgFactor;
     }
 
 RET:

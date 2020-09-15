@@ -56,7 +56,17 @@ void cnn_layer_drop_delete(struct CNN_LAYER_DROP* layerPtr)
     cnn_free(layerPtr->mask);
 
 #ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->maskGpu);
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->ten);
+
+    // Destroy dropout descriptor
+    cudnnDestroyDropoutDescriptor(layerPtr->dropDesc);
+
+    // Free state space
+    cnn_free_cu(layerPtr->stateSpace);
+
+    // Free reserve space
+    cnn_free_cu(layerPtr->rsvSpace);
 #endif
 
     // Zero memory
@@ -70,6 +80,11 @@ void cnn_layer_activ_delete(struct CNN_LAYER_ACTIV* layerPtr)
     cnn_mat_delete(&layerPtr->gradMat);
     cnn_mat_delete(&layerPtr->buf);
 
+#ifdef CNN_WITH_CUDA
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->ten);
+#endif
+
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_ACTIV));
 }
@@ -80,6 +95,18 @@ void cnn_layer_fc_delete(struct CNN_LAYER_FC* layerPtr)
     cnn_mat_delete(&layerPtr->outMat.data);
     cnn_mat_delete(&layerPtr->weight);
     cnn_mat_delete(&layerPtr->bias);
+
+#ifdef CNN_WITH_CUDA
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->biasTen);
+    cudnnDestroyTensorDescriptor(layerPtr->dstTen);
+
+    // Destroy reduction descriptor
+    cudnnDestroyReduceTensorDescriptor(layerPtr->reduDesc);
+
+    // Free indices space
+    cnn_free_cu(layerPtr->indData);
+#endif
 
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_FC));
@@ -95,11 +122,24 @@ void cnn_layer_conv_delete(struct CNN_LAYER_CONV* layerPtr)
     cnn_mat_delete(&layerPtr->bias);
 #endif
 
-    cnn_mat_delete(&layerPtr->unroll);
-
 #ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->indexMap);
+    // Destroy convolution descriptor
+    cudnnDestroyConvolutionDescriptor(layerPtr->convDesc);
+
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->srcTen);
+    cudnnDestroyTensorDescriptor(layerPtr->dstTen);
+    cudnnDestroyFilterDescriptor(layerPtr->kernelTen);
+
+#if defined(CNN_CONV_BIAS_FILTER)
+    cudnnDestroyTensorDescriptor(layerPtr->biasTen);
+#elif defined(CNN_CONV_BIAS_LAYER)
+#error Unsupported convolution bias type
+#endif
+
+    // cnn_free_cu(layerPtr->indexMap);
 #else
+    cnn_mat_delete(&layerPtr->unroll);
     cnn_free(layerPtr->indexMap);
 #endif
 
@@ -113,7 +153,12 @@ void cnn_layer_pool_delete(struct CNN_LAYER_POOL* layerPtr)
     cnn_mat_delete(&layerPtr->outMat.data);
 
 #ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->indexMat);
+    // Destroy pooling descriptor
+    cudnnDestroyPoolingDescriptor(layerPtr->poolDesc);
+
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->srcTen);
+    cudnnDestroyTensorDescriptor(layerPtr->dstTen);
 #else
     cnn_free(layerPtr->indexMat);
 #endif
@@ -126,48 +171,23 @@ void cnn_layer_bn_delete(struct CNN_LAYER_BN* layerPtr)
 {
     // Free memory
     cnn_mat_delete(&layerPtr->outMat.data);
-    cnn_mat_delete(&layerPtr->bnVar);
-    cnn_mat_delete(&layerPtr->srcShift);
-    cnn_mat_delete(&layerPtr->srcNorm);
 
-    //#ifdef CNN_WITH_CUDA
-    //    cnn_free_cu(layerPtr->stddev);
-    //#else
-    cnn_free(layerPtr->stddev);
-    //#endif
+    cnn_mat_delete(&layerPtr->bnScale);
+    cnn_mat_delete(&layerPtr->bnBias);
+
+    cnn_mat_delete(&layerPtr->saveMean);
+    cnn_mat_delete(&layerPtr->saveVar);
+    cnn_mat_delete(&layerPtr->runMean);
+    cnn_mat_delete(&layerPtr->runVar);
 
 #ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->buf);
+    // Destroy tensor
+    cudnnDestroyTensorDescriptor(layerPtr->srcTen);
+    cudnnDestroyTensorDescriptor(layerPtr->bnTen);
 #endif
 
     // Zero memory
     memset(layerPtr, 0, sizeof(struct CNN_LAYER_BN));
-}
-
-void cnn_layer_text_delete(struct CNN_LAYER_TEXT* layerPtr)
-{
-    // Free memory
-    cnn_mat_delete(&layerPtr->outMat.data);
-    cnn_mat_delete(&layerPtr->weight);
-    cnn_mat_delete(&layerPtr->bias);
-    cnn_mat_delete(&layerPtr->alpha);
-
-    cnn_mat_delete(&layerPtr->nbrUnroll);
-    cnn_mat_delete(&layerPtr->ctrUnroll);
-    cnn_mat_delete(&layerPtr->diff);
-    cnn_mat_delete(&layerPtr->scale);
-    cnn_mat_delete(&layerPtr->activ);
-
-#ifdef CNN_WITH_CUDA
-    cnn_free_cu(layerPtr->nbrMap);
-    cnn_free_cu(layerPtr->ctrMap);
-#else
-    cnn_free(layerPtr->nbrMap);
-    cnn_free(layerPtr->ctrMap);
-#endif
-
-    // Zero memory
-    memset(layerPtr, 0, sizeof(struct CNN_LAYER_TEXT));
 }
 
 void cnn_network_delete(struct CNN* cnn)
@@ -207,10 +227,6 @@ void cnn_network_delete(struct CNN* cnn)
 
                 case CNN_LAYER_BN:
                     cnn_layer_bn_delete(&cnn->layerList[i].bn);
-                    break;
-
-                case CNN_LAYER_TEXT:
-                    cnn_layer_text_delete(&cnn->layerList[i].text);
                     break;
             }
         }

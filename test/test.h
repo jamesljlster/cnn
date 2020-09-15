@@ -6,9 +6,11 @@
 #include <time.h>
 
 #include <cnn_config.h>
+#include <cnn_macro.h>
 
 #ifdef CNN_WITH_CUDA
 #include <cuda_runtime.h>
+#include <cudnn.h>
 #endif
 
 #define test(func)                                                  \
@@ -59,6 +61,10 @@
     }
 #endif
 
+#ifndef FLOAT_FMT
+#define FLOAT_FMT "%g"
+#endif
+
 void print_mat(float* src, int rows, int cols)
 {
     int i, j;
@@ -99,7 +105,7 @@ void print_img(float* src, int width, int height, int channel, int batch)
                 printf("[");
                 for (int w = 0; w < width; w++)
                 {
-                    printf("%g", src[shift + w]);
+                    printf(FLOAT_FMT, src[shift + w]);
                     if (w < width - 1)
                     {
                         printf(", ");
@@ -259,5 +265,65 @@ float get_time_cost(struct timespec timeHold)
 
     return tmpTime.tv_sec * 1000.0 + (double)tmpTime.tv_nsec / 1e+6;
 }
+
+#ifdef CNN_WITH_CUDA
+void cudnn_log(cudnnSeverity_t sev, void* udata, const cudnnDebug_t* dbg,
+               const char* msg)
+{
+    // Print time step
+    printf("[%d, %d] ", dbg->time_sec, dbg->time_usec);
+
+    // Print severity message
+    const char* sevMsg = "";
+    switch (sev)
+    {
+        case CUDNN_SEV_FATAL:
+            sevMsg = "Fatal";
+            break;
+
+        case CUDNN_SEV_ERROR:
+            sevMsg = "Error";
+            break;
+
+        case CUDNN_SEV_WARNING:
+            sevMsg = "Warning";
+            break;
+
+        case CUDNN_SEV_INFO:
+            sevMsg = "Info";
+            break;
+    }
+
+    printf("[%s]: ", sevMsg);
+
+    // Print message
+    int index = 0;
+    char ch = -1;
+    char preCh = -1;
+    while (1)
+    {
+        if (ch == '\0' && preCh == '\0')
+        {
+            break;
+        }
+
+        preCh = ch;
+        ch = msg[index++];
+        if (ch == '\0')
+        {
+            printf("\n");
+        }
+        printf("%c", ch);
+    }
+}
+
+void cudnn_log_enable()
+{
+    cnn_assert_cudnn(cudnnSetCallback(
+        CUDNN_SEV_INFO_EN | CUDNN_SEV_ERROR_EN | CUDNN_SEV_WARNING_EN, NULL,
+        cudnn_log));
+}
+
+#endif
 
 #endif

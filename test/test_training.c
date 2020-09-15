@@ -110,14 +110,13 @@ int main(int argc, char* argv[])
     test(cnn_config_set_batch_size(cfg, BATCH));
 
     test(cnn_config_append_convolution(cfg, CNN_PAD_SAME, 2, 3, KERNEL_SIZE));
-    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0, 0.001));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_convolution(cfg, CNN_PAD_SAME, 2, 3, KERNEL_SIZE));
-    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0, 0.001));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_texture(cfg, CNN_RELU, 3, 2.7183));
     test(cnn_config_append_full_connect(cfg, 128));
     test(cnn_config_append_dropout(cfg, 0.5));
     test(cnn_config_append_full_connect(cfg, 64));
@@ -133,7 +132,7 @@ int main(int argc, char* argv[])
     force = 0;
     for (iter = 0; iter < ITER; iter++)
     {
-        cnn_set_dropout_enabled(cnn, 1);
+        cnn_set_opmode(cnn, CNN_OPMODE_TRAIN);
 
         for (i = 0; i < data.instances; i += BATCH)
         {
@@ -148,7 +147,7 @@ int main(int argc, char* argv[])
             cnn_update(cnn, lRate, GRAD_LIMIT);
         }
 
-        cnn_set_dropout_enabled(cnn, 0);
+        cnn_set_opmode(cnn, CNN_OPMODE_RECALL);
 
         mse = 0;
         hit = 0;

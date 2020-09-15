@@ -85,5 +85,16 @@ int main()
                           layer[1].outMat.channel, cfg->batch);
     }
 
+    // Recall
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** Recall %d *****\n", i);
+        cnn_recall_drop(layer, cfg, 2);
+
+        print_img_net_msg("Dropout output:", layer[2].outMat.data.mat,
+                          layer[2].outMat.width, layer[2].outMat.height,
+                          layer[2].outMat.channel, cfg->batch);
+    }
+
     return 0;
 }

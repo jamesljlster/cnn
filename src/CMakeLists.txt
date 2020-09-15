@@ -3,18 +3,12 @@ cmake_minimum_required(VERSION 2.8)
 # Set variables
 set(PROJECT_NAME cnn)
 set(PROJECT_LANGUAGE C)
+if(${WITH_CUDA})
+    set(PROJECT_LANGUAGE ${PROJECT_LANGUAGE} CUDA)
+endif()
+
 set(PROJECT_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/cnn.h)
 set(PROJECT_DEPS ${OpenBLAS_LIB} ${LIBXML2_LIBRARIES})
-
-if(${WITH_CUDA})
-    set(PROJECT_LANGUAGE C CXX)
-    set(PROJECT_DEPS
-        ${PROJECT_DEPS}
-        ${CUDA_CUBLAS_LIBRARIES}
-        ${CUDA_LIBRARIES}
-        stdc++
-        )
-endif()
 
 set(CNN_CONV_BIAS_TYPES "None;Filter;Layer" CACHE STRING "CNN convolution bias types" FORCE)
 if(DEFINED CNN_CONV_BIAS_TYPE)
@@ -49,8 +43,8 @@ else()
 endif()
 
 if(${WITH_CUDA})
-    set(CMAKE_NVCC_FLAGS "${CMAKE_NVCC_FLAGS} -Wall")
-    set(CMAKE_NVCC_FLAGS_RELEASE "${CMAKE_NVCC_FLAGS} -O3")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wall")
+    set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS} -O3")
 endif()
 
 # Set default build option
@@ -87,12 +81,7 @@ if(${WITH_CUDA})
 endif()
 
 # Build library
-if(${WITH_CUDA})
-    cuda_add_library(${PROJECT_NAME} ${PROJECT_SRCS})
-else()
-    add_library(${PROJECT_NAME} ${PROJECT_SRCS})
-endif()
-
+add_library(${PROJECT_NAME} ${PROJECT_SRCS})
 set_target_properties(${PROJECT_NAME} PROPERTIES
     C_STANDARD 99
     OUTPUT_NAME ${PROJECT_NAME}

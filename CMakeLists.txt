@@ -10,6 +10,9 @@ endif()
 # Set variables
 set(PROJECT_NAME cnn)
 set(PROJECT_LANGUAGE C)
+if(${WITH_CUDA})
+    set(PROJECT_LANGUAGE ${PROJECT_LANGUAGE} CUDA)
+endif()
 
 # Environment variables
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation directory")
@@ -24,6 +27,9 @@ endif()
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
+
+# Export compile commands (For some useful tools like YCM, Sourcetrail, ...)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # Library paths
 set(LIB_PATHS

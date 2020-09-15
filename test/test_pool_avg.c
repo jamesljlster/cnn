@@ -17,7 +17,7 @@
 int main()
 {
     int size;
-    union CNN_LAYER layer[3];
+    union CNN_LAYER layer[3] = {0};
 
     float src[IMG_WIDTH * IMG_HEIGHT * CH_IN * BATCH] = {
         /* batch 1 */
@@ -92,7 +92,7 @@ int main()
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_MAX, POOL_SIZE));
+    test(cnn_config_append_pooling(cfg, CNN_DIM_2D, CNN_POOL_AVG, POOL_SIZE));
 
     // Print information
     print_img_msg("src:", src, IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch);
@@ -136,9 +136,7 @@ int main()
         print_img_net_msg("Pooling layer gradient:", layer[2].outMat.data.grad,
                           layer[2].outMat.width, layer[2].outMat.height,
                           layer[2].outMat.channel, cfg->batch);
-        print_img_int_net_msg("Gradient index mat:", layer[2].pool.indexMat,
-                              layer[2].outMat.width, layer[2].outMat.height,
-                              layer[2].outMat.channel, 1);
+
         print_img_net_msg("Previous layer gradient:", layer[1].outMat.data.grad,
                           layer[1].outMat.width, layer[1].outMat.height,
                           layer[1].outMat.channel, cfg->batch);

@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     struct timespec timeHold;
     float fwCost, bpCost;
 
-    union CNN_LAYER layer[3];
+    union CNN_LAYER layer[3] = {0};
 
     cnn_config_t cfg = NULL;
 
@@ -59,6 +59,10 @@ int main(int argc, char* argv[])
     test(cnn_layer_fc_alloc(&layer[2].fc,
                             (struct CNN_CONFIG_LAYER_FC*)&cfg->layerCfg[2],
                             sizeOut, 1, 1, cfg->batch));
+
+#ifdef CNN_WITH_CUDA
+    test(cnn_cudnn_ws_alloc());
+#endif
 
     // Performance test
     printf("Forward (ms), Backward (ms)\n");

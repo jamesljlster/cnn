@@ -176,9 +176,12 @@ void check_cnn_arch(cnn_t cnn)
                 print_mat_info("Output mat", cnn->layerList[i].outMat.data);
 
                 test_mat(cnn->layerList[i].outMat.data);
-                test_mat(cnn->layerList[i].bn.bnVar);
-                test_mat(cnn->layerList[i].bn.srcShift);
-                test_mat(cnn->layerList[i].bn.srcNorm);
+                test_mat(cnn->layerList[i].bn.bnScale);
+                test_mat(cnn->layerList[i].bn.bnBias);
+                test_mat(cnn->layerList[i].bn.saveMean);
+                test_mat(cnn->layerList[i].bn.saveVar);
+                test_mat(cnn->layerList[i].bn.runMean);
+                test_mat(cnn->layerList[i].bn.runVar);
                 break;
 
             default:
@@ -200,13 +203,12 @@ int main()
     test(cnn_config_set_input_size(cfg, INPUT_WIDTH, INPUT_HEIGHT, 1));
     test(cnn_config_set_batch_size(cfg, BATCH));
 
-    test(cnn_config_append_texture(cfg, CNN_SIGMOID, 9, 2.7183));
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 3, 3));
-    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0, 0.001));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_convolution(cfg, CNN_PAD_VALID, 2, 6, 3));
-    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0));
+    test(cnn_config_append_batchnorm(cfg, 1.0, 0.0, 0.001));
     test(cnn_config_append_pooling(cfg, 2, CNN_POOL_MAX, 2));
     test(cnn_config_append_activation(cfg, CNN_RELU));
     test(cnn_config_append_full_connect(cfg, 16));

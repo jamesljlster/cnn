@@ -16,7 +16,7 @@
 int main()
 {
     int size;
-    union CNN_LAYER layer[3];
+    union CNN_LAYER layer[3] = {0};
 
     float src[SIZE_IN * BATCH] = {
         0.1, 0.2, 0.3, 0.4,  // batch 1
@@ -62,6 +62,10 @@ int main()
     test(cnn_layer_fc_alloc(&layer[2].fc,
                             (struct CNN_CONFIG_LAYER_FC*)&cfg->layerCfg[2],
                             SIZE_IN, 1, 1, cfg->batch));
+
+#ifdef CNN_WITH_CUDA
+    test(cnn_cudnn_ws_alloc());
+#endif
 
     // Copy memory
     size =

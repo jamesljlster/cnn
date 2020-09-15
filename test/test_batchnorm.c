@@ -17,7 +17,7 @@
 int main()
 {
     int size;
-    union CNN_LAYER layer[3];
+    union CNN_LAYER layer[3] = {0};
 
     float src[IMG_WIDTH * IMG_HEIGHT * CH_IN * BATCH] = {
         /* batch 1 */
@@ -49,7 +49,7 @@ int main()
     test(cnn_config_set_input_size(cfg, IMG_WIDTH, IMG_HEIGHT, CH_IN));
 
     test(cnn_config_append_activation(cfg, CNN_RELU));
-    test(cnn_config_append_batchnorm(cfg, 0.87, 0.03));
+    test(cnn_config_append_batchnorm(cfg, 0.87, 0.03, 0.001));
 
     // Print information
     print_img_msg("src:", src, IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch);
@@ -81,6 +81,11 @@ int main()
         print_img_net_msg("BatchNorm output:", layer[2].outMat.data.mat,
                           layer[2].outMat.width, layer[2].outMat.height,
                           layer[2].outMat.channel, cfg->batch);
+
+        print_img_net_msg("BatchNorm running mean:", layer[2].bn.runMean.mat, 1,
+                          CH_IN, 1, 1);
+        print_img_net_msg("BatchNorm running var:", layer[2].bn.runVar.mat, 1,
+                          CH_IN, 1, 1);
     }
 
     // BP
@@ -98,8 +103,21 @@ int main()
                           layer[1].outMat.width, layer[1].outMat.height,
                           layer[1].outMat.channel, cfg->batch);
 
-        print_img_net_msg("BatchNorm variable gradient:",
-                          layer[2].bn.bnVar.grad, 2, CH_IN, 1, 1);
+        print_img_net_msg("BatchNorm scale gradient:", layer[2].bn.bnScale.grad,
+                          1, CH_IN, 1, 1);
+        print_img_net_msg("BatchNorm bias gradient:", layer[2].bn.bnBias.grad,
+                          1, CH_IN, 1, 1);
+    }
+
+    // Recall
+    for (int i = 0; i < 2; i++)
+    {
+        printf("***** Recall %d *****\n", i);
+        cnn_recall_bn(layer, cfg, 2);
+
+        print_img_net_msg("BatchNorm output:", layer[2].outMat.data.mat,
+                          layer[2].outMat.width, layer[2].outMat.height,
+                          layer[2].outMat.channel, cfg->batch);
     }
 
     return 0;

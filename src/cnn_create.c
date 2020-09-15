@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "cnn.h"
+#include "cnn_init.h"
 #include "cnn_private.h"
 
 int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg)
@@ -18,6 +19,11 @@ int cnn_create(cnn_t* cnnPtr, const cnn_config_t cfg)
 
     // Allocate network
     cnn_run(cnn_network_alloc(tmpCnn), ret, ERR);
+
+#ifdef CNN_WITH_CUDA
+    // Allocate workspace size
+    cnn_run(cnn_cudnn_ws_alloc(), ret, ERR);
+#endif
 
     // Assing value
     *cnnPtr = tmpCnn;

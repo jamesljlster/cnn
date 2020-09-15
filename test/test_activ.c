@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
 {
     int id = 0;
     int size;
-    union CNN_LAYER layer[3];
+    union CNN_LAYER layer[3] = {0};
 
     float src[SIZE * BATCH] = {
         -1, 0, 1,  // batch 1

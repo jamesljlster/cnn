@@ -153,19 +153,14 @@ void cnn_clone_network_detail(struct CNN* dst, const struct CNN* src)
 
             case CNN_LAYER_BN:
                 // Clone parameter
-                __cnn_mat_clone(bn.bnVar);
+                __cnn_mat_clone(bn.bnScale);
+                __cnn_mat_clone(bn.bnBias);
 
-                break;
+                __cnn_mat_clone(bn.saveMean);
+                __cnn_mat_clone(bn.saveVar);
 
-            case CNN_LAYER_TEXT:
-                // Clone weight
-                __cnn_mat_clone(text.weight);
-
-                // Clone bias
-                __cnn_mat_clone(text.bias);
-
-                // Clone alpha
-                __cnn_mat_clone(text.alpha);
+                __cnn_mat_clone(bn.runMean);
+                __cnn_mat_clone(bn.runVar);
 
                 break;
 

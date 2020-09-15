@@ -4,6 +4,10 @@
 #include "cnn.h"
 #include "cnn_config.h"
 
+#ifdef CNN_WITH_CUDA
+#include <cudnn.h>
+#endif
+
 // CNN matrix type
 struct CNN_MAT
 {
@@ -83,19 +87,12 @@ struct CNN_CONFIG_LAYER_BN
 
     float rInit;
     float bInit;
+
+    float expAvgFactor;
 };
 
-struct CNN_CONFIG_LAYER_TEXT
+union CNN_CONFIG_LAYER
 {
-    // Layer type
-    cnn_layer_t type;
-
-    cnn_activ_t activId;
-    int filter;
-    float aInit;
-};
-
-union CNN_CONFIG_LAYER {
     // Layer type
     cnn_layer_t type;
 
@@ -106,7 +103,6 @@ union CNN_CONFIG_LAYER {
     struct CNN_CONFIG_LAYER_POOL pool;
     struct CNN_CONFIG_LAYER_DROP drop;
     struct CNN_CONFIG_LAYER_BN bn;
-    struct CNN_CONFIG_LAYER_TEXT text;
 };
 
 struct CNN_CONFIG
@@ -137,6 +133,10 @@ struct CNN_LAYER_ACTIV
 
     // Calculate buffer
     struct CNN_MAT buf;
+
+#ifdef CNN_WITH_CUDA
+    cudnnTensorDescriptor_t ten;
+#endif
 };
 
 struct CNN_LAYER_FC
@@ -149,6 +149,16 @@ struct CNN_LAYER_FC
 
     // Bias vector
     struct CNN_MAT bias;
+
+#ifdef CNN_WITH_CUDA
+    cudnnReduceTensorDescriptor_t reduDesc;
+
+    cudnnTensorDescriptor_t biasTen;
+    cudnnTensorDescriptor_t dstTen;
+
+    size_t indSize;
+    uint32_t* indData;
+#endif
 };
 
 struct CNN_LAYER_CONV
@@ -167,9 +177,28 @@ struct CNN_LAYER_CONV
     // Channel
     int inChannel;
 
+#ifdef CNN_WITH_CUDA
+    cudnnConvolutionDescriptor_t convDesc;
+
+    cudnnTensorDescriptor_t srcTen;
+    cudnnTensorDescriptor_t dstTen;
+    cudnnFilterDescriptor_t kernelTen;
+
+#if defined(CNN_CONV_BIAS_FILTER)
+    cudnnTensorDescriptor_t biasTen;
+#elif defined(CNN_CONV_BIAS_LAYER)
+#error Unsupported convolution bias type
+#endif
+
+    cudnnConvolutionFwdAlgo_t convAlgoFW;
+    cudnnConvolutionBwdFilterAlgo_t convAlgoBWFilter;
+    cudnnConvolutionBwdDataAlgo_t convAlgoBWGrad;
+
+#else
     // Convolution to gemm
     int* indexMap;
     struct CNN_MAT unroll;
+#endif
 };
 
 struct CNN_LAYER_POOL
@@ -177,8 +206,15 @@ struct CNN_LAYER_POOL
     // Layer output matrix
     struct CNN_SHAPE outMat;
 
+#ifdef CNN_WITH_CUDA
+    cudnnPoolingDescriptor_t poolDesc;
+
+    cudnnTensorDescriptor_t srcTen;
+    cudnnTensorDescriptor_t dstTen;
+#else
     // Pooling index
     int* indexMat;
+#endif
 };
 
 struct CNN_LAYER_DROP
@@ -188,7 +224,17 @@ struct CNN_LAYER_DROP
 
     // Dropout mask
     int* mask;
-    int* maskGpu;
+
+#ifdef CNN_WITH_CUDA
+    cudnnDropoutDescriptor_t dropDesc;
+    cudnnTensorDescriptor_t ten;
+
+    size_t stateSize;
+    void* stateSpace;
+
+    size_t rsvSize;
+    void* rsvSpace;
+#endif
 };
 
 struct CNN_LAYER_BN
@@ -197,45 +243,23 @@ struct CNN_LAYER_BN
     struct CNN_SHAPE outMat;
 
     // BatchNorm variables
-    struct CNN_MAT bnVar;
+    struct CNN_MAT bnScale;
+    struct CNN_MAT bnBias;
 
-    // Cache
-    float* stddev;
-    struct CNN_MAT srcShift;
-    struct CNN_MAT srcNorm;
+    struct CNN_MAT saveMean;
+    struct CNN_MAT saveVar;
+
+    struct CNN_MAT runMean;
+    struct CNN_MAT runVar;
 
 #ifdef CNN_WITH_CUDA
-    // Buffer
-    float* buf;
+    cudnnTensorDescriptor_t srcTen;
+    cudnnTensorDescriptor_t bnTen;
 #endif
 };
 
-struct CNN_LAYER_TEXT
+union CNN_LAYER
 {
-    // Layer output matrix
-    struct CNN_SHAPE outMat;
-
-    // Texture weights
-    struct CNN_MAT weight;
-    struct CNN_MAT bias;
-    struct CNN_MAT alpha;
-
-    // Channel
-    int inChannel;
-
-    // Texture calculation buffer
-    struct CNN_MAT nbrUnroll;
-    struct CNN_MAT ctrUnroll;
-    struct CNN_MAT diff;
-    struct CNN_MAT scale;
-    struct CNN_MAT activ;
-
-    // Index mapping
-    int* nbrMap;  // Neighbor mapping
-    int* ctrMap;  // Center mapping
-};
-
-union CNN_LAYER {
     // Layer output matrix
     struct CNN_SHAPE outMat;
 
@@ -246,7 +270,6 @@ union CNN_LAYER {
     struct CNN_LAYER_POOL pool;
     struct CNN_LAYER_DROP drop;
     struct CNN_LAYER_BN bn;
-    struct CNN_LAYER_TEXT text;
 };
 
 struct CNN
@@ -254,7 +277,7 @@ struct CNN
     struct CNN_CONFIG cfg;
     union CNN_LAYER* layerList;
 
-    int dropEnable;
+    cnn_opmode_t opMode;
 };
 
 #endif

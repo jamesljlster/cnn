@@ -390,83 +390,44 @@ int cnn_write_layer_bn_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
                 ret, RET);
 
     // Write gamma
-    cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.rInit);
+    cnn_ftostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.rInit);
     cnn_xml_run(
         xmlTextWriterWriteAttribute(
             writer, (xmlChar*)cnn_str_list[CNN_STR_GAMMA], (xmlChar*)buf),
         ret, RET);
 
     // Write beta
-    cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.bInit);
+    cnn_ftostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].bn.bInit);
     cnn_xml_run(
         xmlTextWriterWriteAttribute(
             writer, (xmlChar*)cnn_str_list[CNN_STR_BETA], (xmlChar*)buf),
         ret, RET);
 
+    // Write exponential average factor
+    cnn_ftostr(buf, CNN_XML_BUFLEN,
+               cfgRef->layerCfg[layerIndex].bn.expAvgFactor);
+    cnn_xml_run(xmlTextWriterWriteAttribute(
+                    writer, (xmlChar*)cnn_str_list[CNN_STR_EAF], (xmlChar*)buf),
+                ret, RET);
+
     // Write network detail
     if (layerRef != NULL)
     {
         // Write batch normalization parameter
-        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.bnVar,
-                                  cnn_str_list[CNN_STR_PARAM], writer),
-                ret, RET);
-    }
-
-RET:
-    return ret;
-}
-
-int cnn_write_layer_text_xml(struct CNN_CONFIG* cfgRef,
-                             union CNN_LAYER* layerRef, int layerIndex,
-                             xmlTextWriterPtr writer)
-{
-    int ret = CNN_NO_ERROR;
-    char buf[CNN_XML_BUFLEN] = {0};
-
-    // Write layer type
-    cnn_xml_run(xmlTextWriterWriteAttribute(
-                    writer, (xmlChar*)cnn_str_list[CNN_STR_TYPE],
-                    (xmlChar*)cnn_str_list[CNN_STR_TEXT]),
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.bnScale,
+                                  cnn_str_list[CNN_STR_GAMMA], writer),
                 ret, RET);
 
-    // Write activation function id
-    cnn_xml_run(
-        xmlTextWriterWriteAttribute(
-            writer, (xmlChar*)cnn_str_list[CNN_STR_ID],
-            (xmlChar*)
-                cnn_activ_name[cfgRef->layerCfg[layerIndex].text.activId]),
-        ret, RET);
-
-    // Write filter
-    cnn_itostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].text.filter);
-    cnn_xml_run(
-        xmlTextWriterWriteAttribute(
-            writer, (xmlChar*)cnn_str_list[CNN_STR_FILTER], (xmlChar*)buf),
-        ret, RET);
-
-    // Write alpha
-    cnn_ftostr(buf, CNN_XML_BUFLEN, cfgRef->layerCfg[layerIndex].text.aInit);
-    cnn_xml_run(
-        xmlTextWriterWriteAttribute(
-            writer, (xmlChar*)cnn_str_list[CNN_STR_ALPHA], (xmlChar*)buf),
-        ret, RET);
-
-    // Write network detail
-    if (layerRef != NULL)
-    {
-        // Write weight
-        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.weight,
-                                  cnn_str_list[CNN_STR_WEIGHT], writer),
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.bnBias,
+                                  cnn_str_list[CNN_STR_BETA], writer),
                 ret, RET);
 
-        // Write bias
-        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.bias,
-                                  cnn_str_list[CNN_STR_BIAS], writer),
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.runMean,
+                                  cnn_str_list[CNN_STR_MEAN], writer),
                 ret, RET);
 
-        // Write alpha
-        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].text.alpha,
-                                  cnn_str_list[CNN_STR_ALPHA], writer),
+        cnn_run(cnn_write_mat_xml(&layerRef[layerIndex].bn.runVar,
+                                  cnn_str_list[CNN_STR_VAR], writer),
                 ret, RET);
     }
 
@@ -538,11 +499,6 @@ int cnn_write_network_xml(struct CNN_CONFIG* cfgRef, union CNN_LAYER* layerRef,
 
             case CNN_LAYER_BN:
                 cnn_run(cnn_write_layer_bn_xml(cfgRef, layerRef, i, writer),
-                        ret, RET);
-                break;
-
-            case CNN_LAYER_TEXT:
-                cnn_run(cnn_write_layer_text_xml(cfgRef, layerRef, i, writer),
                         ret, RET);
                 break;
 

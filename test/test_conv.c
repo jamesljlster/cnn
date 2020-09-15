@@ -18,7 +18,7 @@
 int main()
 {
     int size;
-    union CNN_LAYER layer[3];
+    union CNN_LAYER layer[3] = {0};
 
     float src[IMG_WIDTH * IMG_HEIGHT * CH_IN * BATCH] = {
         /* batch 1 */
@@ -119,6 +119,10 @@ int main()
     test(cnn_layer_conv_alloc(&layer[2].conv,
                               (struct CNN_CONFIG_LAYER_CONV*)&cfg->layerCfg[2],
                               IMG_WIDTH, IMG_HEIGHT, CH_IN, cfg->batch));
+
+#ifdef CNN_WITH_CUDA
+    test(cnn_cudnn_ws_alloc());
+#endif
 
     // Copy memory
     size =
